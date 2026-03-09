@@ -1,0 +1,115 @@
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  backend:
+  frontend:
+
+x-common-env: &common-env
+  HOSTNAME: "0.0.0.0"
+  PORT: 3000
+  REDIS_URL: redis://redis:6379
+  CORE_PUBLIC_URL: http://development.mairie360.fr
+
+# x-depends-on: &depends-on
+#   postgres:
+#     condition: service_healthy
+#   redis:
+#     condition: service_healthy
+
+x-healthcheck: &healthcheck
+  test: ["CMD", "curl", "-f", "http://localhost:3000"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+
+x-service: &service-template
+  pull_policy: always
+  restart: always
+  expose:
+    - "3000"
+  networks:
+    - backend
+    - frontend
+  healthcheck:
+    <<: *healthcheck
+
+services:
+  # postgres:
+  #   image: postgres:17.4-bookworm
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   expose:
+  #     - "5432"
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     - backend
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # redis:
+  #   image: redis:7.4.2-bookworm
+  #   restart: always
+  #   expose:
+  #     - "6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - backend
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # core:
+  #   <<: *service-template
+  #   image: ghcr.io/mairie360/core:latest
+  #   environment:
+  #     <<: *common-env
+  #     POSTGRES_URL: postgresql://postgres:postgres@postgres:5432/core
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  
+  projects:
+    <<: *service-template
+    build:
+      context: .
+      dockerfile: development.Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /usr/src/projects/src
+        - action: rebuild
+          path: package*.json
+    environment:
+      <<: *common-env
+      POSTGRES_URL: postgresql://postgres:postgres@postgres:5432/projects
+    # depends_on:
+    #   <<: *depends-on
+
+  nginx:
+    image: nginx:1.27.4-bookworm
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    networks:
+      - frontend
+    depends_on:
+      # core:
+      #   condition: service_healthy
+      projects:
+        condition: service_healthy
