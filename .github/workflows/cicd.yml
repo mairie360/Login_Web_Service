@@ -1,4 +1,4 @@
-name: Project Web Service CICD
+name: Login Web Service CICD
 
 on:
   push:
