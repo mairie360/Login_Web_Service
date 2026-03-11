@@ -36,80 +36,145 @@ x-service: &service-template
     <<: *healthcheck
 
 services:
-  # postgres:
-  #   image: postgres:17.4-bookworm
-  #   restart: always
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #   expose:
-  #     - "5432"
-  #   volumes:
-  #     - postgres-data:/var/lib/postgresql/data
-  #   networks:
-  #     - backend
-  #   healthcheck:
-  #     test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+  postgres:
+    image: ghcr.io/mairie360/database:dev-latest
+    restart: always
+    container_name: mairie360-db-login-front #change front name
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: mairie_360_database
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # redis:
-  #   image: redis:7.4.2-bookworm
-  #   restart: always
-  #   expose:
-  #     - "6379"
-  #   volumes:
-  #     - redis-data:/data
-  #   networks:
-  #     - backend
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+  liquibase:
+    image: ghcr.io/mairie360/liquibase-migrations:dev-latest
+    container_name: mairie360-liquibase-login-front #change front name
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/mairie_360_database
+      LIQUIBASE_COMMAND_USERNAME: ${DB_USER:-postgres}
+      LIQUIBASE_COMMAND_PASSWORD: ${DB_PASSWORD:-password}
+      LIQUIBASE_SEARCH_PATH: /liquibase/changelog
+    command: >
+      --changelog-file=changelog.xml
+      update
+    networks:
+      - backend
 
-  # core:
-  #   <<: *service-template
-  #   image: ghcr.io/mairie360/core:latest
-  #   environment:
-  #     <<: *common-env
-  #     POSTGRES_URL: postgresql://postgres:postgres@postgres:5432/core
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
+  redis:
+    image: redis:7.4.2-bookworm
+    container_name: mairie360-redis-login-front #change front name
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  core:
+    container_name: core-login-front-developpement
+    image: ghcr.io/mairie360/core-api:dev-1644fa7
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 3000
+      REDIS_URL: redis://redis:6379
+      DB_TYPE: postgres
+      DB_NAME: mairie_360_database
+      DB_USER: postgres
+      DB_HOST: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+      PUBLIC_URL: http://core.development.mairie360.fr
+      JWT_SECRET: b"secret"
+      JWT_TIMEOUT: 3600
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # <--- Doit être 3000
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
   
-  projects:
-    <<: *service-template
+  #add other apis if needed
+
+  bff-user:
+    container_name: bff-user-login-front
+    image: ghcr.io/mairie360/bff-user:dev-latest
+    ports:
+      - "4000:4000"
+    networks:
+      - backend
+      - frontend
+    environment:
+      CORE_API_URL: "core" 
+      CORE_API_PORT: 3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
+  login-front: # Ton application React
+    container_name: login-front-developpement
     build:
       context: .
       dockerfile: development.Dockerfile
+      secrets:
+        - NODE_AUTH_TOKEN
+    ports:
+      - "3001:3000" # On map le 3000 interne sur 3001 pour éviter le conflit avec 'core'
     develop:
       watch:
         - action: sync
           path: ./src
-          target: /usr/src/projects/src
+          target: /app/src
         - action: rebuild
-          path: package*.json
+          path: package.json
+    secrets:
+      - NODE_AUTH_TOKEN
     environment:
       <<: *common-env
-      POSTGRES_URL: postgresql://postgres:postgres@postgres:5432/projects
-    # depends_on:
-    #   <<: *depends-on
-
-  nginx:
-    image: nginx:1.27.4-bookworm
-    restart: always
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - "80:80"
+      PORT: 3000
+      # Force React/Vite à surveiller les fichiers correctement dans Docker
+      WATCHPACK_POLLING: "true" 
+      CHOKIDAR_USEPOLLING: "true"
     networks:
       - frontend
-    depends_on:
-      # core:
-      #   condition: service_healthy
-      projects:
-        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      retries: 3
+        
+secrets:
+  NODE_AUTH_TOKEN:
+    environment: NODE_AUTH_TOKEN
