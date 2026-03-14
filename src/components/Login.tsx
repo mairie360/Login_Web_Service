@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { InputManager, Button } from "@mairie360/lib-components";
 import { useState } from "react";
 
@@ -10,12 +11,12 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = () => {
-    console.log("Login with:", { email, password, rememberMe });
+    // Future login logic here
   };
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F5F3F0]">
-        <Image src="/logo.png" alt="Logo" width={400} height={400} className="mt-30 mb-4" />
+        <Image src="/logo.png" alt="Logo" width={400} height={400} className="mt-[7.5rem] mb-4" />
 
         <div className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0">
             <h2 className="text-2xl font-bold text-gray-900 !mb-2">Connexion</h2>
@@ -31,7 +32,7 @@ export default function Login() {
             <div className="w-full flex flex-col gap-1">
                 <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-500">Mot de passe</p>
-                    <a href="#" className="text-sm text-[#4B908D] hover:underline">Mot de passe oublié ?</a>
+                    <Link href="/forgot-password" className="text-sm text-[#4B908D] hover:underline">Mot de passe oublié ?</Link>
                 </div>
                 <InputManager 
                     label="" 
