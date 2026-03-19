@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mairie360/lib-components": "0.1.12",
+    "@mairie360/bff-user-openapi": "0.2.1",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
