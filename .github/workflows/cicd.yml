@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   CICD:
-    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@v1.3.0
+    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@v1.3.1
     with:
       package_name: "login-front"
       node_version: 23
