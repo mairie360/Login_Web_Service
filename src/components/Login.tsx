@@ -3,22 +3,62 @@
 import Image from "next/image";
 import Link from "next/link";
 import { InputManager, Button } from "@mairie360/lib-components";
+import type { FormEvent } from "react";
 import { useState } from "react";
+
+import { getBffUserErrorMessage, login } from "@/lib/bffUserClient";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const handleLogin = () => {
-    // Future login logic here
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage(null);
+
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
+      setMessage({
+        type: "error",
+        text: "Veuillez renseigner votre email et votre mot de passe.",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await login({
+        email: trimmedEmail,
+        password,
+      });
+
+      setMessage({
+        type: "success",
+        text: "Connexion réussie.",
+      });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: getBffUserErrorMessage(error),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-[#F5F3F0]">
         <Image src="/logo.png" alt="Logo" width={400} height={400} className="mt-[7.5rem] mb-4" />
 
-        <div className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0">
+        <form onSubmit={handleLogin} className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0">
             <h2 className="text-2xl font-bold text-gray-900 !mb-2">Connexion</h2>
             <div className="w-full flex flex-col gap-1">
                 <p className="text-sm text-gray-500">Email professionnel</p>
@@ -51,11 +91,26 @@ export default function Login() {
                     value={rememberMe}
                 />
             </div>
+            {message && (
+                <p
+                    role={message.type === "error" ? "alert" : "status"}
+                    className={`text-sm ${
+                        message.type === "error" ? "text-red-600" : "text-green-700"
+                    }`}
+                >
+                    {message.text}
+                </p>
+            )}
             <div className="w-full [&>button]:flex [&>button]:w-full [&>button]:py-[9px] [&>button]:pb-[11px] [&>button]:px-0 [&>button]:justify-center [&>button]:items-center [&>button]:self-stretch [&>button]:rounded-md [&>button]:bg-[#1256A6] [&>button]:shadow-[0_10px_15px_-3px_rgba(18,86,166,0.30),0_4px_6px_-4px_rgba(18,86,166,0.30)] [&>button]:hover:bg-[#0e4785]">
-                <Button label="Se connecter" onClick={() => handleLogin()} primary/>
+                <Button
+                    label={isSubmitting ? "Connexion..." : "Se connecter"}
+                    type="submit"
+                    disabled={isSubmitting}
+                    primary
+                />
             </div>
 
-        </div>
+        </form>
         <p className="mt-6 text-sm text-gray-500">
             © 2026 Mairie360. Tous droits réservés.
         </p>

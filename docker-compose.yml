@@ -136,6 +136,7 @@ services:
       - backend
       - frontend
     environment:
+      PORT: 4000
       CORE_API_URL: "core" 
       CORE_API_PORT: 3000
     healthcheck:
@@ -165,6 +166,7 @@ services:
     environment:
       <<: *common-env
       PORT: 3000
+      BFF_USER_BASE_URL: http://bff-user:4000
       # Force React/Vite à surveiller les fichiers correctement dans Docker
       WATCHPACK_POLLING: "true" 
       CHOKIDAR_USEPOLLING: "true"
