@@ -149,15 +149,6 @@ export async function POST(request: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
     const upstreamBody = await readResponseBody(upstreamResponse);
-    const authorizationHeader = upstreamResponse.headers.get("authorization");
-
-    console.log("[auth/login] Réponse reçue du BFF", {
-      status: upstreamResponse.status,
-      authorization: authorizationHeader
-        ? `Bearer ${maskToken(getAuthorizationToken(upstreamResponse))}`
-        : "absent",
-      bodyKeys: getResponseKeys(upstreamBody),
-    });
 
     if (upstreamResponse.status === 412) {
       const passwordChangeToken = getPasswordChangeToken(upstreamBody);
