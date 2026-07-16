@@ -1,7 +1,11 @@
-import  Login  from "../components/Login";
+import Login from "../components/Login";
+
+const DEFAULT_PROJECT_FRONT_URL = "http://localhost:5001/";
 
 export default function Home() {
   return (
-    <Login />
+    <Login
+      redirectUrl={process.env.PROJECT_FRONT_URL || DEFAULT_PROJECT_FRONT_URL}
+    />
   );
 }

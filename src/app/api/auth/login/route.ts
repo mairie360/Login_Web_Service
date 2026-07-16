@@ -149,7 +149,6 @@ export async function POST(request: NextRequest) {
       signal: AbortSignal.timeout(10_000),
     });
     const upstreamBody = await readResponseBody(upstreamResponse);
-    const authorizationHeader = upstreamResponse.headers.get("authorization");
 
     if (upstreamResponse.status === 412) {
       const passwordChangeToken = getPasswordChangeToken(upstreamBody);

@@ -15,7 +15,11 @@ type LoginResponse = {
 const inputClassName =
   "block w-full rounded-md border border-gray-300 bg-white p-2 text-sm !text-gray-700 placeholder:text-gray-400 shadow-sm outline-none transition focus:border-[#1256A6] focus:ring-2 focus:ring-[#1256A6]/20";
 
-export default function Login() {
+type LoginProps = {
+  redirectUrl?: string;
+};
+
+export default function Login({ redirectUrl }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordChange, setIsPasswordChange] = useState(false);
@@ -26,8 +30,6 @@ export default function Login() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const redirectAfterLogin = () => {
-    const redirectUrl = process.env.NEXT_PUBLIC_LOGIN_REDIRECT_URL;
-
     if (redirectUrl) {
       window.location.assign(redirectUrl);
     }

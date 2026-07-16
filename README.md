@@ -23,9 +23,8 @@ server-side URL can be overridden when needed:
 BFF_USER_API_URL=http://localhost:4000 npm run dev
 ```
 
-Set `NEXT_PUBLIC_LOGIN_REDIRECT_URL` if the user should be sent to another
-application after a successful login. Without it, the login page displays a
-success confirmation.
+Set `PROJECT_FRONT_URL` to choose the application opened after a successful
+login. It defaults to `http://localhost:5001/` when the variable is absent.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
