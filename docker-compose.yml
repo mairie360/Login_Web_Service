@@ -166,6 +166,7 @@ services:
       <<: *common-env
       PORT: 3000
       BFF_USER_API_URL: http://bff-user:4000
+      PROJECT_FRONT_URL: ${PROJECT_FRONT_URL}
       # Force React/Vite à surveiller les fichiers correctement dans Docker
       WATCHPACK_POLLING: "true" 
       CHOKIDAR_USEPOLLING: "true"
