@@ -16,6 +16,17 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+The login form uses the BFF documented at `http://localhost:4000/docs`. The
+server-side URL can be overridden when needed:
+
+```bash
+BFF_USER_API_URL=http://localhost:4000 npm run dev
+```
+
+Set `NEXT_PUBLIC_LOGIN_REDIRECT_URL` if the user should be sent to another
+application after a successful login. Without it, the login page displays a
+success confirmation.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
