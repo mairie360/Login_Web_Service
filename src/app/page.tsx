@@ -1,7 +1,5 @@
-import  Login  from "../components/Login";
+import Login from "../components/Login";
 
 export default function Home() {
-  return (
-    <Login />
-  );
+  return <Login redirectUrl={process.env.PROJECT_FRONT_URL} />;
 }
