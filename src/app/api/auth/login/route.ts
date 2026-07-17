@@ -14,7 +14,11 @@ type FirstConnectionResponse = {
   token?: unknown;
 };
 
-const BFF_URL = process.env.BFF_USER_API_URL ?? "http://localhost:4000";
+const BFF_URL =
+  process.env.BFF_USER_API_URL ??
+  process.env.USER_BFF_URL ??
+  "http://localhost:4000";
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN?.trim();
 const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60;
 const PASSWORD_CHANGE_TOKEN_MAX_AGE = 10 * 60;
 
@@ -196,6 +200,7 @@ export async function POST(request: NextRequest) {
       sameSite: "strict",
       path: "/",
       maxAge: ACCESS_TOKEN_MAX_AGE,
+      ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
     });
 
     return response;
