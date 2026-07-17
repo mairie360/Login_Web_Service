@@ -8,7 +8,11 @@ type UpstreamError = {
   message?: unknown;
 };
 
-const BFF_URL = process.env.BFF_USER_API_URL ?? "http://localhost:4000";
+const BFF_URL = (
+  process.env.BFF_USER_API_URL ??
+  process.env.USER_BFF_URL ??
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 function clearPasswordChangeToken(response: NextResponse) {
   response.cookies.set("passwordChangeToken", "", {
