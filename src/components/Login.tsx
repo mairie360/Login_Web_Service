@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Button } from "@mairie360/lib-components";
 import { FormEvent, useState } from "react";
 
@@ -229,12 +228,6 @@ export default function Login({ redirectUrl }: LoginProps) {
                 <label htmlFor="password" className="text-sm text-gray-500">
                   Mot de passe
                 </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-[#4B908D] hover:underline"
-                >
-                  Mot de passe oublié ?
-                </Link>
               </div>
               <input
                 id="password"
