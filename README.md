@@ -15,6 +15,17 @@ access** doit accorder au dépôt `mairie360/Login_Web_Service` le rôle **Read*
 La permission du workflow seule ne donne pas accès aux packages d'un autre dépôt.
 Voir la [documentation GitHub Packages](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility#ensuring-workflow-access-to-your-package).
 
+## Dépendances et audit de sécurité
+
+Les `overrides` de `package.json` alignent la copie de Next.js apportée par
+`lib-components` sur la version de l'application (`$next`). Ils imposent aussi
+PostCSS `>=8.5.23 <9` et Sharp `>=0.35.4 <0.36` à Next.js pour corriger les
+alertes de sécurité de ses dépendances. Conserver ces règles tant que les
+versions déclarées par les packages amont restent vulnérables.
+
+Après une mise à jour, vérifier le fichier de verrouillage avec `npm ci`, puis
+exécuter `npm audit --audit-level=high`, `npm run lint` et `npm run build`.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
