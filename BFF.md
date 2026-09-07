@@ -1,44 +1,49 @@
-# BFF — Connexion
+# Contrat web service / BFF
 
-Référentiel de besoins harmonisé le 5 septembre 2026. Documentation uniquement : aucune route ni migration n'est créée par ces fichiers. Les chemins BFF sont relatifs au service indiqué, pas au préfixe des proxies Next.js ; les chemins backend conservent leurs préfixes réels.
+Ce web service consomme **BFF_user**. La copie [OpenAPI](contracts/openapi.json) définit les routes et les données échangées ; les [types TypeScript](src/contracts/bff.d.ts) sont générés depuis cette copie.
 
-Le front branche la connexion et le changement obligatoire à la première connexion. Mot de passe oublié, réinitialisation et défi MFA restent des besoins cibles, pas des écrans déjà raccordés.
+## Routes implémentées
 
-Tables et routes propriétaires : [BACKEND.md](BACKEND.md).
+Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètres, contenu binaire, statuts et cookies. Les chemins `/api/auth/*` restent des adaptateurs de session vers BFF User ; les pages Next.js sont distinctes des routes de données.
 
-`Existant` : déclaré dans les sources locales ; `Partiel` : route présente mais données manquantes, SQL direct ou mémoire ; `Client généré` : chemin observé dans le client installé, déploiement non vérifié ; `Proposé` : contrat cible à implémenter/valider. Pour les tables, `SQL observé` ne prouve pas qu'une migration est déployée.
+| Méthode | Route | Réponse / schéma |
+| --- | --- | --- |
+| GET | `/health` | 200 OK |
+| GET | `/check_apis` | 200 CheckApiResponse |
+| POST | `/auth/login` | 200 AuthTokenResponse |
+| POST | `/auth/register` | 201 Utilisateur créé avec succès |
+| POST | `/auth/force_change_password` | 204 Mot de passe changé avec succès |
+| POST | `/auth/logout` | 200 LogoutResponse |
+| GET | `/user/{userId}/about` | 200 AboutResponseView |
+| GET | `/bff/admin/users` | 200 AdministrationUsersPage ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/users` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| PATCH | `/bff/admin/users/{userId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| DELETE | `/bff/admin/users/{userId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| PATCH | `/bff/admin/users/{userId}/password` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/users/{userId}/roles` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| DELETE | `/bff/admin/users/{userId}/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/bff/admin/roles` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/roles` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| PUT | `/bff/admin/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| PATCH | `/bff/admin/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| DELETE | `/bff/admin/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/bff/admin/groups` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/groups` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/bff/admin/groups/{groupId}` | 200 AdministrationGroup ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| PATCH | `/bff/admin/groups/{groupId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| DELETE | `/bff/admin/groups/{groupId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/bff/admin/groups/{groupId}/users` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/groups/{groupId}/users` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| DELETE | `/bff/admin/groups/{groupId}/users/{userId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/bff/admin/sessions` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/bff/admin/sessions/history` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/sessions/refresh` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| POST | `/bff/admin/sessions/revoke` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
+| GET | `/me` | 200 SessionResponse |
+| GET | `/session/me` | 200 SessionResponse |
 
-## Routes communes
+## Mise à jour et validation
 
-Les identifiants renvoyés par un domaine restent ceux de son backend, même lorsqu'un BFF les sérialise en chaîne. `phone` côté Core/DTO correspond à `users.phone_number` en SQL ; `name`/`fullName` est composé à partir du prénom et du nom, sans découpage automatique inverse. Les rôles d'affichage sont adaptés par chaque front à partir de `roles`, sans nouvelle table de rôles par module. Le profil s'édite dans **Paramètres > Profil** ; les anciennes pages `/profile` ne définissent pas un stockage distinct.
+Dans le BFF associé, exécuter `npm run contracts:generate`. Dans ce web service, exécuter `npm run contracts:sync`, puis `npm run contracts:check` et `npm run test:contracts`. Les dépôts peuvent être voisins ; sinon `BFF_CONTRACT_DIR` indique le répertoire `contracts` du BFF. La CI vérifie que les types correspondent au document livré, même sans checkout du dépôt voisin.
 
-| Méthode | Service et route BFF | Route backend / source | Données nécessaires au front | État |
-| --- | --- | --- | --- | --- |
-| GET | BFF User `/me` (alias `/session/me`) | Core `GET /api/v1/user/me/` + `GET /api/v1/groups/` | Identité, rôles et groupes communs ; réponse actuelle `{user, groups, roles}` ; enrichir avec identifiant, avatar, service, poste et dernière connexion | Partiel |
-| POST | BFF User `/auth/logout` | Actuel : suppression du cookie ; cible : Core `POST /api/v1/sessions/revoke` avec le refresh token de la session courante | Déconnexion ; révocation serveur à brancher, pas une suppression de toutes les sessions | Partiel |
-| GET | BFF User `/notifications` | Core `GET /api/v1/user/me/notifications/` | Notifications du bandeau et compteur non lu ; ne pas utiliser la constante de démonstration 3 | Proposé |
-| PATCH | BFF User `/notifications/{notificationId}/read` | Core `PATCH /api/v1/user/me/notifications/{notificationId}/read` | Marquage lu et compteur actualisé pour l'utilisateur connecté | Proposé |
-
-## Routes du module
-
-| Méthode | Service et route BFF | Route backend / source | Données nécessaires au front | État |
-| --- | --- | --- | --- | --- |
-| POST | BFF User `/auth/login` | Core `POST /api/v1/auth/login` | E-mail, mot de passe, appareil ; jeton d'accès transmis en en-tête Authorization et refresh token ; 412 à la première connexion | Existant |
-| POST | BFF User `/auth/force_change_password` | Core `POST /api/v1/auth/force_change_password` | Jeton temporaire, nouveau mot de passe ; BFF écrit aussi actuellement users/Redis | Partiel : double persistance |
-| POST | BFF User `/auth/forgot_password` | Core `POST /api/v1/auth/forgot_password` | E-mail de récupération ; réponse ne révélant pas l'existence du compte | Proposé côté BFF |
-| POST | BFF User `/auth/reset_password` | Core `POST /api/v1/auth/reset_password` | Jeton à usage unique, nouveau mot de passe, appareil | Proposé côté BFF |
-| POST | BFF User `/auth/register` | Actuel : Core `POST /api/v1/admin/users/` ; cible auto-inscription : `POST /api/v1/auth/register` | Compte utilisateur ; respecter le réglage global d'inscription publique | Partiel : route actuelle de création administrative, pas d'auto-inscription branchée |
-| POST | BFF User `/auth/mfa/verify` | Core `POST /api/v1/auth/mfa/verify` | Défi, méthode SMS/authenticator, code ; session authentifiée seulement après validation | Proposé ; commun à la sécurité Paramètres |
-
-## Points d'alignement
-
-| Sujet | Contrat / écart |
-| --- | --- |
-| Proxies Next existants | `POST /api/auth/login` → `/auth/login` ; `POST /api/auth/force_change_password` (alias `/api/auth/force-change-password`) → `/auth/force_change_password`. Les routes Core d'authentification n'ont pas de slash final dans les handlers locaux. |
-
-## Sources
-
-| Périmètre | Référence |
-| --- | --- |
-| Front inspecté | [src/components/Login.tsx](src/components/Login.tsx) |
-| Identité / sessions / groupes | [Core_API 9904624](https://github.com/mairie360/Core_API/tree/99046240dd9742217d2a2c3d282721b785cacca0/src) ; [BFF_user b7c3477](https://github.com/mairie360/BFF_user/tree/b7c3477f858073aa846ba0129cbb29152528e6d2/src) |
+Le générateur de types est fixé à `openapi-typescript@7.10.1`. Il est exécuté via npm ; aucun jeton privé ne figure dans les contrats.

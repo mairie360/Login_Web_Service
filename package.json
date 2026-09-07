@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "contracts:generate": "node scripts/contracts.mjs --generate",
+    "contracts:check": "node scripts/contracts.mjs --check",
+    "contracts:sync": "node scripts/contracts.mjs --sync",
+    "test:contracts": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.2.1",

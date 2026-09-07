@@ -1,3 +1,4 @@
+import type { components } from '@/contracts/bff';
 import { NextRequest, NextResponse } from "next/server";
 
 type LoginBody = {
@@ -62,19 +63,6 @@ async function readResponseBody(response: Response): Promise<unknown> {
   }
 }
 
-function getRefreshToken(body: unknown) {
-  if (
-    typeof body === "object" &&
-    body !== null &&
-    "refresh_token" in body &&
-    typeof body.refresh_token === "string"
-  ) {
-    return body.refresh_token;
-  }
-
-  return null;
-}
-
 function getAuthorizationToken(response: Response) {
   const authorization = response.headers.get("authorization");
 
@@ -85,26 +73,6 @@ function getAuthorizationToken(response: Response) {
   const match = authorization.match(/^Bearer\s+(.+)$/i);
 
   return match?.[1] ?? null;
-}
-
-function maskToken(token: string | null) {
-  if (!token) {
-    return "absent";
-  }
-
-  if (token.length <= 16) {
-    return "présent";
-  }
-
-  return `${token.slice(0, 8)}…${token.slice(-8)}`;
-}
-
-function getResponseKeys(body: unknown) {
-  if (typeof body !== "object" || body === null || Array.isArray(body)) {
-    return [];
-  }
-
-  return Object.keys(body);
 }
 
 function getPasswordChangeToken(body: unknown) {
@@ -150,7 +118,7 @@ export async function POST(request: NextRequest) {
         email,
         password,
         device_info: request.headers.get("user-agent") ?? "Navigateur inconnu",
-      }),
+      } satisfies components["schemas"]["LoginView"]),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
@@ -185,7 +153,7 @@ export async function POST(request: NextRequest) {
     }
 
     const accessToken =
-      getAuthorizationToken(upstreamResponse) ?? getRefreshToken(upstreamBody);
+      getAuthorizationToken(upstreamResponse);
 
     if (!accessToken) {
       return NextResponse.json(
