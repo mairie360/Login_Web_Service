@@ -1,5 +1,7 @@
 # Backend — Connexion
 
+> Les besoins backend ci-dessous distinguent existant et proposé. Le contrat BFF/web effectivement livré est désormais décrit dans [BFF.md](BFF.md) et `contracts/openapi.json`. Les API propriétaires restent inchangées.
+
 Correspondance front/BFF : [BFF.md](BFF.md). Référentiel de besoins harmonisé le 5 septembre 2026. Documentation uniquement : aucune route ni migration n'est créée par ces fichiers. Les chemins BFF sont relatifs au service indiqué, pas au préfixe des proxies Next.js ; les chemins backend conservent leurs préfixes réels.
 
 `Existant` : déclaré dans les sources locales ; `Partiel` : route présente mais données manquantes, SQL direct ou mémoire ; `Client généré` : chemin observé dans le client installé, déploiement non vérifié ; `Proposé` : contrat cible à implémenter/valider. Pour les tables, `SQL observé` ne prouve pas qu'une migration est déployée.
