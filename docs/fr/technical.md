@@ -2,8 +2,6 @@
 
 [Présentation du module](module.md) · [English](../en/technical.md) · [README](../../README.md)
 
-Documentation du code versionné au 7 septembre 2026, basée sur `c71c7640f53f`. Les commandes ci-dessous décrivent les vérifications à effectuer; elles ne certifient pas un déploiement distant.
-
 ## Architecture et traitement des requêtes
 
 Application Next.js 15.5.25, React 19 et TypeScript avec App Router. Le navigateur appelle les routes de la même origine; le serveur Next.js relaie les données vers **BFF_user**.

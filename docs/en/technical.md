@@ -2,8 +2,6 @@
 
 [Module overview](module.md) · [Français](../fr/technical.md) · [README](../../README.md)
 
-Documentation of the versioned code as of 7 September 2026, based on `c71c7640f53f`. Commands below describe checks to run; they do not certify a remote deployment.
-
 ## Architecture and request handling
 
 Next.js 15.5.25, React 19 and TypeScript application using the App Router. The browser calls same-origin routes; the Next.js server forwards data to **BFF_user**.
