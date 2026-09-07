@@ -15,5 +15,6 @@ jobs:
     uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@v1.13.0
     with:
       package_name: "login-front"
-      node_version: 23
+      node_version: "23"
+      cicd_version: "v1.13.0"
     secrets: inherit
