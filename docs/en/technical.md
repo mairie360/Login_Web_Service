@@ -12,7 +12,7 @@ flowchart LR
   Next --> BFF["BFF_user"]
 ```
 
-The page passes `PROJECT_FRONT_URL` to the Login component. `/api/auth/login` sends email, password and user-agent to BFF User. A 412 with a token becomes a `requiresPasswordChange` response; normal success requires a Bearer token in the upstream Authorization header. Password change maps `newPassword` to `new_password` and forwards the temporary token.
+The page passes `PROJECT_FRONT_URL` to the Login component. `/api/auth/login` checks email and password with the same rules as BFF User’s `LoginView` (email format, non-empty password), then sends email, password and user-agent to BFF User. A 412 with a token becomes a `requiresPasswordChange` response; normal success requires a Bearer token in the upstream Authorization header. Password change maps `newPassword` to `new_password` and forwards the temporary token; a 401 or 403 (token refused or expired) clears it and asks to sign in again. Upstream statuses are kept, but the displayed message is chosen by the front from the status: BFF User messages are technical and in English.
 
 The generic proxy reads the versioned OpenAPI contract to allow paths and methods. It preserves query parameters, binary bodies, statuses and useful headers, filters transport headers, disables caching and does not automatically follow redirects. Its timeout is 15 seconds.
 
@@ -79,11 +79,11 @@ These data paths are exposed at the same origin through the proxy; Next.js pages
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/auth/login` | application/json | 200, 401, 412, 500 |
-| POST | `/auth/register` | application/json | 201, 400, 409, 500 |
-| POST | `/auth/force_change_password` | application/json | 204, 400, 401, 500 |
+| POST | `/auth/login` | application/json | 200, 400, 401, 412, 500, 502 |
+| POST | `/auth/register` | application/json | 201, 400, 409, 500, 502 |
+| POST | `/auth/force_change_password` | application/json | 204, 400, 401, 403, 500, 502 |
 | POST | `/auth/logout` | — | 200, 500 |
-| GET | `/user/{userId}/about` | — | 200, 400, 401, 500 |
+| GET | `/user/{userId}/about` | — | 200, 400, 401, 500, 502 |
 | GET | `/bff/admin/users` | — | 200, 201, 204, 400, 401, 403, 404, 502 |
 | POST | `/bff/admin/users` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
 | PATCH | `/bff/admin/users/{userId}` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
@@ -108,8 +108,8 @@ These data paths are exposed at the same origin through the proxy; Next.js pages
 | GET | `/bff/admin/sessions/history` | — | 200, 201, 204, 400, 401, 403, 404, 502 |
 | POST | `/bff/admin/sessions/refresh` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
 | POST | `/bff/admin/sessions/revoke` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
-| GET | `/me` | — | 200, 401 |
-| GET | `/session/me` | — | 200, 401 |
+| GET | `/me` | — | 200, 401, 502 |
+| GET | `/session/me` | — | 200, 401, 502 |
 
 ### Pages and local adapters
 
@@ -136,14 +136,16 @@ Every response carries `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff
 After changing routes or schemas, export the contract in **BFF_user** using `npm run contracts:generate`, then run in this repository:
 
 ```bash
-npm run contracts:sync
-npm run contracts:check
-npm run test:contracts
+BFF_CONTRACT_DIR=../../BFFs/BFF_user/contracts npm run contracts:sync
+BFF_CONTRACT_DIR=../../BFFs/BFF_user/contracts npm run contracts:check
+npm test
 npm run lint
 npm run build
 ```
 
-`contracts:sync` copies the BFF contract and regenerates `src/contracts/bff.d.ts`. `contracts:check` also compares a neighboring BFF when present; in an isolated checkout, it checks types against the local committed snapshot. `test:contracts` runs the Node proxy tests and sign-in flow tests.
+`contracts:sync` copies the BFF contract and regenerates `src/contracts/bff.d.ts`. `contracts:check` also compares the BFF found at `BFF_CONTRACT_DIR`; without it (or in an isolated checkout), it only checks types against the local committed snapshot. `npm test` runs the Node tests and fails below 60% line, branch or function coverage of `src/**` (`test:contracts` runs the same tests without coverage).
+
+Unit tests run the route handlers and the proxy with the real `fetch` against a fake BFF User served over HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) and driven by `contracts/openapi.json`: any request outside the contract (path, method, parameter, body), any mocked response that does not match its declared status, or any call to another origin fails the test. Every contract operation is exercised through the proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) also inventories every network call in `src/` (server and browser): each must target a contract operation or a local route handler, and the proxy is the only dynamic call allowed. Coverage only counts modules loaded by a test; React components (`.tsx`) are not measured.
 
 The type generator is pinned to `openapi-typescript@7.10.1` in `scripts/contracts.mjs` and runs through npm. For documentation-only changes, check links, accuracy in both languages and `git diff --check`; do not regenerate contracts without changing their source.
 
