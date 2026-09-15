@@ -1,12 +1,11 @@
+import type { components } from '@/contracts/bff';
 import { NextRequest, NextResponse } from "next/server";
 
 type ForceChangePasswordBody = {
   newPassword?: unknown;
 };
 
-type UpstreamError = {
-  message?: unknown;
-};
+type ForceChangePasswordView = components["schemas"]["ForceChangePasswordView"];
 
 const BFF_URL = (
   process.env.BFF_USER_API_URL ??
@@ -24,39 +23,19 @@ function clearPasswordChangeToken(response: NextResponse) {
   });
 }
 
-async function readResponseBody(response: Response): Promise<unknown> {
-  const text = await response.text();
-
-  if (!text) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-}
-
-function getErrorMessage(status: number, body: unknown) {
-  if (typeof body === "object" && body !== null) {
-    const { message } = body as UpstreamError;
-
-    if (typeof message === "string" && message.trim()) {
-      return message;
-    }
-  }
-
+// Les messages de BFF User sont techniques et en anglais (« Invalid password-change payload »,
+// « Unknown or expired user token ») : l'interface affiche ses propres messages selon le statut.
+function getErrorMessage(status: number) {
   if (status === 400) {
     return "Le nouveau mot de passe est invalide.";
   }
 
   if (status === 401 || status === 403) {
-    return "Le lien de changement de mot de passe est invalide ou expiré.";
+    return "Le lien de changement de mot de passe est invalide ou expiré. Reconnectez-vous.";
   }
 
-  if (status === 404) {
-    return "Le BFF ne trouve pas la route de changement de mot de passe du Core API.";
+  if (status >= 500) {
+    return "Le service de changement de mot de passe est indisponible. Veuillez réessayer.";
   }
 
   return "Le mot de passe n’a pas pu être modifié.";
@@ -100,26 +79,21 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           new_password: newPassword,
           token,
-        }),
+        } satisfies ForceChangePasswordView),
         cache: "no-store",
         signal: AbortSignal.timeout(10_000),
       },
     );
-    const upstreamBody = await readResponseBody(upstreamResponse);
-
     if (!upstreamResponse.ok) {
+      // 401 : jeton refusé par Core API ; 403 : jeton de première connexion inconnu ou expiré côté BFF.
       const shouldRestartLogin =
         upstreamResponse.status === 401 || upstreamResponse.status === 403;
-      const isCoreRouteMismatch = upstreamResponse.status === 404;
       const response = NextResponse.json(
         {
-          message: getErrorMessage(upstreamResponse.status, upstreamBody),
-          ...(isCoreRouteMismatch
-            ? { errorCode: "CORE_FORCE_CHANGE_ROUTE_NOT_FOUND" }
-            : {}),
+          message: getErrorMessage(upstreamResponse.status),
           ...(shouldRestartLogin ? { restartLogin: true } : {}),
         },
-        { status: isCoreRouteMismatch ? 502 : upstreamResponse.status },
+        { status: upstreamResponse.status },
       );
 
       if (shouldRestartLogin) {

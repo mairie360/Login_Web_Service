@@ -12,7 +12,7 @@ flowchart LR
   Next --> BFF["BFF_user"]
 ```
 
-La page transmet `PROJECT_FRONT_URL` au composant Login. `/api/auth/login` envoie e-mail, mot de passe et user-agent à BFF User. Un 412 avec jeton devient une réponse `requiresPasswordChange`; un succès normal exige un Bearer dans l’en-tête Authorization amont. Le changement de mot de passe adapte `newPassword` en `new_password` et transmet le jeton temporaire.
+La page transmet `PROJECT_FRONT_URL` au composant Login. `/api/auth/login` vérifie e-mail et mot de passe avec les mêmes règles que le `LoginView` de BFF User (format d’e-mail, mot de passe non vide), puis envoie e-mail, mot de passe et user-agent à BFF User. Un 412 avec jeton devient une réponse `requiresPasswordChange`; un succès normal exige un Bearer dans l’en-tête Authorization amont. Le changement de mot de passe adapte `newPassword` en `new_password` et transmet le jeton temporaire; un 401 ou 403 (jeton refusé ou expiré) le supprime et demande de se reconnecter. Les statuts amont sont conservés, mais le message affiché est choisi par le front selon le statut : les messages de BFF User sont techniques et en anglais.
 
 Le proxy générique lit le contrat OpenAPI versionné pour autoriser chemins et méthodes. Il conserve paramètres de requête, corps binaire, statuts et en-têtes utiles, filtre les en-têtes de transport, désactive le cache et n’effectue pas de suivi automatique des redirections. Son délai est de 15 secondes.
 
@@ -79,11 +79,11 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/auth/login` | application/json | 200, 401, 412, 500 |
-| POST | `/auth/register` | application/json | 201, 400, 409, 500 |
-| POST | `/auth/force_change_password` | application/json | 204, 400, 401, 500 |
+| POST | `/auth/login` | application/json | 200, 400, 401, 412, 500, 502 |
+| POST | `/auth/register` | application/json | 201, 400, 409, 500, 502 |
+| POST | `/auth/force_change_password` | application/json | 204, 400, 401, 403, 500, 502 |
 | POST | `/auth/logout` | — | 200, 500 |
-| GET | `/user/{userId}/about` | — | 200, 400, 401, 500 |
+| GET | `/user/{userId}/about` | — | 200, 400, 401, 500, 502 |
 | GET | `/bff/admin/users` | — | 200, 201, 204, 400, 401, 403, 404, 502 |
 | POST | `/bff/admin/users` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
 | PATCH | `/bff/admin/users/{userId}` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
@@ -108,8 +108,8 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 | GET | `/bff/admin/sessions/history` | — | 200, 201, 204, 400, 401, 403, 404, 502 |
 | POST | `/bff/admin/sessions/refresh` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
 | POST | `/bff/admin/sessions/revoke` | application/json | 200, 201, 204, 400, 401, 403, 404, 502 |
-| GET | `/me` | — | 200, 401 |
-| GET | `/session/me` | — | 200, 401 |
+| GET | `/me` | — | 200, 401, 502 |
+| GET | `/session/me` | — | 200, 401, 502 |
 
 ### Pages et adaptateurs locaux
 
@@ -136,14 +136,16 @@ Toutes les réponses portent `X-Frame-Options: DENY`, `X-Content-Type-Options: n
 Après une modification de routes ou de schémas, exporter le contrat dans **BFF_user** avec `npm run contracts:generate`, puis exécuter dans ce dépôt:
 
 ```bash
-npm run contracts:sync
-npm run contracts:check
-npm run test:contracts
+BFF_CONTRACT_DIR=../../BFFs/BFF_user/contracts npm run contracts:sync
+BFF_CONTRACT_DIR=../../BFFs/BFF_user/contracts npm run contracts:check
+npm test
 npm run lint
 npm run build
 ```
 
-`contracts:sync` copie le contrat BFF et régénère `src/contracts/bff.d.ts`. `contracts:check` compare aussi le BFF voisin lorsqu’il est présent; dans un checkout isolé, il vérifie les types contre la copie locale versionnée. `test:contracts` exécute les tests Node du proxy et des parcours de connexion.
+`contracts:sync` copie le contrat BFF et régénère `src/contracts/bff.d.ts`. `contracts:check` compare aussi le BFF situé dans `BFF_CONTRACT_DIR`; sans cette variable (ou dans un checkout isolé), il vérifie seulement les types contre la copie locale versionnée. `npm test` exécute les tests Node et échoue sous 60 % de couverture des lignes, branches ou fonctions de `src/**` (`test:contracts` lance les mêmes tests sans couverture).
+
+Les tests unitaires exécutent les route handlers et le proxy avec le vrai `fetch` contre un faux BFF User servi en HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) et piloté par `contracts/openapi.json` : toute requête hors contrat (chemin, méthode, paramètre, corps), toute réponse mockée non conforme au statut déclaré ou tout appel vers une autre origine fait échouer le test. Chaque opération du contrat est exercée à travers le proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventorie en plus tous les appels réseau de `src/` (serveur et navigateur) : chacun doit viser une opération du contrat ou un route handler local, et le proxy est le seul appel dynamique autorisé. La couverture ne compte que les modules chargés par un test ; les composants React (`.tsx`) ne sont pas mesurés.
 
 Le générateur de types est fixé à `openapi-typescript@7.10.1` dans `scripts/contracts.mjs` et s’exécute via npm. Pour une modification uniquement documentaire, vérifier les liens, l’exactitude des deux langues et `git diff --check`; ne pas régénérer les contrats sans modification de leur source.
 
