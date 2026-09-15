@@ -1,0 +1,222 @@
+# Stack de test de sécurité dynamique (DAST) ISOLÉE pour le front Login (Login_Web_Service).
+#
+#   ./security_test.sh            (local, NODE_AUTH_TOKEN exporté pour le build)
+#   docker compose -f docker-compose-security.yml up --build \
+#       --abort-on-container-exit --exit-code-from security-scan   (CI)
+#
+# security-scan (OWASP ZAP baseline) explore l'application Next.js servie par
+# l'image de production (Dockerfile, sortie standalone) avec un cookie de session
+# accessToken valide (replacer), comme un navigateur authentifié : pages, assets,
+# en-têtes HTTP et routes relayées vers BFF User. Sort en échec sur toute alerte
+# WARN/FAIL non neutralisée dans .zap/rules.tsv (les alertes informatives y sont
+# passées à IGNORE).
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  backend:
+
+x-db-env: &db-env
+  DB_TYPE: postgres
+  DB_NAME: mairie_360_database
+  DB_USER: postgres
+  DB_PASSWORD: password
+  DB_HOST: postgres
+  DB_PORT: 5432
+
+# JWT_SECRET identique sur toute la chaîne : le cookie accessToken du front est
+# relayé tel quel (Bearer) à BFF User, aux BFFs métier et aux APIs.
+x-api-env: &api-env
+  <<: *db-env
+  HOST: "0.0.0.0"
+  REDIS_URL: redis://redis:6379
+  JWT_SECRET: b"secret"
+  JWT_TIMEOUT: 3600
+
+services:
+  postgres:
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:1.1.0}
+    container_name: login-front-sec-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mairie_360_database
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  liquibase:
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:1.1.0}
+    container_name: login-front-sec-liquibase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/mairie_360_database
+      LIQUIBASE_COMMAND_USERNAME: postgres
+      LIQUIBASE_COMMAND_PASSWORD: password
+      LIQUIBASE_SEARCH_PATH: /migrations
+    command: >
+      --changelog-file=changelog.xml
+      update
+    networks:
+      - backend
+
+  seeder:
+    image: postgres:18-alpine
+    container_name: login-front-sec-seeder
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+    volumes:
+      - ./init-test.sql:/init-test.sql:ro
+    environment:
+      PGPASSWORD: password
+    command: >
+      sh -c "psql -h postgres -U postgres -d mairie_360_database -f /init-test.sql"
+    networks:
+      - backend
+
+  redis:
+    image: redis:8.4.0-bookworm
+    container_name: login-front-sec-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  core-api:
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:1.1.1}
+    container_name: login-front-sec-core-api
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *api-env
+      PORT: 3000
+      PUBLIC_URL: http://core-api:3000
+    expose:
+      - "3000"
+    networks:
+      - backend
+    # L'image publiée est "distroless" (ni shell ni curl) : la disponibilité est
+    # sondée depuis le conteneur core-api-ready ci-dessous.
+
+  core-api-ready:
+    image: curlimages/curl:latest
+    container_name: login-front-sec-core-api-ready
+    depends_on:
+      core-api:
+        condition: service_started
+    command: >
+      sh -c 'until curl -fsS http://core-api:3000/health >/dev/null; do
+      echo "waiting for core-api..."; sleep 2; done; echo "core-api ready"'
+    networks:
+      - backend
+
+  bff-user:
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:0.4.0}
+    container_name: login-front-sec-bff-user
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+      core-api-ready:
+        condition: service_completed_successfully
+    environment:
+      <<: *db-env
+      HOST: "0.0.0.0"
+      PORT: 4000
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: 'b"secret"'
+      CORE_API_URL: http://core-api:3000
+    expose:
+      - "4000"
+    networks:
+      - backend
+
+  bff-user-ready:
+    image: curlimages/curl:latest
+    container_name: login-front-sec-bff-user-ready
+    depends_on:
+      bff-user:
+        condition: service_started
+    command: >
+      sh -c 'until curl -fsS http://bff-user:4000/health >/dev/null; do
+      echo "waiting for bff-user..."; sleep 2; done; echo "bff-user ready"'
+    networks:
+      - backend
+
+  login-front:
+    image: ${TARGET_IMAGE:-login-front:security}
+    container_name: login-front-sec-front
+    # Image de production (Next.js standalone), identique à celle publiée par la CI.
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:-}
+    depends_on:
+      bff-user-ready:
+        condition: service_completed_successfully
+    environment:
+      HOSTNAME: "0.0.0.0"
+      PORT: 5000
+      BFF_USER_API_URL: http://bff-user:4000
+    expose:
+      - "5000"
+    networks:
+      - backend
+    # curl est installé dans l'image runner (seul un statut >= 400 fait échouer curl -f).
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  security-scan:
+    image: zaproxy/zap-stable
+    container_name: login-front-sec-zap
+    depends_on:
+      login-front:
+        condition: service_healthy
+    volumes:
+      - ./.zap/rules.tsv:/zap/wrk/rules.tsv:ro
+    # zap-baseline.py : spider + scan passif (adapté à une interface web, là où
+    #   les BFFs rejouent leur OpenAPI avec zap-api-scan.py).
+    # -c rules.tsv : les alertes informatives sont passées à IGNORE, toute autre
+    #   alerte (WARN/FAIL) fait sortir zap-baseline.py en code != 0.
+    # -z ... replacer : injecte le cookie accessToken (JWT HS256 statique sub=2,
+    #   role=user, exp=2100, signé avec JWT_SECRET=b"secret") sur chaque requête,
+    #   le proxy same-origin le convertit en Authorization: Bearer vers le BFF.
+    command:
+      - zap-baseline.py
+      - -t
+      - http://login-front:5000/
+      - -m
+      - "3"
+      - -c
+      - rules.tsv
+      - -z
+      - "-config replacer.full_list(0).description=auth -config replacer.full_list(0).enabled=true -config replacer.full_list(0).matchtype=REQ_HEADER -config replacer.full_list(0).matchstr=Cookie -config replacer.full_list(0).regex=false -config replacer.full_list(0).replacement=accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwicm9sZSI6InVzZXIiLCJleHAiOjQxMDI0NDQ4MDB9.qjXr3pV4v8hvkbv_ufmNqaPqhDTbOGfTUeEXxa1z70U"
+    networks:
+      - backend

@@ -10,11 +10,12 @@
     "contracts:generate": "node scripts/contracts.mjs --generate",
     "contracts:check": "node scripts/contracts.mjs --check",
     "contracts:sync": "node scripts/contracts.mjs --sync",
-    "test:contracts": "node --test tests/*.test.cjs"
+    "test:contracts": "node --test tests/*.test.cjs",
+    "test": "mkdir -p coverage && node --test --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.2.1",
-    "@mairie360/lib-components": "^0.0.9",
+    "@mairie360/lib-components": "0.3.0",
     "next": "15.5.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
