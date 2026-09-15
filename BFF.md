@@ -1,6 +1,6 @@
 # Contrat web service / BFF
 
-Ce web service consomme **BFF_user**. La copie [OpenAPI](contracts/openapi.json) définit les routes et les données échangées ; les [types TypeScript](src/contracts/bff.d.ts) sont générés depuis cette copie.
+Ce web service consomme un seul BFF : **BFF_user**, via son contrat publié dans le paquet `@mairie360/bff-user-openapi` (version exacte épinglée dans `package.json`). La copie [OpenAPI](contracts/openapi.json) est reconstruite depuis ce paquet et définit les routes relayées ; les types TypeScript sont importés directement du paquet (`@mairie360/bff-user-openapi/model`).
 
 ## Routes implémentées
 
@@ -8,42 +8,40 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 
 | Méthode | Route | Réponse / schéma |
 | --- | --- | --- |
-| GET | `/health` | 200 OK |
-| GET | `/check_apis` | 200 CheckApiResponse |
-| POST | `/auth/login` | 200 AuthTokenResponse |
-| POST | `/auth/register` | 201 Utilisateur créé avec succès |
-| POST | `/auth/force_change_password` | 204 Mot de passe changé avec succès |
-| POST | `/auth/logout` | 200 LogoutResponse |
-| GET | `/user/{userId}/about` | 200 AboutResponseView |
-| GET | `/bff/admin/users` | 200 AdministrationUsersPage ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/users` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| PATCH | `/bff/admin/users/{userId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| DELETE | `/bff/admin/users/{userId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| PATCH | `/bff/admin/users/{userId}/password` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/users/{userId}/roles` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| DELETE | `/bff/admin/users/{userId}/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/bff/admin/roles` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/roles` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| PUT | `/bff/admin/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| PATCH | `/bff/admin/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| DELETE | `/bff/admin/roles/{roleId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/bff/admin/groups` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/groups` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/bff/admin/groups/{groupId}` | 200 AdministrationGroup ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| PATCH | `/bff/admin/groups/{groupId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| DELETE | `/bff/admin/groups/{groupId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/bff/admin/groups/{groupId}/users` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/groups/{groupId}/users` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| DELETE | `/bff/admin/groups/{groupId}/users/{userId}` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/bff/admin/sessions` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/bff/admin/sessions/history` | 200 Données de l’administration ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/sessions/refresh` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| POST | `/bff/admin/sessions/revoke` | 200 CoreResponse ; 201 CoreResponse ; 204 Aucun contenu retourné par le Core API |
-| GET | `/me` | 200 SessionResponse |
-| GET | `/session/me` | 200 SessionResponse |
+| POST | `/auth/force_change_password` | 2XX sans corps |
+| POST | `/auth/login` | 2XX AuthTokenResponse ; 412 PostAuthLogin412 |
+| POST | `/auth/logout` | 2XX LogoutResponse |
+| POST | `/auth/register` | 2XX sans corps |
+| GET | `/bff/admin/groups` | 2XX GetBffAdminGroups200 ou CoreResponse |
+| POST | `/bff/admin/groups` | 2XX CoreResponse |
+| DELETE | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
+| GET | `/bff/admin/groups/{groupId}` | 2XX GetBffAdminGroupsGroupId200 ou CoreResponse |
+| PATCH | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
+| GET | `/bff/admin/groups/{groupId}/users` | 2XX GetBffAdminGroupsGroupIdUsers200 ou CoreResponse |
+| POST | `/bff/admin/groups/{groupId}/users` | 2XX CoreResponse |
+| DELETE | `/bff/admin/groups/{groupId}/users/{userId}` | 2XX CoreResponse |
+| GET | `/bff/admin/roles` | 2XX GetBffAdminRoles200 ou CoreResponse |
+| POST | `/bff/admin/roles` | 2XX CoreResponse |
+| DELETE | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
+| PATCH | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
+| PUT | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
+| GET | `/bff/admin/sessions` | 2XX GetBffAdminSessions200 ou CoreResponse |
+| GET | `/bff/admin/sessions/history` | 2XX GetBffAdminSessionsHistory200 ou CoreResponse |
+| POST | `/bff/admin/sessions/refresh` | 2XX CoreResponse |
+| POST | `/bff/admin/sessions/revoke` | 2XX CoreResponse |
+| GET | `/bff/admin/users` | 2XX AdministrationUsersPage ou CoreResponse |
+| POST | `/bff/admin/users` | 2XX CoreResponse |
+| DELETE | `/bff/admin/users/{userId}` | 2XX CoreResponse |
+| PATCH | `/bff/admin/users/{userId}` | 2XX CoreResponse |
+| PATCH | `/bff/admin/users/{userId}/password` | 2XX CoreResponse |
+| POST | `/bff/admin/users/{userId}/roles` | 2XX CoreResponse |
+| DELETE | `/bff/admin/users/{userId}/roles/{roleId}` | 2XX CoreResponse |
+| GET | `/check_apis` | 2XX CheckApiResponse |
+| GET | `/health` | 2XX sans corps |
+| GET | `/me` | 2XX SessionResponse |
+| GET | `/session/me` | 2XX SessionResponse |
+| GET | `/user/{userId}/about` | 2XX AboutResponseView |
 
 ## Mise à jour et validation
 
-Dans le BFF associé, exécuter `npm run contracts:generate`. Dans ce web service, exécuter `npm run contracts:sync`, puis `npm run contracts:check` et `npm run test:contracts`. Les dépôts peuvent être voisins ; sinon `BFF_CONTRACT_DIR` indique le répertoire `contracts` du BFF. La CI vérifie que les types correspondent au document livré, même sans checkout du dépôt voisin.
-
-Le générateur de types est fixé à `openapi-typescript@7.10.1`. Il est exécuté via npm ; aucun jeton privé ne figure dans les contrats.
+Après une release de BFF_user publiant une nouvelle version `X.Y.Z` du paquet (jamais une pré-version `0.0.0-dev`/`staging`, jamais une copie du checkout local du BFF) : `npm install --save-exact @mairie360/bff-user-openapi@X.Y.Z`, puis `npm run contracts:sync`, `npm run contracts:check` et `npm test`. Le paquet est une sortie orval sans `openapi.json` : `scripts/orval-contract.mjs` en reconstruit le contrat. Seuls les succès (`2XX`) et les réponses modélisées par statut (`412`) y figurent ; erreurs, formats et en-têtes de réponse n’y sont pas. Le tag de l’image `bff-user` des fichiers `docker-compose*.yml` doit suivre la même version.
