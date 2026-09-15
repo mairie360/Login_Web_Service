@@ -8,7 +8,8 @@ const { OpenApiContract } = require('./support/openapi-contract.cjs');
 
 // Inventaire statique de tous les appels réseau du code source (serveur et navigateur). Chaque appel
 // doit être vérifiable contre le contrat du BFF :
-// - côté serveur, `fetch(`${BFF_URL}/chemin`, { method })` vers une opération déclarée ;
+// - côté serveur, `fetch(bffUserUrl('/chemin'), { method })` vers une opération déclarée : BFF User est
+//   le seul BFF, et src/lib/bff-user.ts le seul endroit qui connaît son URL ;
 // - côté navigateur, `fetch('/chemin', { method })` same-origin vers un route handler de src/app/api
 //   (lui-même inventorié ici) ou vers une opération du contrat (relayée par le proxy) ;
 // - le seul appel dynamique autorisé est celui du proxy, borné au contrat par tests/bff-contract.test.cjs.
@@ -65,9 +66,9 @@ function describeCall(file, source, node) {
   }
   const where = `${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1}`;
   if (target && ts.isStringLiteralLike(target)) return { where, file, kind: 'same-origin', url: target.text, method };
-  if (target && ts.isTemplateExpression(target) && target.head.text === '' && target.templateSpans.length === 1
-    && target.templateSpans[0].expression.getText(source) === 'BFF_URL' && ts.isTemplateTail(target.templateSpans[0].literal)) {
-    return { where, file, kind: 'bff', url: target.templateSpans[0].literal.text, method };
+  if (target && ts.isCallExpression(target) && target.expression.getText(source) === 'bffUserUrl'
+    && target.arguments.length === 1 && ts.isStringLiteralLike(target.arguments[0])) {
+    return { where, file, kind: 'bff', url: target.arguments[0].text, method };
   }
   return { where, file, kind: 'dynamic', url: target?.getText(source), method };
 }
@@ -92,14 +93,12 @@ test('every fetch call is a verifiable call: BFF operation, same-origin route, o
   assert.equal(calls.filter((call) => call.kind === 'dynamic').length, 1, 'le proxy doit rester le seul appel dynamique');
 });
 
-test('server-side BFF calls target operations declared in the BFF contract, from files reading BFF_USER_API_URL', () => {
+test('server-side BFF calls go through bffUserUrl to operations declared in the BFF User contract', () => {
   const serverCalls = calls.filter((call) => call.kind === 'bff');
   assert.ok(serverCalls.length > 0);
   for (const call of serverCalls) {
     assert.ok(contract.match(call.method, call.url), `${call.where}: ${call.method} ${call.url} absent du contrat ${contract.title}`);
     assert.ok(!call.file.startsWith('src/components/'), `${call.where}: appel au BFF depuis un composant navigateur`);
-    const source = fs.readFileSync(path.join(ROOT, call.file), 'utf8');
-    assert.match(source, /const BFF_URL\s*=\s*\(?\s*process\.env\.BFF_USER_API_URL\b/, `${call.where}: BFF_URL doit venir de BFF_USER_API_URL`);
   }
   assert.deepEqual(serverCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/app/api/auth/force-change-password/route.ts POST /auth/force_change_password',
@@ -124,6 +123,19 @@ test('browser calls stay same-origin and land on an existing route handler or a 
     'src/components/Login.tsx POST /api/auth/force_change_password',
     'src/components/Login.tsx POST /api/auth/login',
   ]);
+});
+
+test('BFF User is the only BFF: one URL module, and the proxy forwards to it', () => {
+  const bffEnvironment = new Map();
+  for (const file of sourceFiles(path.join(ROOT, 'src'))) {
+    const relative = path.relative(ROOT, file).split(path.sep).join('/');
+    for (const [, name] of fs.readFileSync(file, 'utf8').matchAll(/process\.env\.([A-Z0-9_]*BFF[A-Z0-9_]*)/g)) {
+      bffEnvironment.set(`${relative} ${name}`, true);
+    }
+  }
+  assert.deepEqual([...bffEnvironment.keys()].sort(), ['src/lib/bff-user.ts BFF_USER_API_URL', 'src/lib/bff-user.ts USER_BFF_URL']);
+  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /return forwardToBff\(request, configuredBffUrl\(\), /);
+  assert.equal(requireTs(PROXY_FILE).configuredBffUrl, requireTs('src/lib/bff-user.ts').configuredBffUrl);
 });
 
 test('Next.js config adds no rewrite or redirect that would bypass the contract-gated proxy', () => {

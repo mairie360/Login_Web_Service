@@ -1,17 +1,10 @@
-import type { components } from '@/contracts/bff';
+import type { ForceChangePasswordView } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
+import { bffUserUrl } from "../../../../lib/bff-user";
 
 type ForceChangePasswordBody = {
   newPassword?: unknown;
 };
-
-type ForceChangePasswordView = components["schemas"]["ForceChangePasswordView"];
-
-const BFF_URL = (
-  process.env.BFF_USER_API_URL ??
-  process.env.USER_BFF_URL ??
-  "http://localhost:4000"
-).replace(/\/+$/, "");
 
 function clearPasswordChangeToken(response: NextResponse) {
   response.cookies.set("passwordChangeToken", "", {
@@ -69,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const upstreamResponse = await fetch(
-      `${BFF_URL}/auth/force_change_password`,
+      bffUserUrl("/auth/force_change_password"),
       {
         method: "POST",
         headers: {

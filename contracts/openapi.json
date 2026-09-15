@@ -1,149 +1,22 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "bff_user",
-    "version": "1.0.0"
-  },
   "components": {
     "schemas": {
-      "ApiErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "Message lisible de l'erreur",
-            "example": "Invalid credentials provided."
-          },
-          "error": {
-            "description": "Détail technique optionnel de l'erreur"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "LoginView": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Adresse email de l'utilisateur",
-            "example": "alice.dupont@mairie360.fr"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Mot de passe de l'utilisateur",
-            "example": "MotDePasse123"
-          },
-          "device_info": {
-            "type": "string",
-            "description": "Informations sur le périphérique utilisé pour se connecter (chaîne vide acceptée, comme par Core API)",
-            "example": "Firefox"
-          }
-        },
-        "required": [
-          "email",
-          "password",
-          "device_info"
-        ]
-      },
-      "RegisterView": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Adresse email du nouvel utilisateur",
-            "example": "alice.dupont@mairie360.fr"
-          },
-          "first_name": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Prénom du nouvel utilisateur",
-            "example": "Alice"
-          },
-          "last_name": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Nom du nouvel utilisateur",
-            "example": "Dupont"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Mot de passe du nouvel utilisateur",
-            "example": "MotDePasse123"
-          },
-          "phone_number": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Numéro de téléphone du nouvel utilisateur",
-            "example": "+33123456789"
-          }
-        },
-        "required": [
-          "email",
-          "first_name",
-          "last_name",
-          "password"
-        ]
-      },
-      "ForceChangePasswordView": {
-        "type": "object",
-        "properties": {
-          "new_password": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Nouveau mot de passe de l'utilisateur",
-            "example": "NouveauMotDePasse123"
-          },
-          "token": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Token de changement forcé du mot de passe",
-            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-          }
-        },
-        "required": [
-          "new_password",
-          "token"
-        ]
-      },
       "AboutResponseView": {
-        "type": "object",
         "properties": {
           "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Adresse email de l'utilisateur",
-            "example": "alice.dupont@mairie360.fr"
+            "type": "string"
           },
           "first_name": {
-            "type": "string",
-            "description": "Prénom de l'utilisateur",
-            "example": "Alice"
+            "type": "string"
           },
           "last_name": {
-            "type": "string",
-            "description": "Nom de l'utilisateur",
-            "example": "Dupont"
+            "type": "string"
           },
           "phone": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Numéro de téléphone de l'utilisateur (null si non renseigné)",
-            "example": "+33123456789"
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "description": "Statut du compte utilisateur",
-            "example": "active"
+            "type": "string"
           }
         },
         "required": [
@@ -152,190 +25,144 @@
           "last_name",
           "phone",
           "status"
-        ]
+        ],
+        "type": "object"
       },
-      "AuthTokenResponse": {
-        "type": "object",
+      "AdminGroupIdParams": {
         "properties": {
-          "refresh_token": {
-            "type": "string",
-            "description": "Refresh token retourné par le Core API",
-            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          "groupId": {
+            "exclusiveMinimum": 0,
+            "type": "number"
           }
         },
         "required": [
-          "refresh_token"
-        ]
+          "groupId"
+        ],
+        "type": "object"
       },
-      "LogoutResponse": {
-        "type": "object",
+      "AdminGroupPatchBody": {
         "properties": {
-          "message": {
-            "type": "string",
-            "example": "Logged out successfully"
+          "description": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AdminGroupUserParams": {
+        "properties": {
+          "groupId": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "userId": {
+            "exclusiveMinimum": 0,
+            "type": "number"
           }
         },
         "required": [
-          "message"
-        ]
+          "groupId",
+          "userId"
+        ],
+        "type": "object"
       },
-      "UserIdParams": {
-        "type": "object",
+      "AdminJsonBody": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "AdminRoleIdParams": {
+        "properties": {
+          "roleId": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "roleId"
+        ],
+        "type": "object"
+      },
+      "AdminUserIdParams": {
         "properties": {
           "userId": {
-            "type": "integer",
             "exclusiveMinimum": 0,
-            "description": "Identifiant numérique de l'utilisateur",
-            "example": 42
+            "type": "number"
           }
         },
         "required": [
           "userId"
-        ]
+        ],
+        "type": "object"
       },
-      "CheckApiResponse": {
-        "type": "object",
+      "AdminUserListQuery": {
         "properties": {
-          "status": {
-            "type": "string",
-            "example": "OK"
-          },
-          "core_api": {
-            "type": "string",
-            "example": "Connected"
-          }
-        },
-        "required": [
-          "status",
-          "core_api"
-        ]
-      },
-      "AdministrationRole": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "can_be_deleted": {
-            "type": [
-              "boolean",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description"
-        ]
-      },
-      "AdministrationUser": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "first_name": {
-            "type": "string"
-          },
-          "last_name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "phone_number": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "status": {
-            "type": "string"
-          },
-          "is_archived": {
-            "type": "boolean"
-          },
-          "roles": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "name"
-              ]
-            }
-          }
-        },
-        "required": [
-          "id",
-          "first_name",
-          "last_name",
-          "email",
-          "phone_number",
-          "status",
-          "is_archived",
-          "roles"
-        ]
-      },
-      "AdministrationUsersPage": {
-        "type": "object",
-        "properties": {
-          "users": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdministrationUser"
-            }
-          },
           "page": {
+            "exclusiveMinimum": 0,
             "type": "number"
           },
           "page_size": {
+            "maximum": 20,
+            "minimum": 1,
             "type": "number"
           },
-          "total": {
+          "search": {
+            "maxLength": 100,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AdminUserPasswordResetBody": {
+        "properties": {
+          "new_password": {
+            "maxLength": 255,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_password"
+        ],
+        "type": "object"
+      },
+      "AdminUserRoleParams": {
+        "properties": {
+          "roleId": {
+            "exclusiveMinimum": 0,
             "type": "number"
           },
-          "total_pages": {
+          "userId": {
+            "exclusiveMinimum": 0,
             "type": "number"
           }
         },
         "required": [
-          "users",
-          "page",
-          "page_size",
-          "total",
-          "total_pages"
-        ]
+          "userId",
+          "roleId"
+        ],
+        "type": "object"
       },
       "AdministrationGroup": {
-        "type": "object",
         "properties": {
-          "id": {
-            "type": "number"
-          },
-          "name": {
-            "type": "string"
-          },
           "description": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
           },
           "owner_id": {
             "type": "number"
@@ -346,21 +173,24 @@
           "name",
           "description",
           "owner_id"
-        ]
+        ],
+        "type": "object"
       },
       "AdministrationGroupMember": {
-        "type": "object",
         "properties": {
-          "id": {
-            "type": "number"
+          "email": {
+            "type": "string"
           },
           "first_name": {
             "type": "string"
           },
-          "last_name": {
-            "type": "string"
+          "id": {
+            "type": "number"
           },
-          "email": {
+          "is_archived": {
+            "type": "boolean"
+          },
+          "last_name": {
             "type": "string"
           },
           "phone_number": {
@@ -371,9 +201,6 @@
           },
           "status": {
             "type": "string"
-          },
-          "is_archived": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -384,24 +211,49 @@
           "phone_number",
           "status",
           "is_archived"
-        ]
+        ],
+        "type": "object"
+      },
+      "AdministrationRole": {
+        "properties": {
+          "can_be_deleted": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "type": "object"
       },
       "AdministrationSession": {
-        "type": "object",
         "properties": {
-          "id": {
+          "created_at": {
             "type": "string"
           },
           "device_info": {
             "type": "string"
           },
-          "ip_address": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
           "expires_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "ip_address": {
             "type": "string"
           },
           "revoked_at": {
@@ -418,3063 +270,1408 @@
           "created_at",
           "expires_at",
           "revoked_at"
-        ]
+        ],
+        "type": "object"
       },
-      "AdminUserIdParams": {
-        "type": "object",
+      "AdministrationUser": {
         "properties": {
-          "userId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
-          }
-        },
-        "required": [
-          "userId"
-        ]
-      },
-      "AdminRoleIdParams": {
-        "type": "object",
-        "properties": {
-          "roleId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
-          }
-        },
-        "required": [
-          "roleId"
-        ]
-      },
-      "AdminGroupIdParams": {
-        "type": "object",
-        "properties": {
-          "groupId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
-          }
-        },
-        "required": [
-          "groupId"
-        ]
-      },
-      "AdminUserRoleParams": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
+          "email": {
+            "type": "string"
           },
-          "roleId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
-          }
-        },
-        "required": [
-          "userId",
-          "roleId"
-        ]
-      },
-      "AdminGroupUserParams": {
-        "type": "object",
-        "properties": {
-          "groupId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
+          "first_name": {
+            "type": "string"
           },
-          "userId": {
-            "type": "integer",
-            "exclusiveMinimum": 0
-          }
-        },
-        "required": [
-          "groupId",
-          "userId"
-        ]
-      },
-      "AdminUserListQuery": {
-        "type": "object",
-        "properties": {
-          "page": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "default": 1
+          "id": {
+            "type": "number"
           },
-          "page_size": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 20,
-            "default": 20
+          "is_archived": {
+            "type": "boolean"
           },
-          "search": {
-            "type": "string",
-            "maxLength": 100
-          }
-        }
-      },
-      "AdminGroupPatchBody": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
+          "last_name": {
+            "type": "string"
           },
-          "description": {
-            "type": "string",
-            "maxLength": 2000
-          }
-        }
-      },
-      "AdminUserPasswordResetBody": {
-        "type": "object",
-        "properties": {
-          "new_password": {
-            "type": "string",
-            "minLength": 8,
-            "maxLength": 255
-          }
-        },
-        "required": [
-          "new_password"
-        ]
-      },
-      "AdminJsonBody": {
-        "type": "object",
-        "additionalProperties": {}
-      },
-      "CoreResponse": {},
-      "SessionResponse": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ]
-              },
-              "first_name": {
-                "type": "string"
-              },
-              "last_name": {
-                "type": "string"
-              },
-              "email": {
-                "type": "string"
-              },
-              "phone": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "status": {
-                "type": "string"
-              },
-              "role": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "first_name",
-              "last_name",
-              "email",
-              "status"
-            ],
-            "additionalProperties": {}
-          },
-          "groups": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "owner_id": {
-                  "type": "number"
-                },
-                "description": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              },
-              "required": [
-                "id",
-                "name",
-                "owner_id"
-              ],
-              "additionalProperties": {}
-            }
+          "phone_number": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "roles": {
-            "type": "array",
             "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "name"
-                  ],
-                  "additionalProperties": {}
-                }
-              ]
-            }
+              "$ref": "#/components/schemas/AdministrationUserRolesItem"
+            },
+            "type": "array"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "first_name",
+          "last_name",
+          "email",
+          "phone_number",
+          "status",
+          "is_archived",
+          "roles"
+        ],
+        "type": "object"
+      },
+      "AdministrationUserRolesItem": {
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "AdministrationUsersPage": {
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "page_size": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "total_pages": {
+            "type": "number"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationUser"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "users",
+          "page",
+          "page_size",
+          "total",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "ApiErrorResponse": {
+        "properties": {
+          "error": {},
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "AuthTokenResponse": {
+        "properties": {
+          "refresh_token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "type": "object"
+      },
+      "CheckApiResponse": {
+        "properties": {
+          "core_api": {
+            "type": "string"
+          },
+          "details": {},
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "core_api"
+        ],
+        "type": "object"
+      },
+      "CoreResponse": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "ForceChangePasswordView": {
+        "properties": {
+          "new_password": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "token": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_password",
+          "token"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminGroups200": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationGroup"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "groups"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminGroupsGroupId200": {
+        "properties": {
+          "group": {
+            "$ref": "#/components/schemas/AdministrationGroup"
+          }
+        },
+        "required": [
+          "group"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminGroupsGroupIdUsers200": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationGroupMember"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "users"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminRoles200": {
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationRole"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "roles"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminSessions200": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationSession"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sessions"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminSessionsHistory200": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationSession"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sessions"
+        ],
+        "type": "object"
+      },
+      "GetBffAdminUsersParams": {
+        "properties": {
+          "page": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "page_size": {
+            "maximum": 20,
+            "minimum": 1,
+            "type": "number"
+          },
+          "search": {
+            "maxLength": 100,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "LoginView": {
+        "properties": {
+          "device_info": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "device_info"
+        ],
+        "type": "object"
+      },
+      "LogoutResponse": {
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "PostAuthLogin412": {
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "type": "object"
+      },
+      "RegisterView": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "last_name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "phone_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "first_name",
+          "last_name",
+          "password"
+        ],
+        "type": "object"
+      },
+      "SessionResponse": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/SessionResponseGroupsItem"
+            },
+            "type": "array"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/SessionResponseRolesItem"
+            },
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionResponseUser"
           }
         },
         "required": [
           "user",
           "groups",
           "roles"
-        ]
-      }
-    },
-    "parameters": {}
-  },
-  "paths": {
-    "/health": {
-      "get": {
-        "tags": [
-          "Connectivity"
         ],
-        "summary": "Vérifie la santé du BFF",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/check_apis": {
-      "get": {
-        "tags": [
-          "Connectivity"
-        ],
-        "summary": "Vérifie la connexion avec l'API Core (Rust)",
-        "responses": {
-          "200": {
-            "description": "Connexion réussie",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckApiResponse"
-                }
-              }
-            }
+        "type": "object"
+      },
+      "SessionResponseGroupsItem": {
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
-          "502": {
-            "description": "API Core injoignable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/login": {
-      "post": {
-        "tags": [
-          "Authentication"
-        ],
-        "summary": "Authentifie un utilisateur",
-        "description": "Transmet les identifiants au Core API et retourne le token JWT.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginView"
-              }
-            }
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "owner_id": {
+            "type": "number"
           }
         },
-        "responses": {
-          "200": {
-            "description": "Utilisateur authentifié ; le JWT d’accès est dans Authorization, le corps contient le refresh token.",
-            "headers": {
-              "Authorization": {
-                "description": "Bearer <access token>",
-                "schema": {
-                  "type": "string"
-                }
+        "required": [
+          "id",
+          "name",
+          "owner_id"
+        ],
+        "type": "object"
+      },
+      "SessionResponseRolesItem": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
               }
             },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthTokenResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Données invalides",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Identifiants invalides",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "412": {
-            "description": "Première connexion : mot de passe à changer",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "token"
-                  ],
-                  "additionalProperties": {}
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur serveur",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Core API indisponible ou réponse amont invalide",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            "required": [
+              "name"
+            ],
+            "type": "object"
           }
-        }
-      }
-    },
-    "/auth/register": {
-      "post": {
-        "tags": [
-          "Authentication"
-        ],
-        "summary": "Crée un utilisateur",
-        "description": "Valide puis transmet les informations d'inscription au Core API (POST /api/v1/auth/register, route publique).",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterView"
-              }
-            }
+        ]
+      },
+      "SessionResponseUser": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
           }
         },
-        "responses": {
-          "201": {
-            "description": "Utilisateur créé avec succès"
-          },
-          "400": {
-            "description": "Données invalides",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Utilisateur déjà existant",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur serveur",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Core API indisponible ou réponse amont invalide",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "status"
+        ],
+        "type": "object"
+      },
+      "UserIdParams": {
+        "properties": {
+          "userId": {
+            "exclusiveMinimum": 0,
+            "type": "number"
           }
-        }
+        },
+        "required": [
+          "userId"
+        ],
+        "type": "object"
       }
-    },
+    }
+  },
+  "info": {
+    "title": "bff_user",
+    "version": "1.0.0",
+    "x-source-package": "@mairie360/bff-user-openapi@0.4.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
     "/auth/force_change_password": {
       "post": {
-        "tags": [
-          "Authentication"
-        ],
-        "summary": "Force le changement de mot de passe",
-        "description": "Transmet le token et le nouveau mot de passe au Core API sur /api/v1/auth/force_change_password.",
+        "operationId": "postAuthForceChangePassword",
+        "parameters": [],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ForceChangePasswordView"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "204": {
-            "description": "Mot de passe changé avec succès"
-          },
-          "400": {
-            "description": "Données invalides",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
+          "2XX": {
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "postAuthLogin",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginView"
               }
             }
           },
-          "401": {
-            "description": "Token invalide ou expiré",
+          "required": true
+        },
+        "responses": {
+          "412": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/PostAuthLogin412"
                 }
               }
-            }
+            },
+            "description": "Réponse 412 (modèle orval PostAuthLogin412)"
           },
-          "403": {
-            "description": "Token de première connexion inconnu ou expiré",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/AuthTokenResponse"
                 }
               }
-            }
-          },
-          "500": {
-            "description": "Erreur serveur",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Core API indisponible ou réponse amont invalide",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/auth/logout": {
       "post": {
-        "tags": [
-          "Authentication"
-        ],
-        "summary": "Déconnecte un utilisateur",
-        "description": "Supprime le cookie HTTP-only contenant le token d'accès.",
+        "operationId": "postAuthLogout",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "Utilisateur déconnecté",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LogoutResponse"
                 }
               }
-            }
-          },
-          "500": {
-            "description": "Erreur serveur",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
-    "/user/{userId}/about": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Récupère les informations publiques d'un utilisateur",
-        "description": "Transmet la session (en-tête Authorization, x-session-token ou cookie accessToken) au Core API sur /api/v1/user/{id}/ et ne renvoie que les informations publiques.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Identifiant numérique de l'utilisateur",
-              "example": 42
-            },
-            "required": true,
-            "description": "Identifiant numérique de l'utilisateur",
-            "name": "userId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Informations utilisateur récupérées avec succès",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AboutResponseView"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Identifiant utilisateur invalide",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Utilisateur non authentifié ou ID invalide",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur serveur",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Core API indisponible ou réponse amont invalide",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/users": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Liste les utilisateurs administrables, 20 éléments maximum par page",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "default": 1
-            },
-            "required": false,
-            "name": "page",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 20,
-              "default": 20
-            },
-            "required": false,
-            "name": "page_size",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 100
-            },
-            "required": false,
-            "name": "search",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Données de l’administration",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdministrationUsersPage"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
+    "/auth/register": {
       "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Crée un utilisateur via le Core API",
+        "operationId": "postAuthRegister",
+        "parameters": [],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/RegisterView"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}": {
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Met à jour un utilisateur via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "userId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Supprime définitivement un utilisateur via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "userId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}/password": {
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Modifie le mot de passe et révoque les sessions utilisateur",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "userId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminUserPasswordResetBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}/roles": {
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Ajoute un rôle à un utilisateur via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "userId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}/roles/{roleId}": {
-      "delete": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Retire un rôle à un utilisateur via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "userId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "roleId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/roles": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Liste les rôles admin via le Core API",
-        "responses": {
-          "200": {
-            "description": "Données de l’administration",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "roles": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdministrationRole"
-                      }
-                    }
-                  },
-                  "required": [
-                    "roles"
-                  ]
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Crée un rôle via le Core API",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/bff/admin/roles/{roleId}": {
-      "put": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Remplace un rôle via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "roleId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Met à jour un rôle via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "roleId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Supprime un rôle via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
-            "name": "roleId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+          "2XX": {
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/groups": {
       "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Liste les groupes via le Core API",
+        "operationId": "getBffAdminGroups",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "Données de l’administration",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "groups": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdministrationGroup"
-                      }
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetBffAdminGroups200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
                     }
-                  },
-                  "required": [
-                    "groups"
                   ]
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       },
       "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Crée un groupe via le Core API",
+        "operationId": "postBffAdminGroups",
+        "parameters": [],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
-            "description": "Réponse du Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/groups/{groupId}": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Récupère un groupe via le Core API",
+      "delete": {
+        "operationId": "deleteBffAdminGroupsGroupId",
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
+            "in": "path",
             "name": "groupId",
-            "in": "path"
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Données de l’administration",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "group": {
-                      "$ref": "#/components/schemas/AdministrationGroup"
-                    }
-                  },
-                  "required": [
-                    "group"
-                  ]
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "get": {
+        "operationId": "getBffAdminGroupsGroupId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
             }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
+          }
+        ],
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetBffAdminGroupsGroupId200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
                 }
               }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       },
       "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Met à jour le nom ou la description d’un groupe",
+        "operationId": "patchBffAdminGroupsGroupId",
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
+            "in": "path",
             "name": "groupId",
-            "in": "path"
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AdminGroupPatchBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
-            "description": "Réponse du Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Supprime un groupe via le Core API",
-        "parameters": [
-          {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
             },
-            "required": true,
-            "name": "groupId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Réponse du Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/groups/{groupId}/users": {
       "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Liste les utilisateurs d’un groupe via le Core API",
+        "operationId": "getBffAdminGroupsGroupIdUsers",
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
+            "in": "path",
             "name": "groupId",
-            "in": "path"
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Données de l’administration",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "users": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdministrationGroupMember"
-                      }
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetBffAdminGroupsGroupIdUsers200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
                     }
-                  },
-                  "required": [
-                    "users"
                   ]
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       },
       "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Ajoute un utilisateur à un groupe via le Core API",
+        "operationId": "postBffAdminGroupsGroupIdUsers",
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
+            "in": "path",
             "name": "groupId",
-            "in": "path"
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
-            "description": "Réponse du Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/groups/{groupId}/users/{userId}": {
       "delete": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Retire un utilisateur d’un groupe via le Core API",
+        "operationId": "deleteBffAdminGroupsGroupIdUsersUserId",
         "parameters": [
           {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
+            "in": "path",
             "name": "groupId",
-            "in": "path"
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
           },
           {
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0
-            },
-            "required": true,
+            "in": "path",
             "name": "userId",
-            "in": "path"
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Réponse du Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/roles": {
+      "get": {
+        "operationId": "getBffAdminRoles",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetBffAdminRoles200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postBffAdminRoles",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminJsonBody"
+              }
             }
           },
-          "201": {
-            "description": "Créé par le Core API",
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/roles/{roleId}": {
+      "delete": {
+        "operationId": "deleteBffAdminRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
             }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
+          }
+        ],
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchBffAdminRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
           },
-          "401": {
-            "description": "Non authentifié",
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "put": {
+        "operationId": "putBffAdminRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
           },
-          "403": {
-            "description": "Accès refusé",
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
               }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/sessions": {
       "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Liste les sessions actives via le Core API",
+        "operationId": "getBffAdminSessions",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "Données de l’administration",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "sessions": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdministrationSession"
-                      }
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetBffAdminSessions200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
                     }
-                  },
-                  "required": [
-                    "sessions"
                   ]
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/sessions/history": {
       "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Récupère l’historique des sessions via le Core API",
+        "operationId": "getBffAdminSessionsHistory",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "Données de l’administration",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "sessions": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdministrationSession"
-                      }
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetBffAdminSessionsHistory200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
                     }
-                  },
-                  "required": [
-                    "sessions"
                   ]
                 }
               }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/sessions/refresh": {
       "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Rafraîchit une session via le Core API",
-        "description": "Le JWT rafraîchi est renvoyé dans l’en-tête Authorization et remplace le cookie accessToken.",
+        "operationId": "postBffAdminSessionsRefresh",
+        "parameters": [],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
-            "description": "Session rafraîchie",
-            "headers": {
-              "Authorization": {
-                "description": "Bearer <access token>",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "JWT refreshed successfully"
-                    }
-                  },
-                  "required": [
-                    "message"
-                  ]
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Créé par le Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
-            }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Non authentifié",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Accès refusé",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Introuvable",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Erreur upstream",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/bff/admin/sessions/revoke": {
       "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Révoque une session via le Core API",
+        "operationId": "postBffAdminSessionsRevoke",
+        "parameters": [],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
-          "200": {
-            "description": "Réponse du Core API",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/users": {
+      "get": {
+        "operationId": "getBffAdminUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "number"
             }
           },
-          "201": {
-            "description": "Créé par le Core API",
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AdministrationUsersPage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postBffAdminUsers",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminJsonBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/users/{userId}": {
+      "delete": {
+        "operationId": "deleteBffAdminUsersUserId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
             }
-          },
-          "204": {
-            "description": "Aucun contenu retourné par le Core API"
-          },
-          "400": {
-            "description": "Erreur Core API",
+          }
+        ],
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchBffAdminUsersUserId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
           },
-          "401": {
-            "description": "Non authentifié",
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/users/{userId}/password": {
+      "patch": {
+        "operationId": "patchBffAdminUsersUserIdPassword",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserPasswordResetBody"
               }
             }
           },
-          "403": {
-            "description": "Accès refusé",
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/users/{userId}/roles": {
+      "post": {
+        "operationId": "postBffAdminUsersUserIdRoles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminJsonBody"
               }
             }
           },
-          "404": {
-            "description": "Introuvable",
+          "required": true
+        },
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/bff/admin/users/{userId}/roles/{roleId}": {
+      "delete": {
+        "operationId": "deleteBffAdminUsersUserIdRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
             }
           },
-          "502": {
-            "description": "Erreur upstream",
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/CoreResponse"
                 }
               }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/check_apis": {
+      "get": {
+        "operationId": "getCheckApis",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckApiResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/me": {
       "get": {
+        "operationId": "getMe",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "Identité, groupes et rôles de la session",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionResponse"
                 }
               }
-            }
-          },
-          "401": {
-            "description": "Session invalide"
-          },
-          "502": {
-            "description": "Core API indisponible",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     },
     "/session/me": {
       "get": {
+        "operationId": "getSessionMe",
+        "parameters": [],
         "responses": {
-          "200": {
-            "description": "Identité, groupes et rôles de la session",
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionResponse"
                 }
               }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/user/{userId}/about": {
+      "get": {
+        "operationId": "getUserUserIdAbout",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
             }
-          },
-          "401": {
-            "description": "Session invalide"
-          },
-          "502": {
-            "description": "Core API indisponible",
+          }
+        ],
+        "responses": {
+          "2XX": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
+                  "$ref": "#/components/schemas/AboutResponseView"
                 }
               }
-            }
+            },
+            "description": "Succès (seul statut typé par orval)"
           }
         }
       }
     }
-  },
-  "webhooks": {}
+  }
 }
