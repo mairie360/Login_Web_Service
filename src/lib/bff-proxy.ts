@@ -1,13 +1,11 @@
 import { NextRequest } from 'next/server';
 import contract from '../../contracts/openapi.json';
+import { configuredBffUrl } from './bff-user';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 type ContractPaths = Record<string, Record<string, unknown>>;
 
-export function configuredBffUrl() {
-  return (process.env.BFF_USER_API_URL ??
-    process.env.USER_BFF_URL ?? 'http://localhost:4000').replace(/\/+$/, '');
-}
+export { configuredBffUrl } from './bff-user';
 
 export async function forwardToBff(request: NextRequest, baseUrl: string, path: string) {
   const headers = new Headers(request.headers);

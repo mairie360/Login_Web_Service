@@ -7,9 +7,10 @@ const { OpenApiContract } = require('./support/openapi-contract.cjs');
 const { ContractMockServer, unreachableUrl } = require('./support/contract-mock-server.cjs');
 
 // Les route handlers et le proxy sont exécutés tels quels, avec le vrai `fetch`, contre un faux
-// BFF User servi en HTTP et piloté par contracts/openapi.json : toute requête hors contrat (chemin,
-// méthode, paramètre, corps) ou toute réponse mockée non conforme devient une violation, et un test
-// échoue dès qu'un appel réseau sort vers une autre origine que ce faux BFF.
+// BFF User servi en HTTP et piloté par contracts/openapi.json, reconstruit depuis le paquet publié
+// @mairie360/bff-user-openapi (tests/package-contract.test.cjs vérifie cette correspondance) : toute
+// requête hors contrat (chemin, méthode, paramètre, corps) ou toute réponse mockée non conforme devient
+// une violation, et un test échoue dès qu'un appel réseau sort vers une autre origine que ce faux BFF.
 
 const contract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'openapi.json'));
 const bff = new ContractMockServer('BFF_USER', contract)
@@ -29,7 +30,7 @@ let proxy;
 
 before(async () => {
   await bff.start();
-  // Les route handlers lisent l'URL du BFF et COOKIE_DOMAIN au chargement : ils sont importés après.
+  // Le route handler de connexion lit COOKIE_DOMAIN au chargement : il est importé après.
   process.env.BFF_USER_API_URL = `${bff.url}/`;
   process.env.COOKIE_DOMAIN = COOKIE_DOMAIN;
   global.fetch = (input, init) => {
@@ -71,7 +72,17 @@ const changeRequest = (body, token = 'first-connection-token', url = 'http://loc
   body: typeof body === 'string' ? body : JSON.stringify(body),
 });
 
-const apiError = (status, message) => ({ status, body: { message } });
+const apiErrorSchema = contract.schema('ApiErrorResponse');
+
+/**
+ * Erreur BFF User. La sortie orval du paquet ne rattache pas les erreurs à leurs opérations : la réponse est
+ * hors contrat d'opération, mais son corps doit rester conforme au modèle publié ApiErrorResponse.
+ */
+function apiError(status, message) {
+  const body = { message };
+  assert.deepEqual(contract.validate(apiErrorSchema, body), []);
+  return { status, body, outOfContract: true };
+}
 
 /** Réduit les délais d'expiration des route handlers pour simuler un BFF trop lent sans attendre 10 s. */
 async function withShortTimeouts(run) {
@@ -103,14 +114,16 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     assert.equal(call.headers.authorization, undefined);
   });
 
-  test('falls back to a default device_info when the browser sends no user-agent', async () => {
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'bearer access-token' } });
+  for (const [name, userAgent] of [['no', null], ['an empty', '']]) {
+    test(`falls back to a non-empty device_info (minLength 1 in LoginView) when the browser sends ${name} user-agent`, async () => {
+      bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'bearer access-token' } });
 
-    const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, { 'User-Agent': null }));
+      const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, { 'User-Agent': userAgent }));
 
-    assert.equal(response.status, 200);
-    assert.equal(bff.calls('/auth/login')[0].body.device_info, 'Navigateur inconnu');
-  });
+      assert.equal(response.status, 200);
+      assert.equal(bff.calls('/auth/login')[0].body.device_info, 'Navigateur inconnu');
+    });
+  }
 
   test('first connection (412) keeps the one-time token in a short-lived HttpOnly cookie', async () => {
     bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
@@ -125,7 +138,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
   });
 
   for (const [status, message] of [[400, 'Les informations saisies sont invalides.'], [401, 'Email ou mot de passe incorrect.'], [500, 'Le service de connexion est indisponible. Veuillez réessayer.'], [502, 'Le service de connexion est indisponible. Veuillez réessayer.']]) {
-    test(`documented ${status} errors keep their status, show a French message instead of the BFF one, and open no session`, async () => {
+    test(`${status} errors keep their status, show a French message instead of the BFF one, and open no session`, async () => {
       bff.on('POST', '/auth/login', apiError(status, 'Upstream service error'));
 
       const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'mauvais' }));
@@ -148,8 +161,8 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
   }
 
   test('a 200 without Authorization header never becomes a session, even with a refresh token', async () => {
-    // Le contrat déclare l'en-tête Authorization sur 200 : sa disparition est une réponse hors contrat.
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, outOfContract: true });
+    // La sortie orval ne conserve pas l'en-tête Authorization de la réponse : seul le corps est vérifiable.
+    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' } });
 
     const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }));
 
@@ -227,7 +240,7 @@ describe('POST /api/auth/force-change-password → BFF POST /auth/force_change_p
   }
 
   for (const [status, message] of [[400, 'Le nouveau mot de passe est invalide.'], [500, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.'], [502, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.']]) {
-    test(`documented ${status} errors keep their status, show a French message and keep the cookie for a retry`, async () => {
+    test(`${status} errors keep their status, show a French message and keep the cookie for a retry`, async () => {
       bff.on('POST', '/auth/force_change_password', apiError(status, 'Invalid password-change payload'));
 
       const response = await forceChangePassword.POST(changeRequest({ newPassword: 'NouveauMotDePasse123' }));
@@ -279,11 +292,12 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
 
   for (const operation of contract.operations()) {
     test(`${operation.method} ${operation.template} reaches the BFF unchanged and its response comes back`, async () => {
-      const [status, response] = Object.entries(operation.operation.responses).find(([code]) => code.startsWith('2'));
+      const [code, response] = Object.entries(operation.operation.responses).find(([candidate]) => candidate.startsWith('2'));
+      const status = code === '2XX' ? 200 : Number(code);
       const schema = response.content?.['application/json']?.schema;
       const replyBody = schema ? contract.sample(schema, 'reply') : undefined;
       const replyHeaders = Object.fromEntries(Object.keys(response.headers ?? {}).map((name) => [name, `${name}-value`]));
-      bff.on(operation.method, operation.template, { status: Number(status), body: replyBody, headers: replyHeaders });
+      bff.on(operation.method, operation.template, { status, body: replyBody, headers: replyHeaders });
       const bodySchema = operation.operation.requestBody?.content?.['application/json']?.schema;
       const requestBody = bodySchema ? contract.sample(bodySchema, 'request') : undefined;
       const { pathname, search } = concretePath(operation);
@@ -294,7 +308,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
         ...(requestBody ? { body: JSON.stringify(requestBody) } : {}),
       }), context(pathname));
 
-      assert.equal(result.status, Number(status));
+      assert.equal(result.status, status);
       assert.equal(result.headers.get('cache-control'), 'no-store');
       for (const name of Object.keys(replyHeaders)) assert.equal(result.headers.get(name), replyHeaders[name]);
       if (replyBody === undefined) assert.equal(await result.text(), '');
@@ -352,8 +366,8 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     assert.equal(refused.status, 405);
   });
 
-  test('without session cookie no Authorization is invented, and documented empty 401 bodies stay empty', async () => {
-    bff.on('GET', '/session/me', (request) => ({ status: request.headers.authorization ? 200 : 401 }));
+  test('without session cookie no Authorization is invented, and empty 401 bodies stay empty', async () => {
+    bff.on('GET', '/session/me', (request) => ({ status: request.headers.authorization ? 200 : 401, outOfContract: true }));
 
     const result = await catchAll.GET(new NextRequest('http://localhost:5000/session/me'), context('/session/me'));
 
@@ -363,7 +377,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   });
 
   test('BFF errors, their message and Set-Cookie are relayed', async () => {
-    bff.on('POST', '/auth/logout', { status: 500, body: { message: 'Erreur serveur' }, headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
+    bff.on('POST', '/auth/logout', { ...apiError(500, 'Erreur serveur'), headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
 
     const result = await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', { method: 'POST', headers: { cookie: 'accessToken=session-token' } }), context('/auth/logout'));
 
