@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@mairie360'
@@ -49,7 +49,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@mairie360'
