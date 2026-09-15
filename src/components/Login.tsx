@@ -154,6 +154,9 @@ export default function Login({ redirectUrl }: LoginProps) {
       />
 
       <form
+        // method="post" : si le JavaScript n'est pas exécuté (robot, JS désactivé),
+        // une soumission native ne doit jamais placer les identifiants dans l'URL.
+        method="post"
         onSubmit={isPasswordChange ? handlePasswordChange : handleLogin}
         className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0"
       >

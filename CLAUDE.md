@@ -20,29 +20,32 @@ npm run test:contracts                   # same tests, no coverage
 node --test --test-name-pattern="<name>" tests/proxy.test.cjs   # single test
 ```
 
-Tests are plain CommonJS `node:test` files: they transpile `src/**/*.ts` on the fly with `typescript.transpileModule` via a temporary `require.extensions['.ts']` hook and stub `global.fetch`. No Jest/Vitest, no DOM tests; new tests must follow that pattern and match `tests/*.test.cjs`.
+Tests are plain CommonJS `node:test` files: they transpile `src/**/*.ts` on the fly with `typescript.transpileModule` via a temporary `require.extensions['.ts']` hook and stub `global.fetch`. No Jest/Vitest, no DOM tests; new tests must follow that pattern and match `tests/*.test.cjs`. The hook does not resolve the `@/*` tsconfig alias, so a module loaded by a test must use relative runtime imports.
 
 ### OpenAPI contract
 
 `contracts/openapi.json` is a committed copy of BFF_user's contract and `src/contracts/bff.d.ts` is generated from it (`openapi-typescript@7.10.1`, pinned in `scripts/contracts.mjs`). Never hand-edit either file.
 
 ```bash
-npm run contracts:sync      # copy from ../BFF_user/contracts (or $BFF_CONTRACT_DIR) and regenerate types
+BFF_CONTRACT_DIR=../../BFFs/BFF_user/contracts npm run contracts:sync   # copy the BFF contract and regenerate types
 npm run contracts:generate  # regenerate types from the local snapshot
-npm run contracts:check     # fail if types are stale, or if a neighbouring BFF checkout has a different contract
+npm run contracts:check     # fail if types are stale, or if the BFF checkout at $BFF_CONTRACT_DIR has a different contract
 ```
+
+The script's default source `../BFF_user/contracts` resolves to `Fronts/BFF_user`, which does not exist in the EIP checkout, so always set `BFF_CONTRACT_DIR` (without it, `check` silently skips the BFF comparison). All three commands `npm exec` `openapi-typescript`, so they need network access.
 
 ## Architecture
 
 - **Contract-gated catch-all proxy** — `src/app/[...path]/route.ts` exports `proxyBffRequest` (`src/lib/bff-proxy.ts`) for every method. It matches the path against `contracts/openapi.json` `paths` (brace segments are wildcards): unknown path → 404, method not declared → 405 with `Allow`, `.`/`..` segments → 400; `/openapi.json` and `/swagger.json` are always forwarded. **A BFF route is therefore reachable from the browser only once the synced contract declares it.**
 - **`forwardToBff`** strips hop-by-hop headers and the `cookie` header, turns the `accessToken` cookie into `Authorization: Bearer` when no Authorization header is present, keeps the query string and raw (binary) body, uses `redirect: 'manual'`, a 15 s timeout and `Cache-Control: no-store`, preserves upstream status/headers (including `Set-Cookie`, empty 204/205/304 bodies) and returns a controlled 502 JSON error when the BFF is unreachable. `tests/proxy.test.cjs` pins this behaviour.
 - **BFF URL** — `BFF_USER_API_URL` → `USER_BFF_URL` (fallback `http://localhost:4000`); resolved at request time on the server.
+- **Security headers** — `src/middleware.ts` (matcher excludes `/api`, `/_next/*` and paths with a dot) sets a per-request nonce `Content-Security-Policy` on every page (built in `src/lib/content-security-policy.ts`, forwarded to Next.js via request headers); there is no auth gate because the sign-in page is public. `src/app/layout.tsx` forces dynamic rendering for that reason: a prerendered page would carry no nonce and its scripts would be blocked. Any new external origin (images, fonts, browser-side API calls) must be added to that policy.
 - **Client calls** — pages call same-origin paths (e.g. `/me`, `/session/me`).
-- `src/components/Login.tsx` (mounted by `src/app/page.tsx`, which passes `PROJECT_FRONT_URL` as the post-login destination) posts to the dedicated route handlers, not to the generic proxy.
+- `src/components/Login.tsx` (mounted by `src/app/page.tsx`, which passes `PROJECT_FRONT_URL` as the post-login destination) posts to the dedicated route handlers, not to the generic proxy. The `<form>` keeps `method="post"` so that a native submission (no JavaScript, crawlers such as the ZAP spider) never puts the credentials in the URL.
 - `src/app/api/auth/login/route.ts`: sends `email`, `password` and the user-agent as `device_info` to BFF User `/auth/login` (10 s timeout, 502 vs 504 distinguished). On success the **access token is taken only from the upstream `Authorization: Bearer` header** (never from a refresh token in the body) and stored in the `accessToken` cookie: HttpOnly, SameSite strict, path `/`, 24 h, Secure in production, `COOKIE_DOMAIN` when set (must match the other fronts so they can read it).
 - A 412 with a body `token` means first login: the token goes into a `passwordChangeToken` cookie (HttpOnly, path `/api/auth`, 10 min) and the client gets `{ requiresPasswordChange: true }`. `api/auth/force-change-password/route.ts` maps `newPassword` → `new_password`, forwards that token and clears the cookie; `api/auth/force_change_password/route.ts` is only a re-export alias.
 - `tests/login.test.cjs` pins this cookie behaviour; keep it green when touching the login routes.
-- `next.config.ts` sets `output: 'standalone'` (required by the Dockerfile) and inlines the `*_FRONT_URL` values at **build time** (defaults `https://<module>.dev.mairie360-eip.fr/`), so changing them requires a rebuild.
+- `next.config.ts` sets `output: 'standalone'` (required by the Dockerfile), `poweredByHeader: false` and static security headers on every route (`tests/security-headers.test.cjs` pins them, and the ZAP baseline fails without them). `PROJECT_FRONT_URL` (post-login destination) is read at request time by `src/app/page.tsx`, not inlined at build time.
 
 ## CI/CD
 
