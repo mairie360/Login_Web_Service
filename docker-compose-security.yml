@@ -37,7 +37,7 @@ x-api-env: &api-env
 
 services:
   postgres:
-    image: ${DB_IMAGE:-ghcr.io/mairie360/database:1.1.0}
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:1.3.0}
     container_name: login-front-sec-db
     environment:
       POSTGRES_USER: postgres
