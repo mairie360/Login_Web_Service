@@ -13,7 +13,10 @@
             "type": "string"
           },
           "phone": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "type": "string"
@@ -391,7 +394,6 @@
           "core_api": {
             "type": "string"
           },
-          "details": {},
           "status": {
             "type": "string"
           }
@@ -527,7 +529,6 @@
       "LoginView": {
         "properties": {
           "device_info": {
-            "minLength": 1,
             "type": "string"
           },
           "email": {
@@ -564,6 +565,17 @@
         },
         "required": [
           "token"
+        ],
+        "type": "object"
+      },
+      "PostBffAdminSessionsRefresh200": {
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
         ],
         "type": "object"
       },
@@ -725,7 +737,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.4.0"
+    "x-source-package": "@mairie360/bff-user-openapi@0.5.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1293,7 +1305,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PostBffAdminSessionsRefresh200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
                 }
               }
             },
