@@ -1,39 +1,26 @@
-import type { components } from '@/contracts/bff';
+import type { LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
+import { bffUserUrl } from "../../../../lib/bff-user";
 
 type LoginBody = {
   email?: unknown;
   password?: unknown;
 };
 
-type UpstreamError = {
-  message?: unknown;
-  error?: unknown;
-};
+type FirstConnectionResponse = Partial<PostAuthLogin412>;
 
-type FirstConnectionResponse = {
-  token?: unknown;
-};
-
-const BFF_URL =
-  (
-    process.env.BFF_USER_API_URL ??
-    process.env.USER_BFF_URL ??
-    "http://localhost:4000"
-  ).replace(/\/+$/, "");
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN?.trim();
 const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60;
 const PASSWORD_CHANGE_TOKEN_MAX_AGE = 10 * 60;
 
-function getErrorMessage(status: number, body: unknown) {
-  if (typeof body === "object" && body !== null) {
-    const { message } = body as UpstreamError;
+// Même règle que `z.email()` du LoginViewSchema de BFF User (le format email n'est pas conservé par la
+// sortie orval du paquet publié) : une adresse invalide n'est jamais envoyée au BFF.
+const EMAIL_PATTERN =
+  /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
 
-    if (typeof message === "string" && message.trim()) {
-      return message;
-    }
-  }
-
+// Les messages d'erreur de BFF User sont techniques et en anglais (« Upstream service error », texte
+// brut de Core API) : l'interface affiche ses propres messages selon le statut.
+function getErrorMessage(status: number) {
   if (status === 400) {
     return "Les informations saisies sont invalides.";
   }
@@ -44,6 +31,10 @@ function getErrorMessage(status: number, body: unknown) {
 
   if (status === 412) {
     return "Votre mot de passe doit être modifié lors de cette première connexion.";
+  }
+
+  if (status >= 500) {
+    return "Le service de connexion est indisponible. Veuillez réessayer.";
   }
 
   return "La connexion a échoué. Veuillez réessayer.";
@@ -107,8 +98,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!EMAIL_PATTERN.test(email)) {
+    return NextResponse.json(
+      { message: "L’adresse email n’est pas valide." },
+      { status: 400 },
+    );
+  }
+
   try {
-    const upstreamResponse = await fetch(`${BFF_URL}/auth/login`, {
+    const upstreamResponse = await fetch(bffUserUrl("/auth/login"), {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -117,8 +115,9 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         email,
         password,
-        device_info: request.headers.get("user-agent") ?? "Navigateur inconnu",
-      } satisfies components["schemas"]["LoginView"]),
+        // LoginView (bff-user-openapi) impose device_info non vide.
+        device_info: request.headers.get("user-agent") || "Navigateur inconnu",
+      } satisfies LoginView),
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });
@@ -147,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     if (!upstreamResponse.ok) {
       return NextResponse.json(
-        { message: getErrorMessage(upstreamResponse.status, upstreamBody) },
+        { message: getErrorMessage(upstreamResponse.status) },
         { status: upstreamResponse.status },
       );
     }

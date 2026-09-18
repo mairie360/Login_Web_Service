@@ -1,0 +1,169 @@
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { after, afterEach, before, beforeEach, test } = require('node:test');
+const { requireTs } = require('./support/load-ts.cjs');
+const { installReactRuntime, mount, stubModule } = require('./support/server-view.cjs');
+
+// HTML of the sign-in page (src/app/page.tsx → src/components/Login.tsx) rendered with react-dom/server
+// against the mocked BFF User: the real component is rendered, the hook state is kept between render passes
+// (tests/support/server-view.cjs), the form submissions go through the real route handlers of src/app/api/auth
+// (tests/support/browser-front.cjs) and the markup reflects what BFF User answered.
+
+installReactRuntime();
+const React = require('react');
+// `next/image` computes its `src` through the Next.js image loader configuration, which only exists inside a
+// Next.js runtime: the logo is rendered as the plain <img> the optimiser would wrap.
+stubModule('next/image', { __esModule: true, default: ({ src, alt, width, height, className }) => React.createElement('img', { src, alt, width, height, className }) });
+const { OpenApiContract } = require('./support/openapi-contract.cjs');
+const { ContractMockServer } = require('./support/contract-mock-server.cjs');
+const { BrowserFront, USER_AGENT } = require('./support/browser-front.cjs');
+
+const contract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'openapi.json'));
+const bff = new ContractMockServer('BFF_USER', contract);
+const front = new BrowserFront(bff);
+let Home;
+let view;
+let window;
+
+before(async () => {
+  await bff.start();
+  front.install();
+  Home = requireTs('src/app/page.tsx').default;
+});
+after(async () => {
+  front.uninstall();
+  await bff.stop();
+});
+beforeEach(() => {
+  bff.reset();
+  front.reset();
+  window = { location: { assigned: [], assign(href) { this.assigned.push(href); } } };
+  global.window = window;
+});
+afterEach(() => {
+  view?.unmount();
+  view = undefined;
+  delete global.window;
+  assert.deepEqual([...bff.violations, ...front.violations], []);
+});
+
+const apiError = (status, message) => ({ status, body: { code: 'UPSTREAM_ERROR', message }, outOfContract: true });
+const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
+const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
+const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
+
+test('the page renders the sign-in form, ready to post to the same origin', () => {
+  view = mount(React.createElement(Home));
+
+  assert.equal(view.passes, 1);
+  assert.match(view.html, /<img[^>]*alt="Logo"/);
+  assert.match(view.html, /<form[^>]*method="post"/);
+  assert.match(view.html, /<h2[^>]*>Connexion<\/h2>/);
+  assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
+  assert.match(view.html, /<input id="email" type="email"[^>]*placeholder="exemple@domaine\.com" required=""[^>]*name="email" value=""/);
+  assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
+  assert.match(view.html, /<button type="submit" class="btn btn-md btn-primary">Se connecter<\/button>/);
+  assert.doesNotMatch(view.html, /role="(alert|status)"/);
+  assert.match(view.text(), /© 2026 Mairie360\. Tous droits réservés\./);
+});
+
+test('an empty submission is refused in the page without any network call', async () => {
+  view = mount(React.createElement(Home));
+
+  await submit();
+
+  assert.match(view.html, /<p role="alert"[^>]*>Veuillez renseigner votre email et votre mot de passe\.<\/p>/);
+  assert.deepEqual(front.browserCalls, []);
+  assert.deepEqual(bff.requests, []);
+});
+
+test('valid credentials sign the user in: the cookie is set, the success is rendered and the browser leaves', async () => {
+  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  view = mount(React.createElement(Home));
+
+  await typeInto('email', '  alice@mairie.test ');
+  await typeInto('password', 'S3cret!');
+  assert.match(view.html, /<input id="email"[^>]*value="  alice@mairie\.test "/);
+  assert.match(view.html, /<input id="password"[^>]*value="S3cret!"/);
+
+  await submit();
+  const html = await view.waitFor((current) => current.includes('role="status"'));
+
+  assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
+  assert.match(html, /<input id="password"[^>]*value=""/, 'the password is cleared once sent');
+  assert.match(html, /<button type="submit" class="btn btn-md btn-primary">Se connecter<\/button>/);
+  assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
+  assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
+  assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
+  assert.equal(front.cookies.get('accessToken'), 'access-token');
+  assert.deepEqual(window.location.assigned, ['http://localhost:5001/']);
+});
+
+test('refused credentials are rendered as the page message, without a session', async () => {
+  bff.on('POST', '/auth/login', apiError(401, 'Upstream service error'));
+  view = mount(React.createElement(Home));
+
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'wrong');
+  await submit();
+  const html = await view.waitFor((current) => current.includes('role="alert"'));
+
+  assert.match(html, /<p role="alert"[^>]*>Email ou mot de passe incorrect\.<\/p>/);
+  assert.equal(front.cookies.get('accessToken'), undefined);
+  assert.deepEqual(window.location.assigned, []);
+  assert.match(html, /<button type="submit" class="btn btn-md btn-primary">Se connecter<\/button>/);
+});
+
+test('a first connection switches to the password change form, then signs in with the new password', async () => {
+  let logins = 0;
+  bff.on('POST', '/auth/login', () => (logins++ === 0
+    ? { status: 412, body: { token: 'first-connection-token' } }
+    : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
+  bff.on('POST', '/auth/force_change_password', { status: 204 });
+  view = mount(React.createElement(Home));
+
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  const change = await view.waitFor((current) => current.includes('Nouveau mot de passe'));
+
+  assert.match(change, /<h2[^>]*>Nouveau mot de passe<\/h2>/);
+  assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
+  assert.match(change, /<input id="new-password"[^>]*type="password"/);
+  assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
+  assert.match(change, /<button type="submit" class="btn btn-md btn-primary">Modifier le mot de passe<\/button>/);
+  assert.doesNotMatch(change, /id="email"/);
+  assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token', 'the one-time token stays in an HttpOnly cookie');
+  assert.equal(front.cookies.get('accessToken'), undefined);
+
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'other');
+  await submit();
+  assert.match(view.html, /<p role="alert"[^>]*>Les mots de passe ne correspondent pas\.<\/p>/);
+  assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
+
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  await submit();
+  const html = await view.waitFor((current) => current.includes('Connexion réussie.'));
+
+  assert.match(html, /<h2[^>]*>Connexion<\/h2>/);
+  assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
+  assert.deepEqual(front.browserCalls.map((call) => call.path), ['/api/auth/login', '/api/auth/force_change_password', '/api/auth/login']);
+  assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie']);
+  assert.equal(bff.requests[2].body.password, 'N3w-secret');
+  assert.equal(front.cookies.get('accessToken'), 'fresh-access-token');
+  assert.deepEqual(window.location.assigned, ['http://localhost:5001/']);
+});
+
+test('an unreachable BFF is rendered as the unavailable-service message', async () => {
+  bff.on('POST', '/auth/login', { dropConnection: true });
+  view = mount(React.createElement(Home));
+
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'S3cret!');
+  await submit();
+  const html = await view.waitFor((current) => current.includes('role="alert"'));
+
+  assert.match(html, /<p role="alert"[^>]*>Le service de connexion est indisponible\.<\/p>/);
+  assert.equal(front.cookies.get('accessToken'), undefined);
+});

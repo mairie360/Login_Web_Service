@@ -125,11 +125,10 @@ services:
       retries: 3
       start_period: 10s
   
-  #add other apis if needed
-
+  # Seul BFF de ce front : même version que le contrat @mairie360/bff-user-openapi de package.json.
   bff-user:
     container_name: bff-user-login-front
-    image: ghcr.io/mairie360/bff-user:dev-latest
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:0.5.0}
     ports:
       - "4000:4000"
     networks:

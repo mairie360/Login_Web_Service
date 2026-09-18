@@ -43,7 +43,6 @@ export default function Login({ redirectUrl }: LoginProps) {
       body: JSON.stringify({
         email: email.trim(),
         password: passwordValue,
-        device_info: navigator.platform
       }),
     });
     const result = (await response.json()) as LoginResponse;
