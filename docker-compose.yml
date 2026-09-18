@@ -37,7 +37,7 @@ x-service: &service-template
 
 services:
   postgres:
-    image: ghcr.io/mairie360/database:dev-latest
+    image: ghcr.io/mairie360/database:1.3.0
     restart: always
     container_name: mairie360-db-login-front #change front name
     environment:
@@ -57,7 +57,7 @@ services:
       retries: 5
 
   liquibase:
-    image: ghcr.io/mairie360/liquibase-migrations:dev-latest
+    image: ghcr.io/mairie360/liquibase-migrations:1.3.0
     container_name: mairie360-liquibase-login-front #change front name
     depends_on:
       postgres:
@@ -92,7 +92,7 @@ services:
 
   core:
     container_name: core-login-front-developpement
-    image: ghcr.io/mairie360/core-api:dev-1644fa7
+    image: ghcr.io/mairie360/core-api:1.2.0
     ports:
       - "3000:3000"
     networks:
