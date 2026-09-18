@@ -5,3 +5,12 @@ build
 .git
 *.log
 .env
+
+# tests isolés (sécurité / performance) : inutiles dans l'image
+coverage
+.zap
+docker-compose-*.yml
+load-test.js
+init-test.sql
+security_test.sh
+performance_test.sh

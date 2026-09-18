@@ -16,5 +16,5 @@ jobs:
     with:
       package_name: "login-front"
       node_version: "23"
-      cicd_version: "v1.13.2"
+      cicd_version: "v2.3.1"
     secrets: inherit
