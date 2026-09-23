@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src",
     "contracts:generate": "node scripts/contracts.mjs --generate",
     "contracts:check": "node scripts/contracts.mjs --check",
     "contracts:sync": "node scripts/contracts.mjs --sync",
@@ -16,7 +16,7 @@
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.5.0",
     "@mairie360/lib-components": "0.3.0",
-    "next": "15.5.26",
+    "next": "16.3.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -28,13 +28,12 @@
     }
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.26",
+    "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
