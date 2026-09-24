@@ -1,13 +1,17 @@
 export const dynamic = 'force-dynamic';
 
 import Login from "../components/Login";
+import { resolveLoginRedirect } from "../lib/login-redirect";
 
-const DEFAULT_PROJECT_FRONT_URL = "http://localhost:5001/";
+type HomeProps = {
+  searchParams: Promise<{ redirect?: string | string[] }>;
+};
 
-export default function Home() {
+export default async function Home({ searchParams }: HomeProps) {
+  const { redirect } = await searchParams;
   return (
     <Login
-      redirectUrl={process.env.PROJECT_FRONT_URL || DEFAULT_PROJECT_FRONT_URL}
+      redirectUrl={resolveLoginRedirect(redirect)}
     />
   );
 }

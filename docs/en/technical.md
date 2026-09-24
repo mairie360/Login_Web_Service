@@ -12,7 +12,7 @@ flowchart LR
   Next --> BFF["BFF_user"]
 ```
 
-The page passes `PROJECT_FRONT_URL` to the Login component. `/api/auth/login` checks email format and non-empty password before calling BFF User, then sends email, password and user-agent (never empty, as `LoginView` requires) to BFF User. A 412 with a token becomes a `requiresPasswordChange` response; normal success requires a Bearer token in the upstream Authorization header. Password change maps `newPassword` to `new_password` and forwards the temporary token; a 401 or 403 (token refused or expired) clears it and asks to sign in again. Upstream statuses are kept, but the displayed message is chosen by the front from the status: BFF User messages are technical and in English.
+The page validates its `redirect` query parameter on the server: only an absolute HTTP(S) URL whose origin matches a configured `*_FRONT_URL` is accepted; otherwise it uses `PROJECT_FRONT_URL`. The validated destination is used after normal sign-in and first-sign-in password change. `/api/auth/login` checks email format and non-empty password before calling BFF User, then sends email, password and user-agent (never empty, as `LoginView` requires) to BFF User. A 412 with a token becomes a `requiresPasswordChange` response; normal success requires a Bearer token in the upstream Authorization header. Password change maps `newPassword` to `new_password` and forwards the temporary token; a 401 or 403 (token refused or expired) clears it and asks to sign in again. Upstream statuses are kept, but the displayed message is chosen by the front from the status: BFF User messages are technical and in English.
 
 The generic proxy reads the versioned OpenAPI contract to allow paths and methods. It preserves query parameters, binary bodies, statuses and useful headers, filters transport headers, disables caching and does not automatically follow redirects. Its timeout is 15 seconds.
 
@@ -64,7 +64,8 @@ Values below are local examples or explicitly described behavior, not production
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Left-to-right proxy precedence; the URL shown is the local fallback. |
 | `COOKIE_DOMAIN` | — | Cookie domain; keep it consistent with Login and BFF User. |
-| `PROJECT_FRONT_URL` | — | Navigation destination; see the source file that reads it. Variables injected by `next.config.ts` or prefixed `NEXT_PUBLIC_` are public and consumed at build time. |
+| `PROJECT_FRONT_URL` | — | Default destination when `redirect` is absent or invalid. |
+| `*_FRONT_URL` | — | Runtime-configured public front origins accepted for the `redirect` destination; these values are read on the server, not sent to the browser. |
 
 Inside a container, `localhost` refers to that container. Use the BFF service DNS name on the Docker network or a reachable host address. Compose files sometimes include other services and legacy settings; check effective URLs and ports before using them.
 

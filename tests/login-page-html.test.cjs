@@ -22,6 +22,7 @@ const contract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'o
 const bff = new ContractMockServer('BFF_USER', contract);
 const front = new BrowserFront(bff);
 let Home;
+let resolveLoginRedirect;
 let view;
 let window;
 
@@ -29,6 +30,7 @@ before(async () => {
   await bff.start();
   front.install();
   Home = requireTs('src/app/page.tsx').default;
+  resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
 });
 after(async () => {
   front.uninstall();
@@ -51,9 +53,12 @@ const apiError = (status, message) => ({ status, body: { code: 'UPSTREAM_ERROR',
 const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
 const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
+const renderLogin = async (searchParams = {}) => {
+  view = mount(await Home({ searchParams: Promise.resolve(searchParams) }));
+};
 
-test('the page renders the sign-in form, ready to post to the same origin', () => {
-  view = mount(React.createElement(Home));
+test('the page renders the sign-in form, ready to post to the same origin', async () => {
+  await renderLogin();
 
   assert.equal(view.passes, 1);
   assert.match(view.html, /<img[^>]*alt="Logo"/);
@@ -67,8 +72,40 @@ test('the page renders the sign-in form, ready to post to the same origin', () =
   assert.match(view.text(), /© 2026 Mairie360\. Tous droits réservés\./);
 });
 
+test('redirect only accepts an absolute URL on a configured front origin', () => {
+  const previous = process.env.CALENDAR_FRONT_URL;
+  process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
+  try {
+    const fallback = process.env.PROJECT_FRONT_URL || 'http://localhost:5001/';
+    assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events?id=42'), 'https://calendar.mairie.test/events?id=42');
+    for (const candidate of [undefined, ['https://calendar.mairie.test/'], '//evil.com', 'javascript:alert(1)', 'https://evil.com/', 'https://calendar.mairie.test.evil.com/', 'https://user@calendar.mairie.test/']) {
+      assert.equal(resolveLoginRedirect(candidate), fallback);
+    }
+  } finally {
+    if (previous === undefined) delete process.env.CALENDAR_FRONT_URL;
+    else process.env.CALENDAR_FRONT_URL = previous;
+  }
+});
+
+test('a successful sign-in returns to the requested page', async () => {
+  const previous = process.env.CALENDAR_FRONT_URL;
+  process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
+  try {
+    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+    await renderLogin({ redirect: 'https://calendar.mairie.test/events?id=42' });
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'S3cret!');
+    await submit();
+    await view.waitFor((current) => current.includes('Connexion réussie.'));
+    assert.deepEqual(window.location.assigned, ['https://calendar.mairie.test/events?id=42']);
+  } finally {
+    if (previous === undefined) delete process.env.CALENDAR_FRONT_URL;
+    else process.env.CALENDAR_FRONT_URL = previous;
+  }
+});
+
 test('an empty submission is refused in the page without any network call', async () => {
-  view = mount(React.createElement(Home));
+  await renderLogin();
 
   await submit();
 
@@ -79,7 +116,7 @@ test('an empty submission is refused in the page without any network call', asyn
 
 test('valid credentials sign the user in: the cookie is set, the success is rendered and the browser leaves', async () => {
   bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
-  view = mount(React.createElement(Home));
+  await renderLogin();
 
   await typeInto('email', '  alice@mairie.test ');
   await typeInto('password', 'S3cret!');
@@ -101,7 +138,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
 
 test('refused credentials are rendered as the page message, without a session', async () => {
   bff.on('POST', '/auth/login', apiError(401, 'Upstream service error'));
-  view = mount(React.createElement(Home));
+  await renderLogin();
 
   await typeInto('email', 'alice@mairie.test');
   await typeInto('password', 'wrong');
@@ -120,7 +157,7 @@ test('a first connection switches to the password change form, then signs in wit
     ? { status: 412, body: { token: 'first-connection-token' } }
     : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
   bff.on('POST', '/auth/force_change_password', { status: 204 });
-  view = mount(React.createElement(Home));
+  await renderLogin({ redirect: 'http://localhost:5001/projects?view=board' });
 
   await typeInto('email', 'alice@mairie.test');
   await typeInto('password', 'temporary');
@@ -152,12 +189,12 @@ test('a first connection switches to the password change form, then signs in wit
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie']);
   assert.equal(bff.requests[2].body.password, 'N3w-secret');
   assert.equal(front.cookies.get('accessToken'), 'fresh-access-token');
-  assert.deepEqual(window.location.assigned, ['http://localhost:5001/']);
+  assert.deepEqual(window.location.assigned, ['http://localhost:5001/projects?view=board']);
 });
 
 test('an unreachable BFF is rendered as the unavailable-service message', async () => {
   bff.on('POST', '/auth/login', { dropConnection: true });
-  view = mount(React.createElement(Home));
+  await renderLogin();
 
   await typeInto('email', 'alice@mairie.test');
   await typeInto('password', 'S3cret!');

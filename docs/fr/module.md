@@ -14,7 +14,7 @@ Domaine fonctionnel: Identité et administration.
 
 - Formulaire de connexion avec remontée des erreurs serveur.
 - Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
-- Création du cookie d’accès puis redirection vers le module Projets configuré.
+- Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le module Projets configuré.
 
 ## Parcours type
 

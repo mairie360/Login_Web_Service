@@ -14,7 +14,7 @@ Business domain: Identity and administration.
 
 - Sign-in form with server error feedback.
 - First-sign-in flow with a temporary token and a new password.
-- Access cookie creation followed by redirection to the configured Projects module.
+- Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Projects module.
 
 ## Typical workflow
 
