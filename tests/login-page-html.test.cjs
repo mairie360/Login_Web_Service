@@ -78,7 +78,7 @@ test('redirect only accepts an absolute URL on a configured front origin', () =>
   try {
     const fallback = process.env.PROJECT_FRONT_URL || 'http://localhost:5001/';
     assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events?id=42'), 'https://calendar.mairie.test/events?id=42');
-    for (const candidate of [undefined, ['https://calendar.mairie.test/'], '//evil.com', 'javascript:alert(1)', 'https://evil.com/', 'https://calendar.mairie.test.evil.com/', 'https://user@calendar.mairie.test/']) {
+    for (const candidate of [undefined, ['https://calendar.mairie.test/'], '//evil.com', 'javascript:alert(1)', 'http://%', 'https://evil.com/', 'https://calendar.mairie.test.evil.com/', 'https://user@calendar.mairie.test/']) {
       assert.equal(resolveLoginRedirect(candidate), fallback);
     }
   } finally {
