@@ -6,8 +6,15 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Login | Mairie360",
-  description: "Login page for Mairie360 application",
+  title: "Connexion | Mairie360",
+  description: "Connexion à l’application Mairie360.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico?v=8dd52d5111b8", sizes: "192x192", type: "image/x-icon" },
+      { url: "/mairie360-favicon.png?v=8dd52d5111b8", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/mairie360-logo.png?v=8dd52d5111b8", sizes: "192x192", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({
@@ -16,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body className="font-sans antialiased">
         {children}
       </body>
