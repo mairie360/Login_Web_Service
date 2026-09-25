@@ -87,6 +87,28 @@ test('redirect only accepts an absolute URL on a configured front origin', () =>
   }
 });
 
+test('invalid configured front URLs never authorize a redirect', () => {
+  const previousCalendar = process.env.CALENDAR_FRONT_URL;
+  const previousEmail = process.env.EMAIL_FRONT_URL;
+  const previousProject = process.env.PROJECT_FRONT_URL;
+  process.env.CALENDAR_FRONT_URL = 'http://%';
+  process.env.EMAIL_FRONT_URL = 'ftp://files.mairie.test/';
+  try {
+    const fallback = process.env.PROJECT_FRONT_URL || 'http://localhost:5001/';
+    assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), fallback);
+    assert.equal(resolveLoginRedirect('https://files.mairie.test/'), fallback);
+    process.env.PROJECT_FRONT_URL = 'http://%';
+    assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), 'http://%');
+  } finally {
+    if (previousCalendar === undefined) delete process.env.CALENDAR_FRONT_URL;
+    else process.env.CALENDAR_FRONT_URL = previousCalendar;
+    if (previousEmail === undefined) delete process.env.EMAIL_FRONT_URL;
+    else process.env.EMAIL_FRONT_URL = previousEmail;
+    if (previousProject === undefined) delete process.env.PROJECT_FRONT_URL;
+    else process.env.PROJECT_FRONT_URL = previousProject;
+  }
+});
+
 test('a successful sign-in returns to the requested page', async () => {
   const previous = process.env.CALENDAR_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';

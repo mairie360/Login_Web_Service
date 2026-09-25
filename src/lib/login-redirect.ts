@@ -15,26 +15,19 @@ const FRONT_URL_KEYS = [
 
 export function resolveLoginRedirect(candidate: string | string[] | undefined): string {
   const fallback = process.env.PROJECT_FRONT_URL || DEFAULT_PROJECT_FRONT_URL;
-  if (typeof candidate !== "string" || !/^https?:\/\//i.test(candidate)) return fallback;
+  if (typeof candidate !== "string" || !/^https?:\/\//i.test(candidate) || !URL.canParse(candidate)) return fallback;
+  if (!URL.canParse(fallback)) return fallback;
 
-  try {
-    const target = new URL(candidate);
-    if (target.username || target.password) return fallback;
+  const target = new URL(candidate);
+  if (target.username || target.password) return fallback;
 
-    const knownOrigins = FRONT_URL_KEYS.flatMap((key) => {
-      const configured = process.env[key];
-      if (!configured) return [];
-      try {
-        const url = new URL(configured);
-        return url.protocol === "http:" || url.protocol === "https:" ? [url.origin] : [];
-      } catch {
-        return [];
-      }
-    });
-    knownOrigins.push(new URL(fallback).origin);
+  const knownOrigins = FRONT_URL_KEYS.flatMap((key) => {
+    const configured = process.env[key];
+    if (!configured || !URL.canParse(configured)) return [];
+    const url = new URL(configured);
+    return url.protocol === "http:" || url.protocol === "https:" ? [url.origin] : [];
+  });
+  knownOrigins.push(new URL(fallback).origin);
 
-    return knownOrigins.includes(target.origin) ? target.href : fallback;
-  } catch {
-    return fallback;
-  }
+  return knownOrigins.includes(target.origin) ? target.href : fallback;
 }
