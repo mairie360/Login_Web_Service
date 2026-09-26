@@ -74,7 +74,7 @@ Values below are local examples or explicitly described behavior, not production
 
 | Variable or precedence | Example / stated fallback | Purpose |
 | --- | --- | --- |
-| `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Left-to-right proxy precedence; the URL shown is the local fallback. |
+| `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Left-to-right precedence; explicitly configure an HTTP(S) URL. Missing or invalid configuration returns an uncached 503 without an upstream call. |
 | `COOKIE_DOMAIN` | — | Cookie domain; keep it consistent with Login and BFF User. |
 | `PROJECT_FRONT_URL` | — | Default destination when `redirect` is absent or invalid. |
 | `*_FRONT_URL` | — | Runtime-configured public front origins accepted for the `redirect` destination; these values are read on the server, not sent to the browser. |
