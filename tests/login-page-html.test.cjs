@@ -101,7 +101,7 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
   assert.match(view.html, /<input id="email" type="email"[^>]*placeholder="exemple@domaine\.com" required=""[^>]*name="email" value=""/);
   assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
-  assert.match(view.html, /<button type="submit" class="btn btn-md btn-primary">Se connecter<\/button>/);
+  assert.match(view.html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
   assert.match(view.text(), /© 2026 Mairie360\. Tous droits réservés\./);
 });
@@ -184,7 +184,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
 
   assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
   assert.match(html, /<input id="password"[^>]*value=""/, 'the password is cleared once sent');
-  assert.match(html, /<button type="submit" class="btn btn-md btn-primary">Se connecter<\/button>/);
+  assert.match(html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
   assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
   assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
@@ -204,7 +204,7 @@ test('refused credentials are rendered as the page message, without a session', 
   assert.match(html, /<p role="alert"[^>]*>Email ou mot de passe incorrect\.<\/p>/);
   assert.equal(front.cookies.get('accessToken'), undefined);
   assert.deepEqual(window.location.assigned, []);
-  assert.match(html, /<button type="submit" class="btn btn-md btn-primary">Se connecter<\/button>/);
+  assert.match(html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
 });
 
 test('a first connection switches to the password change form, then signs in with the new password', async () => {
@@ -224,7 +224,7 @@ test('a first connection switches to the password change form, then signs in wit
   assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
   assert.match(change, /<input id="new-password"[^>]*type="password"/);
   assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
-  assert.match(change, /<button type="submit" class="btn btn-md btn-primary">Modifier le mot de passe<\/button>/);
+  assert.match(change, /<button type="submit" class="btn btn-md btn-primary !text-white">Modifier le mot de passe<\/button>/);
   assert.doesNotMatch(change, /id="email"/);
   assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token', 'the one-time token stays in an HttpOnly cookie');
   assert.equal(front.cookies.get('accessToken'), undefined);
