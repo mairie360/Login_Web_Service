@@ -1,6 +1,6 @@
 import type { ForceChangePasswordView } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
-import { bffUserUrl } from "../../../../lib/bff-user";
+import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 
 type ForceChangePasswordBody = {
   newPassword?: unknown;
@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
         restartLogin: true,
       },
       { status: 400 },
+    );
+  }
+
+  if (!configuredBffUrl()) {
+    return NextResponse.json(
+      { message: "Le service de changement de mot de passe n’est pas configuré." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 

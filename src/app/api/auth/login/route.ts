@@ -1,6 +1,6 @@
 import type { LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
-import { bffUserUrl } from "../../../../lib/bff-user";
+import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 
 type LoginBody = {
   email?: unknown;
@@ -102,6 +102,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { message: "L’adresse email n’est pas valide." },
       { status: 400 },
+    );
+  }
+
+  if (!configuredBffUrl()) {
+    return NextResponse.json(
+      { message: "Le service de connexion n’est pas configuré." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 

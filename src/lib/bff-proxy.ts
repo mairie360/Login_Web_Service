@@ -8,6 +8,9 @@ type ContractPaths = Record<string, Record<string, unknown>>;
 export { configuredBffUrl } from './bff-user';
 
 export async function forwardToBff(request: NextRequest, baseUrl: string, path: string) {
+  if (!baseUrl) {
+    return Response.json({ error: { message: 'Le service n’est pas configuré.' } }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
   const headers = new Headers(request.headers);
   // x-nonce / content-security-policy sont ajoutés par le middleware et ne concernent pas le BFF.
   for (const name of ['host', 'connection', 'content-length', 'accept-encoding', 'cookie', 'x-nonce', 'content-security-policy']) headers.delete(name);

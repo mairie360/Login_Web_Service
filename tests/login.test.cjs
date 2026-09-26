@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { test, afterEach } = require('node:test');
+const { test, beforeEach, afterEach } = require('node:test');
 const fs = require('node:fs');
 const ts = require('typescript');
 const { NextRequest } = require('next/server');
@@ -8,7 +8,13 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
 const { POST } = require('../src/app/api/auth/login/route.ts');
 require.extensions['.ts'] = originalLoader;
 const originalFetch = global.fetch;
-afterEach(() => { global.fetch = originalFetch; });
+const originalBffUrl = process.env.BFF_USER_API_URL;
+beforeEach(() => { process.env.BFF_USER_API_URL = 'http://bff.example'; });
+afterEach(() => {
+  global.fetch = originalFetch;
+  if (originalBffUrl === undefined) delete process.env.BFF_USER_API_URL;
+  else process.env.BFF_USER_API_URL = originalBffUrl;
+});
 const loginRequest = () => new NextRequest('http://localhost/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'alice@example.test', password: 'fixture-password' }) });
 
 test('the access cookie uses the Authorization token returned by the BFF', async () => {

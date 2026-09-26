@@ -8,9 +8,15 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
 const { proxyBffRequest, forwardToBff } = require('../src/lib/bff-proxy.ts');
 require.extensions['.ts'] = originalLoader;
 const originalFetch = global.fetch;
-afterEach(() => { global.fetch = originalFetch; });
+const originalBffUrl = process.env.BFF_USER_API_URL;
+afterEach(() => {
+  global.fetch = originalFetch;
+  if (originalBffUrl === undefined) delete process.env.BFF_USER_API_URL;
+  else process.env.BFF_USER_API_URL = originalBffUrl;
+});
 
 test('proxy preserves query, authorization, data, and upstream status', async () => {
+  process.env.BFF_USER_API_URL = 'http://bff.example';
   let called;
   global.fetch = async (url, init) => { called = { url: String(url), init }; return Response.json({ id: '42', value: null }, { status: 201 }); };
   const request = new NextRequest('http://localhost/health?q=a%26b', { headers: { cookie: 'accessToken=test-session', Authorization: 'Bearer explicit-session' } });
