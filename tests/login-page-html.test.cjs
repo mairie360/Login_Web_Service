@@ -25,6 +25,7 @@ let Home;
 let resolveLoginRedirect;
 let view;
 let window;
+const savedProjectUrl = process.env.PROJECT_FRONT_URL;
 
 before(async () => {
   await bff.start();
@@ -37,12 +38,15 @@ after(async () => {
   await bff.stop();
 });
 beforeEach(() => {
+  process.env.PROJECT_FRONT_URL = 'https://projects.mairie.test/';
   bff.reset();
   front.reset();
   window = { location: { assigned: [], assign(href) { this.assigned.push(href); } } };
   global.window = window;
 });
 afterEach(() => {
+  if (savedProjectUrl === undefined) delete process.env.PROJECT_FRONT_URL;
+  else process.env.PROJECT_FRONT_URL = savedProjectUrl;
   view?.unmount();
   view = undefined;
   delete global.window;
@@ -56,6 +60,36 @@ const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit')
 const renderLogin = async (searchParams = {}) => {
   view = mount(await Home({ searchParams: Promise.resolve(searchParams) }));
 };
+
+test('missing or invalid default destinations render an unavailable state without a sign-in form', async () => {
+  for (const value of [undefined, '', '  ', 'http://%', 'ftp://projects.mairie.test/', 'https://user:password@projects.mairie.test/']) {
+    if (value === undefined) delete process.env.PROJECT_FRONT_URL;
+    else process.env.PROJECT_FRONT_URL = value;
+    await renderLogin();
+    assert.match(view.text(), /Connexion temporairement indisponible/);
+    assert.doesNotMatch(view.html, /<form|localhost/);
+    assert.deepEqual(front.browserCalls, []);
+    view.unmount();
+    view = undefined;
+  }
+});
+
+test('an explicitly allowed return destination works even without a default Projects URL', async () => {
+  const previous = process.env.CALENDAR_FRONT_URL;
+  delete process.env.PROJECT_FRONT_URL;
+  process.env.CALENDAR_FRONT_URL = '  https://calendar.mairie.test/  ';
+  try {
+    const target = 'https://calendar.mairie.test/events?id=42';
+    assert.equal(resolveLoginRedirect(target), target);
+    await renderLogin({ redirect: target });
+    assert.match(view.html, /<form/);
+    process.env.CALENDAR_FRONT_URL = 'https://user:password@calendar.mairie.test/';
+    assert.equal(resolveLoginRedirect(target), undefined);
+  } finally {
+    if (previous === undefined) delete process.env.CALENDAR_FRONT_URL;
+    else process.env.CALENDAR_FRONT_URL = previous;
+  }
+});
 
 test('the page renders the sign-in form, ready to post to the same origin', async () => {
   await renderLogin();
@@ -76,7 +110,7 @@ test('redirect only accepts an absolute URL on a configured front origin', () =>
   const previous = process.env.CALENDAR_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
   try {
-    const fallback = process.env.PROJECT_FRONT_URL || 'http://localhost:5001/';
+    const fallback = 'https://projects.mairie.test/';
     assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events?id=42'), 'https://calendar.mairie.test/events?id=42');
     for (const candidate of [undefined, ['https://calendar.mairie.test/'], '//evil.com', 'javascript:alert(1)', 'http://%', 'https://evil.com/', 'https://calendar.mairie.test.evil.com/', 'https://user@calendar.mairie.test/']) {
       assert.equal(resolveLoginRedirect(candidate), fallback);
@@ -94,11 +128,11 @@ test('invalid configured front URLs never authorize a redirect', () => {
   process.env.CALENDAR_FRONT_URL = 'http://%';
   process.env.EMAIL_FRONT_URL = 'ftp://files.mairie.test/';
   try {
-    const fallback = process.env.PROJECT_FRONT_URL || 'http://localhost:5001/';
+    const fallback = 'https://projects.mairie.test/';
     assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), fallback);
     assert.equal(resolveLoginRedirect('https://files.mairie.test/'), fallback);
     process.env.PROJECT_FRONT_URL = 'http://%';
-    assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), 'http://%');
+    assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), undefined);
   } finally {
     if (previousCalendar === undefined) delete process.env.CALENDAR_FRONT_URL;
     else process.env.CALENDAR_FRONT_URL = previousCalendar;
@@ -155,7 +189,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
   assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
   assert.equal(front.cookies.get('accessToken'), 'access-token');
-  assert.deepEqual(window.location.assigned, ['http://localhost:5001/']);
+  assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/']);
 });
 
 test('refused credentials are rendered as the page message, without a session', async () => {
@@ -179,7 +213,7 @@ test('a first connection switches to the password change form, then signs in wit
     ? { status: 412, body: { token: 'first-connection-token' } }
     : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
   bff.on('POST', '/auth/force_change_password', { status: 204 });
-  await renderLogin({ redirect: 'http://localhost:5001/projects?view=board' });
+  await renderLogin({ redirect: 'https://projects.mairie.test/projects?view=board' });
 
   await typeInto('email', 'alice@mairie.test');
   await typeInto('password', 'temporary');
@@ -211,7 +245,7 @@ test('a first connection switches to the password change form, then signs in wit
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie']);
   assert.equal(bff.requests[2].body.password, 'N3w-secret');
   assert.equal(front.cookies.get('accessToken'), 'fresh-access-token');
-  assert.deepEqual(window.location.assigned, ['http://localhost:5001/projects?view=board']);
+  assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/projects?view=board']);
 });
 
 test('an unreachable BFF is rendered as the unavailable-service message', async () => {

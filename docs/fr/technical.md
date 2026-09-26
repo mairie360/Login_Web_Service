@@ -1,5 +1,17 @@
 # Login_Web_Service — Documentation technique
 
+## Destinations frontend explicites (MAIR-177)
+
+Les redirections utilisent uniquement des URL HTTP(S) configurées, sans
+identifiants intégrés. Aucun repli implicite vers localhost. Renseigner à
+l’exécution les variables existantes `LOGIN_FRONT_URL` (fronts protégés) et
+`PROJECT_FRONT_URL` (destination par défaut de Login), même en local. Login
+accepte toujours un retour vers un front autorisé si sa destination par défaut
+manque. Sans destination Login valide, le middleware répond 503 sans cache ;
+Login affiche un état indisponible sans formulaire si aucune destination ne
+peut être résolue. Aucun contrat API/BFF ni variable de déploiement ajouté.
+
+
 [Présentation du module](module.md) · [English](../en/technical.md) · [README](../../README.md)
 
 ## Architecture et traitement des requêtes

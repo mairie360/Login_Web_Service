@@ -1,5 +1,17 @@
 # Login_Web_Service — Technical documentation
 
+## Explicit frontend destinations (MAIR-177)
+
+Frontend redirects use only explicitly configured HTTP(S) URLs without embedded
+credentials. There is no implicit localhost destination. Set the existing
+`LOGIN_FRONT_URL` (protected fronts) and `PROJECT_FRONT_URL` (Login default)
+at runtime, including local development. A valid configured return destination
+may still be used by Login when its default is absent. Invalid or missing
+Login destinations produce an uncached HTTP 503 message in the middleware;
+Login itself displays an unavailable state without a form when no destination
+can be resolved. No BFF/API contract or deployment variable is added.
+
+
 [Module overview](module.md) · [Français](../fr/technical.md) · [README](../../README.md)
 
 ## Architecture and request handling
