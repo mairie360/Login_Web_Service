@@ -265,6 +265,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
         )}
         <div className="w-full [&>button]:flex [&>button]:w-full [&>button]:py-[9px] [&>button]:pb-[11px] [&>button]:px-0 [&>button]:justify-center [&>button]:items-center [&>button]:self-stretch [&>button]:rounded-md [&>button]:bg-[#1256A6] [&>button]:shadow-[0_10px_15px_-3px_rgba(18,86,166,0.30),0_4px_6px_-4px_rgba(18,86,166,0.30)] [&>button]:hover:bg-[#0e4785] [&>button:disabled]:cursor-not-allowed [&>button:disabled]:opacity-60">
           <Button
+            className="!text-white"
             label={
               isLoading
                 ? isPasswordChange
