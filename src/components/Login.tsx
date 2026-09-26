@@ -16,9 +16,12 @@ const inputClassName =
 
 type LoginProps = {
   redirectUrl?: string;
+  navigate?: (url: string) => void;
 };
 
-export default function Login({ redirectUrl }: LoginProps) {
+const navigateToFront = (url: string) => window.location.assign(url);
+
+export default function Login({ redirectUrl, navigate = navigateToFront }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordChange, setIsPasswordChange] = useState(false);
@@ -30,7 +33,7 @@ export default function Login({ redirectUrl }: LoginProps) {
 
   const redirectAfterLogin = () => {
     if (redirectUrl) {
-      window.location.assign(redirectUrl);
+      navigate(redirectUrl);
     }
   };
 
