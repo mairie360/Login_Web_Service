@@ -1,4 +1,4 @@
-const DEFAULT_PROJECT_FRONT_URL = "http://localhost:5001/";
+import { parseFrontUrl } from "./front-url";
 
 const FRONT_URL_KEYS = [
   "LOGIN_FRONT_URL",
@@ -13,21 +13,17 @@ const FRONT_URL_KEYS = [
   "FILES_FRONT_URL",
 ] as const;
 
-export function resolveLoginRedirect(candidate: string | string[] | undefined): string {
-  const fallback = process.env.PROJECT_FRONT_URL || DEFAULT_PROJECT_FRONT_URL;
-  if (typeof candidate !== "string" || !/^https?:\/\//i.test(candidate) || !URL.canParse(candidate)) return fallback;
-  if (!URL.canParse(fallback)) return fallback;
-
-  const target = new URL(candidate);
-  if (target.username || target.password) return fallback;
+export function resolveLoginRedirect(candidate: string | string[] | undefined): string | undefined {
+  const fallback = parseFrontUrl(process.env.PROJECT_FRONT_URL)?.href;
+  const target = typeof candidate === "string" && /^https?:\/\//i.test(candidate)
+    ? parseFrontUrl(candidate)
+    : undefined;
+  if (!target) return fallback;
 
   const knownOrigins = FRONT_URL_KEYS.flatMap((key) => {
-    const configured = process.env[key];
-    if (!configured || !URL.canParse(configured)) return [];
-    const url = new URL(configured);
-    return url.protocol === "http:" || url.protocol === "https:" ? [url.origin] : [];
+    const url = parseFrontUrl(process.env[key]);
+    return url ? [url.origin] : [];
   });
-  knownOrigins.push(new URL(fallback).origin);
 
   return knownOrigins.includes(target.origin) ? target.href : fallback;
 }
