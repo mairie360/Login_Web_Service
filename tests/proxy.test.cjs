@@ -9,10 +9,13 @@ const { proxyBffRequest, forwardToBff } = require('../src/lib/bff-proxy.ts');
 require.extensions['.ts'] = originalLoader;
 const originalFetch = global.fetch;
 const originalBffUrl = process.env.BFF_USER_API_URL;
+const originalTrustIngressIpHeaders = process.env.TRUST_INGRESS_IP_HEADERS;
 afterEach(() => {
   global.fetch = originalFetch;
   if (originalBffUrl === undefined) delete process.env.BFF_USER_API_URL;
   else process.env.BFF_USER_API_URL = originalBffUrl;
+  if (originalTrustIngressIpHeaders === undefined) delete process.env.TRUST_INGRESS_IP_HEADERS;
+  else process.env.TRUST_INGRESS_IP_HEADERS = originalTrustIngressIpHeaders;
 });
 
 test('proxy preserves query, authorization, data, and upstream status', async () => {
@@ -34,6 +37,21 @@ test('proxy preserves binary upload bytes and 204 responses', async () => {
   assert.equal(response.status, 204); assert.equal(await response.text(), '');
   assert.deepEqual(new Uint8Array(init.body), bytes); assert.equal(init.headers.get('Authorization'), 'Bearer test-session');
   assert.equal(init.headers.get('Content-Type'), 'multipart/form-data; boundary=test');
+});
+test('proxy strips forged client IP headers unless the ingress is explicitly trusted', async () => {
+  delete process.env.TRUST_INGRESS_IP_HEADERS;
+  let headers;
+  global.fetch = async (_url, options) => { headers = options.headers; return Response.json({ ok: true }); };
+  const request = new NextRequest('http://localhost/health', { headers: { 'X-Forwarded-For': '198.51.100.20', 'X-Real-IP': '198.51.100.20' } });
+
+  await forwardToBff(request, 'http://bff.example', '/health');
+  assert.equal(headers.get('x-forwarded-for'), null);
+  assert.equal(headers.get('x-real-ip'), null);
+
+  process.env.TRUST_INGRESS_IP_HEADERS = 'true';
+  await forwardToBff(request, 'http://bff.example', '/health');
+  assert.equal(headers.get('x-forwarded-for'), '198.51.100.20');
+  assert.equal(headers.get('x-real-ip'), '198.51.100.20');
 });
 test('contract rejects unknown routes and methods before contacting the BFF', async () => {
   global.fetch = async () => { throw new Error('must not be called'); };
