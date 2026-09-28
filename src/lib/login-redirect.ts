@@ -14,7 +14,7 @@ const FRONT_URL_KEYS = [
 ] as const;
 
 export function resolveLoginRedirect(candidate: string | string[] | undefined): string | undefined {
-  const fallback = parseFrontUrl(process.env.PROJECT_FRONT_URL)?.href;
+  const fallback = parseFrontUrl(process.env.DASHBOARD_FRONT_URL)?.href;
   const target = typeof candidate === "string" && /^https?:\/\//i.test(candidate)
     ? parseFrontUrl(candidate)
     : undefined;

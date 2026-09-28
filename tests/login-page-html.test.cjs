@@ -25,6 +25,7 @@ let Home;
 let resolveLoginRedirect;
 let view;
 let window;
+const savedDashboardUrl = process.env.DASHBOARD_FRONT_URL;
 const savedProjectUrl = process.env.PROJECT_FRONT_URL;
 
 before(async () => {
@@ -38,6 +39,7 @@ after(async () => {
   await bff.stop();
 });
 beforeEach(() => {
+  process.env.DASHBOARD_FRONT_URL = 'https://dashboard.mairie.test/';
   process.env.PROJECT_FRONT_URL = 'https://projects.mairie.test/';
   bff.reset();
   front.reset();
@@ -45,6 +47,8 @@ beforeEach(() => {
   global.window = window;
 });
 afterEach(() => {
+  if (savedDashboardUrl === undefined) delete process.env.DASHBOARD_FRONT_URL;
+  else process.env.DASHBOARD_FRONT_URL = savedDashboardUrl;
   if (savedProjectUrl === undefined) delete process.env.PROJECT_FRONT_URL;
   else process.env.PROJECT_FRONT_URL = savedProjectUrl;
   view?.unmount();
@@ -62,9 +66,9 @@ const renderLogin = async (searchParams = {}) => {
 };
 
 test('missing or invalid default destinations render an unavailable state without a sign-in form', async () => {
-  for (const value of [undefined, '', '  ', 'http://%', 'ftp://projects.mairie.test/', 'https://user:password@projects.mairie.test/']) {
-    if (value === undefined) delete process.env.PROJECT_FRONT_URL;
-    else process.env.PROJECT_FRONT_URL = value;
+  for (const value of [undefined, '', '  ', 'http://%', 'ftp://dashboard.mairie.test/', 'https://user:password@dashboard.mairie.test/']) {
+    if (value === undefined) delete process.env.DASHBOARD_FRONT_URL;
+    else process.env.DASHBOARD_FRONT_URL = value;
     await renderLogin();
     assert.match(view.text(), /Connexion temporairement indisponible/);
     assert.doesNotMatch(view.html, /<form|localhost/);
@@ -74,9 +78,9 @@ test('missing or invalid default destinations render an unavailable state withou
   }
 });
 
-test('an explicitly allowed return destination works even without a default Projects URL', async () => {
+test('an explicitly allowed return destination works even without a default Dashboard URL', async () => {
   const previous = process.env.CALENDAR_FRONT_URL;
-  delete process.env.PROJECT_FRONT_URL;
+  delete process.env.DASHBOARD_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = '  https://calendar.mairie.test/  ';
   try {
     const target = 'https://calendar.mairie.test/events?id=42';
@@ -110,7 +114,7 @@ test('redirect only accepts an absolute URL on a configured front origin', () =>
   const previous = process.env.CALENDAR_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
   try {
-    const fallback = 'https://projects.mairie.test/';
+    const fallback = 'https://dashboard.mairie.test/';
     assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events?id=42'), 'https://calendar.mairie.test/events?id=42');
     for (const candidate of [undefined, ['https://calendar.mairie.test/'], '//evil.com', 'javascript:alert(1)', 'http://%', 'https://evil.com/', 'https://calendar.mairie.test.evil.com/', 'https://user@calendar.mairie.test/']) {
       assert.equal(resolveLoginRedirect(candidate), fallback);
@@ -121,25 +125,32 @@ test('redirect only accepts an absolute URL on a configured front origin', () =>
   }
 });
 
+test('Dashboard remains the default when Projects is not configured', async () => {
+  delete process.env.PROJECT_FRONT_URL;
+  assert.equal(resolveLoginRedirect(undefined), 'https://dashboard.mairie.test/');
+  await renderLogin();
+  assert.match(view.html, /<form/);
+});
+
 test('invalid configured front URLs never authorize a redirect', () => {
   const previousCalendar = process.env.CALENDAR_FRONT_URL;
   const previousEmail = process.env.EMAIL_FRONT_URL;
-  const previousProject = process.env.PROJECT_FRONT_URL;
+  const previousDashboard = process.env.DASHBOARD_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = 'http://%';
   process.env.EMAIL_FRONT_URL = 'ftp://files.mairie.test/';
   try {
-    const fallback = 'https://projects.mairie.test/';
+    const fallback = 'https://dashboard.mairie.test/';
     assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), fallback);
     assert.equal(resolveLoginRedirect('https://files.mairie.test/'), fallback);
-    process.env.PROJECT_FRONT_URL = 'http://%';
+    process.env.DASHBOARD_FRONT_URL = 'http://%';
     assert.equal(resolveLoginRedirect('https://calendar.mairie.test/events'), undefined);
   } finally {
     if (previousCalendar === undefined) delete process.env.CALENDAR_FRONT_URL;
     else process.env.CALENDAR_FRONT_URL = previousCalendar;
     if (previousEmail === undefined) delete process.env.EMAIL_FRONT_URL;
     else process.env.EMAIL_FRONT_URL = previousEmail;
-    if (previousProject === undefined) delete process.env.PROJECT_FRONT_URL;
-    else process.env.PROJECT_FRONT_URL = previousProject;
+    if (previousDashboard === undefined) delete process.env.DASHBOARD_FRONT_URL;
+    else process.env.DASHBOARD_FRONT_URL = previousDashboard;
   }
 });
 
@@ -189,7 +200,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
   assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
   assert.equal(front.cookies.get('accessToken'), 'access-token');
-  assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/']);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
 });
 
 test('refused credentials are rendered as the page message, without a session', async () => {
@@ -246,6 +257,24 @@ test('a first connection switches to the password change form, then signs in wit
   assert.equal(bff.requests[2].body.password, 'N3w-secret');
   assert.equal(front.cookies.get('accessToken'), 'fresh-access-token');
   assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/projects?view=board']);
+});
+
+test('a first connection without a requested page ends on Dashboard', async () => {
+  let logins = 0;
+  bff.on('POST', '/auth/login', () => (logins++ === 0
+    ? { status: 412, body: { token: 'first-connection-token' } }
+    : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
+  bff.on('POST', '/auth/force_change_password', { status: 204 });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await view.waitFor((current) => current.includes('Nouveau mot de passe'));
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  await submit();
+  await view.waitFor((current) => current.includes('Connexion réussie.'));
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
 });
 
 test('an unreachable BFF is rendered as the unavailable-service message', async () => {

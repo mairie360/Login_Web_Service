@@ -1,15 +1,16 @@
 # Login_Web_Service — Technical documentation
 
-## Explicit frontend destinations (MAIR-177)
+## Explicit frontend destinations (MAIR-177, MAIR-360)
 
 Frontend redirects use only explicitly configured HTTP(S) URLs without embedded
 credentials. There is no implicit localhost destination. Set the existing
-`LOGIN_FRONT_URL` (protected fronts) and `PROJECT_FRONT_URL` (Login default)
+`LOGIN_FRONT_URL` (protected fronts) and `DASHBOARD_FRONT_URL` (Login default)
 at runtime, including local development. A valid configured return destination
 may still be used by Login when its default is absent. Invalid or missing
 Login destinations produce an uncached HTTP 503 message in the middleware;
 Login itself displays an unavailable state without a form when no destination
-can be resolved. No BFF/API contract or deployment variable is added.
+can be resolved. The existing `DASHBOARD_FRONT_URL` must be supplied to Login
+in each environment; no BFF/API contract or secret is added.
 
 
 [Module overview](module.md) · [Français](../fr/technical.md) · [README](../../README.md)
@@ -24,7 +25,7 @@ flowchart LR
   Next --> BFF["BFF_user"]
 ```
 
-The page validates its `redirect` query parameter on the server: only an absolute HTTP(S) URL whose origin matches a configured `*_FRONT_URL` is accepted; otherwise it uses `PROJECT_FRONT_URL`. The validated destination is used after normal sign-in and first-sign-in password change. `/api/auth/login` checks email format and non-empty password before calling BFF User, then sends email, password and user-agent (never empty, as `LoginView` requires) to BFF User. A 412 with a token becomes a `requiresPasswordChange` response; normal success requires a Bearer token in the upstream Authorization header. Password change maps `newPassword` to `new_password` and forwards the temporary token; a 401 or 403 (token refused or expired) clears it and asks to sign in again. Upstream statuses are kept, but the displayed message is chosen by the front from the status: BFF User messages are technical and in English.
+The page validates its `redirect` query parameter on the server: only an absolute HTTP(S) URL whose origin matches a configured `*_FRONT_URL` is accepted; otherwise it uses `DASHBOARD_FRONT_URL`. The validated destination is used after normal sign-in and first-sign-in password change. `/api/auth/login` checks email format and non-empty password before calling BFF User, then sends email, password and user-agent (never empty, as `LoginView` requires) to BFF User. A 412 with a token becomes a `requiresPasswordChange` response; normal success requires a Bearer token in the upstream Authorization header. Password change maps `newPassword` to `new_password` and forwards the temporary token; a 401 or 403 (token refused or expired) clears it and asks to sign in again. Upstream statuses are kept, but the displayed message is chosen by the front from the status: BFF User messages are technical and in English.
 
 The generic proxy reads the versioned OpenAPI contract to allow paths and methods. It preserves query parameters, binary bodies, statuses and useful headers, filters transport headers, disables caching and does not automatically follow redirects. Its timeout is 15 seconds.
 
@@ -52,6 +53,7 @@ Create `.env.local` in the repository root. Example for BFFs running on the same
 
 ```dotenv
 BFF_USER_API_URL=http://localhost:4000
+DASHBOARD_FRONT_URL=http://localhost:5008/
 PROJECT_FRONT_URL=http://localhost:5001/
 ```
 
@@ -77,7 +79,8 @@ Values below are local examples or explicitly described behavior, not production
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Left-to-right precedence; explicitly configure an HTTP(S) URL. Missing or invalid configuration returns an uncached 503 without an upstream call. |
 | `COOKIE_DOMAIN` | — | Cookie domain; keep it consistent with Login and BFF User. |
 | `TRUST_INGRESS_IP_HEADERS` | `false` | Set to `true` only when the frontend is reachable exclusively through an ingress that owns `X-Forwarded-For` and `X-Real-IP` (with direct pod access blocked). Then the login, password-change and proxied routes relay those headers to BFF User for per-client rate limiting. Direct/local requests discard them by default. BFF User must separately trust its proxy; this frontend flag does not configure the BFF. |
-| `PROJECT_FRONT_URL` | — | Default destination when `redirect` is absent or invalid. |
+| `DASHBOARD_FRONT_URL` | — | Default destination when `redirect` is absent or invalid. Required unless an explicit allowed return URL is supplied. |
+| `PROJECT_FRONT_URL` | — | Projects origin allowed for an explicit `redirect`; no longer the default. |
 | `*_FRONT_URL` | — | Runtime-configured public front origins accepted for the `redirect` destination; these values are read on the server, not sent to the browser. |
 
 Inside a container, `localhost` refers to that container. Use the BFF service DNS name on the Docker network or a reachable host address. Compose files sometimes include other services and legacy settings; check effective URLs and ports before using them.
