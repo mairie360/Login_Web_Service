@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import contract from '../../contracts/openapi.json';
 import { configuredBffUrl } from './bff-user';
+import { trustedClientIpHeaders } from './trusted-client-ip';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 type ContractPaths = Record<string, Record<string, unknown>>;
@@ -13,7 +14,8 @@ export async function forwardToBff(request: NextRequest, baseUrl: string, path: 
   }
   const headers = new Headers(request.headers);
   // x-nonce / content-security-policy sont ajoutés par le middleware et ne concernent pas le BFF.
-  for (const name of ['host', 'connection', 'content-length', 'accept-encoding', 'cookie', 'x-nonce', 'content-security-policy']) headers.delete(name);
+  for (const name of ['host', 'connection', 'content-length', 'accept-encoding', 'cookie', 'x-nonce', 'content-security-policy', 'x-forwarded-for', 'x-real-ip']) headers.delete(name);
+  for (const [name, value] of Object.entries(trustedClientIpHeaders(request))) headers.set(name, value);
   const accessToken = request.cookies.get('accessToken')?.value;
   if (!headers.has('authorization') && accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
   const target = new URL(`${baseUrl.replace(/\/+$/, '')}${path}`);

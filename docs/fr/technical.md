@@ -76,6 +76,7 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Priorité de gauche à droite; configurer explicitement une URL HTTP(S). Une configuration absente ou invalide renvoie un 503 non mis en cache, sans appel réseau. |
 | `COOKIE_DOMAIN` | — | Domaine des cookies; vérifier sa cohérence avec Login et BFF User. |
+| `TRUST_INGRESS_IP_HEADERS` | `false` | Mettre à `true` uniquement si le front n’est joignable que par un ingress qui contrôle `X-Forwarded-For` et `X-Real-IP` (accès direct au pod bloqué). Les routes de connexion, de changement de mot de passe et le proxy transmettent alors ces en-têtes à BFF User pour limiter le débit par client. Par défaut, les requêtes directes/locales les écartent. La confiance du proxy côté BFF User se configure séparément ; cette variable ne configure pas le BFF. |
 | `PROJECT_FRONT_URL` | — | Destination par défaut si `redirect` est absent ou invalide. |
 | `*_FRONT_URL` | — | Origines publiques des fronts acceptées pour `redirect`, lues à l’exécution côté serveur. |
 

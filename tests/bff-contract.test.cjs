@@ -19,6 +19,7 @@ const bff = new ContractMockServer('BFF_USER', contract)
 
 const COOKIE_DOMAIN = '.mairie360.test';
 const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0';
+const originalTrustIngressIpHeaders = process.env.TRUST_INGRESS_IP_HEADERS;
 const realFetch = global.fetch;
 const outgoing = [];
 let allowedOrigins = [];
@@ -32,6 +33,8 @@ before(async () => {
   await bff.start();
   // Le route handler de connexion lit COOKIE_DOMAIN au chargement : il est importé après.
   process.env.BFF_USER_API_URL = `${bff.url}/`;
+  if (originalTrustIngressIpHeaders === undefined) delete process.env.TRUST_INGRESS_IP_HEADERS;
+  else process.env.TRUST_INGRESS_IP_HEADERS = originalTrustIngressIpHeaders;
   process.env.COOKIE_DOMAIN = COOKIE_DOMAIN;
   global.fetch = (input, init) => {
     outgoing.push(new URL(input instanceof Request ? input.url : String(input)));
@@ -56,6 +59,8 @@ afterEach(() => {
   allowedOrigins = [];
   bff.reset();
   process.env.BFF_USER_API_URL = `${bff.url}/`;
+  if (originalTrustIngressIpHeaders === undefined) delete process.env.TRUST_INGRESS_IP_HEADERS;
+  else process.env.TRUST_INGRESS_IP_HEADERS = originalTrustIngressIpHeaders;
   assert.deepEqual(escaped.map(String), [], 'appel réseau hors du BFF');
   assert.deepEqual(violations, [], 'échange hors contrat avec le BFF');
 });
@@ -66,9 +71,9 @@ const loginRequest = (body, headers = {}) => new NextRequest('http://localhost:5
   body: typeof body === 'string' ? body : JSON.stringify(body),
 });
 
-const changeRequest = (body, token = 'first-connection-token', url = 'http://localhost:5000/api/auth/force-change-password') => new NextRequest(url, {
+const changeRequest = (body, token = 'first-connection-token', url = 'http://localhost:5000/api/auth/force-change-password', extraHeaders = {}) => new NextRequest(url, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', ...(token ? { cookie: `passwordChangeToken=${token}` } : {}) },
+  headers: { 'Content-Type': 'application/json', ...(token ? { cookie: `passwordChangeToken=${token}` } : {}), ...extraHeaders },
   body: typeof body === 'string' ? body : JSON.stringify(body),
 });
 
@@ -83,6 +88,42 @@ function apiError(status, message) {
   assert.deepEqual(contract.validate(apiErrorSchema, body), []);
   return { status, body, outOfContract: true };
 }
+
+describe('trusted ingress client IP headers', () => {
+  const ipHeaders = { 'X-Forwarded-For': '198.51.100.20, 203.0.113.9', 'X-Real-IP': '203.0.113.9' };
+
+  test('direct requests cannot spoof the client IP used by BFF User', async () => {
+    delete process.env.TRUST_INGRESS_IP_HEADERS;
+    bff.on('POST', '/auth/login', apiError(401, 'Invalid credentials'));
+
+    await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'incorrect' }, ipHeaders));
+
+    const [call] = bff.calls('/auth/login', 'POST');
+    assert.equal(call.headers['x-forwarded-for'], undefined);
+    assert.equal(call.headers['x-real-ip'], undefined);
+  });
+
+  test('an explicitly trusted ingress chain reaches login, password change, and JWT logout', async () => {
+    process.env.TRUST_INGRESS_IP_HEADERS = 'true';
+    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+    bff.on('POST', '/auth/force_change_password', { status: 204 });
+    bff.on('POST', '/auth/logout', { body: contract.sample(contract.schema('LogoutResponse')) });
+
+    await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, ipHeaders));
+    await forceChangePassword.POST(changeRequest({ newPassword: 'NouveauMotDePasse123' }, 'first-connection-token', undefined, ipHeaders));
+    await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', {
+      method: 'POST', headers: { ...ipHeaders, cookie: 'accessToken=session-token' },
+    }), { params: Promise.resolve({ path: ['auth', 'logout'] }) });
+
+    for (const route of ['/auth/login', '/auth/force_change_password', '/auth/logout']) {
+      const [call] = bff.calls(route, 'POST');
+      assert.equal(call.headers['x-forwarded-for'], ipHeaders['X-Forwarded-For'], route);
+      assert.equal(call.headers['x-real-ip'], ipHeaders['X-Real-IP'], route);
+    }
+    assert.equal(bff.calls('/auth/logout', 'POST')[0].headers.authorization, 'Bearer session-token');
+    assert.equal(bff.calls('/auth/logout', 'POST')[0].headers.cookie, undefined);
+  });
+});
 
 /** Réduit les délais d'expiration des route handlers pour simuler un BFF trop lent sans attendre 10 s. */
 async function withShortTimeouts(run) {

@@ -1,6 +1,7 @@
 import type { ForceChangePasswordView } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
 import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
+import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 
 type ForceChangePasswordBody = {
   newPassword?: unknown;
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
+          ...trustedClientIpHeaders(request),
         },
         body: JSON.stringify({
           new_password: newPassword,
