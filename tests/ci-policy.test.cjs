@@ -46,11 +46,11 @@ test('npm resolution keeps the seven-day window except for the internal UI packa
 test('the internal UI package is pinned to its published release in the lockfile', () => {
   const manifest = JSON.parse(read('package.json'));
   const lock = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.0');
-  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.0');
+  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.1');
+  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.1');
   const resolved = lock.packages['node_modules/@mairie360/lib-components'];
-  assert.equal(resolved.version, '0.6.0');
-  assert.match(resolved.resolved, /^https:\/\/npm\.pkg\.github\.com\/download\/@mairie360\/lib-components\/0\.6\.0\//);
+  assert.equal(resolved.version, '0.6.1');
+  assert.match(resolved.resolved, /^https:\/\/npm\.pkg\.github\.com\/download\/@mairie360\/lib-components\/0\.6\.1\//);
   assert.match(resolved.integrity, /^sha512-/);
 });
 
