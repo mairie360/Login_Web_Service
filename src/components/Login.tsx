@@ -145,13 +145,13 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-[#F5F3F0]">
+    <div className="flex min-h-full w-full flex-col items-center justify-center bg-[#F5F3F0] py-8">
       <Image
         src="/logo.png"
-        alt="Logo"
+        alt="Logo Mairie360"
         width={400}
         height={104}
-        className="mt-[7.5rem] mb-4"
+        className="mb-4 max-w-full"
         priority
       />
 
@@ -162,9 +162,9 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
         onSubmit={isPasswordChange ? handlePasswordChange : handleLogin}
         className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0"
       >
-        <h2 className="text-2xl font-bold text-gray-900 !mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 !mb-2">
           {isPasswordChange ? "Nouveau mot de passe" : "Connexion"}
-        </h2>
+        </h1>
         {isPasswordChange ? (
           <>
             <p className="text-sm leading-5 text-gray-600">
@@ -281,9 +281,6 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
           />
         </div>
       </form>
-      <p className="mt-6 text-sm text-gray-500">
-        © 2026 Mairie360. Tous droits réservés.
-      </p>
     </div>
   );
 }

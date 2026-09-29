@@ -29,3 +29,8 @@ body {
 input, textarea {
   color: var(--foreground);
 }
+
+/* The shared header has no anonymous mode yet; never suggest a signed-in user on Login. */
+.login-anonymous-shell header [data-slot="dropdown-menu"] {
+  display: none;
+}
