@@ -71,6 +71,7 @@ test('missing or invalid default destinations render an unavailable state withou
     else process.env.DASHBOARD_FRONT_URL = value;
     await renderLogin();
     assert.match(view.text(), /Connexion temporairement indisponible/);
+    assert.match(view.html, /aria-label="Navigation principale"/);
     assert.doesNotMatch(view.html, /<form|localhost/);
     assert.deepEqual(front.browserCalls, []);
     view.unmount();
@@ -99,15 +100,42 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   await renderLogin();
 
   assert.equal(view.passes, 1);
-  assert.match(view.html, /<img[^>]*alt="Logo"/);
+  assert.match(view.html, /<img[^>]*src="\/logo\.png" alt="Logo Mairie360"/);
+  assert.match(view.html, /aria-label="Navigation principale"/);
+  assert.match(view.html, /aria-label="Menu principal"/);
+  assert.match(view.html, /Tableau de bord/);
+  assert.match(view.html, /Projets/);
   assert.match(view.html, /<form[^>]*method="post"/);
-  assert.match(view.html, /<h2[^>]*>Connexion<\/h2>/);
+  assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
   assert.match(view.html, /<input id="email" type="email"[^>]*placeholder="exemple@domaine\.com" required=""[^>]*name="email" value=""/);
   assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
   assert.match(view.html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
-  assert.match(view.text(), /© 2026 Mairie360\. Tous droits réservés\./);
+  assert.match(view.text(), /© 2026 Mairie360/);
+});
+
+test('the anonymous shell only offers configured frontend destinations', async () => {
+  const previousAdmin = process.env.ADMINISTRATION_FRONT_URL;
+  const previousMessages = process.env.MESSAGE_FRONT_URL;
+  process.env.ADMINISTRATION_FRONT_URL = 'https://admin.mairie.test/';
+  process.env.MESSAGE_FRONT_URL = 'javascript:alert(1)';
+  try {
+    await renderLogin();
+    assert.match(view.html, /Tableau de bord/);
+    assert.match(view.html, /Projets/);
+    assert.doesNotMatch(view.html, /Messagerie|Administration|javascript:alert/);
+    assert.deepEqual(front.browserCalls, []);
+
+    await view.fire((props, text, tag) => tag === 'button' && text === 'Projets', 'onClick');
+    assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/']);
+    assert.deepEqual(front.browserCalls, []);
+  } finally {
+    if (previousAdmin === undefined) delete process.env.ADMINISTRATION_FRONT_URL;
+    else process.env.ADMINISTRATION_FRONT_URL = previousAdmin;
+    if (previousMessages === undefined) delete process.env.MESSAGE_FRONT_URL;
+    else process.env.MESSAGE_FRONT_URL = previousMessages;
+  }
 });
 
 test('redirect only accepts an absolute URL on a configured front origin', () => {
@@ -231,7 +259,7 @@ test('a first connection switches to the password change form, then signs in wit
   await submit();
   const change = await view.waitFor((current) => current.includes('Nouveau mot de passe'));
 
-  assert.match(change, /<h2[^>]*>Nouveau mot de passe<\/h2>/);
+  assert.match(change, /<h1[^>]*>Nouveau mot de passe<\/h1>/);
   assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
   assert.match(change, /<input id="new-password"[^>]*type="password"/);
   assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
@@ -250,7 +278,7 @@ test('a first connection switches to the password change form, then signs in wit
   await submit();
   const html = await view.waitFor((current) => current.includes('Connexion réussie.'));
 
-  assert.match(html, /<h2[^>]*>Connexion<\/h2>/);
+  assert.match(html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
   assert.deepEqual(front.browserCalls.map((call) => call.path), ['/api/auth/login', '/api/auth/force_change_password', '/api/auth/login']);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie']);
