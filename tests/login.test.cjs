@@ -22,7 +22,40 @@ test('the access cookie uses the Authorization token returned by the BFF', async
   const result = await POST(loginRequest());
   assert.equal(result.status, 200);
   assert.equal(result.cookies.get('accessToken').value, 'access-fixture');
+  assert.equal(result.cookies.get('accessToken').maxAge, 3600, 'opaque tokens must not keep a 24-hour cookie');
   assert.deepEqual(await result.json(), { success: true });
+});
+test('a JWT access cookie expires no later than its token', async () => {
+  const exp = Math.floor(Date.now() / 1000) + 1800;
+  const token = `header.${Buffer.from(JSON.stringify({ exp })).toString('base64url')}.signature`;
+  global.fetch = async () => Response.json({ refresh_token: 'refresh-fixture' }, { headers: { Authorization: `Bearer ${token}` } });
+  const result = await POST(loginRequest());
+  assert.equal(result.status, 200);
+  assert.equal(result.cookies.get('accessToken').value, token);
+  assert.ok(result.cookies.get('accessToken').maxAge > 0);
+  assert.ok(result.cookies.get('accessToken').maxAge <= 1800);
+});
+test('a malformed JWT expiry gets only a short fallback cookie', async () => {
+  const token = `header.${Buffer.from(JSON.stringify({ exp: 'tomorrow' })).toString('base64url')}.signature`;
+  global.fetch = async () => Response.json({ refresh_token: 'refresh-fixture' }, { headers: { Authorization: `Bearer ${token}` } });
+  const result = await POST(loginRequest());
+  assert.equal(result.status, 200);
+  assert.equal(result.cookies.get('accessToken').maxAge, 3600);
+});
+test('a far-future JWT cannot create a cookie beyond one day', async () => {
+  const token = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 7 * 86400 })).toString('base64url')}.signature`;
+  global.fetch = async () => Response.json({ refresh_token: 'refresh-fixture' }, { headers: { Authorization: `Bearer ${token}` } });
+  const result = await POST(loginRequest());
+  assert.equal(result.status, 200);
+  assert.equal(result.cookies.get('accessToken').maxAge, 86400);
+});
+test('an already expired JWT cannot create an access session', async () => {
+  const token = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 10 })).toString('base64url')}.signature`;
+  global.fetch = async () => Response.json({ refresh_token: 'refresh-fixture' }, { headers: { Authorization: `Bearer ${token}` } });
+  const result = await POST(loginRequest());
+  assert.equal(result.status, 502);
+  assert.equal(result.cookies.get('accessToken'), undefined);
+  assert.deepEqual(await result.json(), { message: 'Le service de connexion a renvoyé une session expirée.' });
 });
 test('a refresh token alone cannot become an access session', async () => {
   global.fetch = async () => Response.json({ refresh_token: 'refresh-fixture' });
