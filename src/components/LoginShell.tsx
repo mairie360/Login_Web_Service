@@ -11,7 +11,7 @@ type LoginShellProps = {
 /** Keep the shared navigation visible before authentication without inventing a session. */
 export default function LoginShell({ hrefs, children }: LoginShellProps) {
   return (
-    <AppShell activeItem="login" hrefs={hrefs} className="login-anonymous-shell">
+    <AppShell activeItem="login" hrefs={hrefs}>
       {children}
     </AppShell>
   );

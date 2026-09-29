@@ -103,6 +103,7 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   assert.match(view.html, /<img[^>]*src="\/logo\.png" alt="Logo Mairie360"/);
   assert.match(view.html, /aria-label="Navigation principale"/);
   assert.match(view.html, /aria-label="Menu principal"/);
+  assert.doesNotMatch(view.html, /data-slot="dropdown-menu"/, 'anonymous Login must not expose a signed-in account menu');
   assert.match(view.html, /Tableau de bord/);
   assert.match(view.html, /Projets/);
   assert.match(view.html, /<form[^>]*method="post"/);
