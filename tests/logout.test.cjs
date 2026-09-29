@@ -5,10 +5,13 @@ const { requireTs } = require('./support/load-ts.cjs');
 
 const { POST } = requireTs('src/app/api/auth/logout/route.ts');
 const originalDomain = process.env.COOKIE_DOMAIN;
+const originalNodeEnv = process.env.NODE_ENV;
 
 after(() => {
   if (originalDomain === undefined) delete process.env.COOKIE_DOMAIN;
   else process.env.COOKIE_DOMAIN = originalDomain;
+  if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = originalNodeEnv;
 });
 
 const request = (headers = {}) => new NextRequest('https://login.dev.mairie360-eip.fr/api/auth/logout', {
@@ -41,9 +44,10 @@ test('a cross-site or mismatched-origin request cannot clear the cookie', () => 
 });
 
 test('production fails closed if the shared cookie domain is unavailable', () => {
-  if (process.env.NODE_ENV !== 'production') return;
+  process.env.NODE_ENV = 'production';
   delete process.env.COOKIE_DOMAIN;
   const response = POST(request());
   assert.equal(response.status, 503);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal(response.cookies.get('accessToken'), undefined);
 });
