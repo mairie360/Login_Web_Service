@@ -2,8 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import Login from "../components/Login";
 import LoginShell from "../components/LoginShell";
-import { parseFrontUrl } from "../lib/front-url";
 import { resolveLoginRedirect } from "../lib/login-redirect";
+import { loginShellHrefs } from "../lib/login-shell-hrefs";
 
 type HomeProps = {
   searchParams: Promise<{ redirect?: string | string[] }>;
@@ -12,18 +12,7 @@ type HomeProps = {
 export default async function Home({ searchParams }: HomeProps) {
   const { redirect } = await searchParams;
   const redirectUrl = resolveLoginRedirect(redirect);
-  const configuredFront = (key: string) => parseFrontUrl(process.env[key])?.href;
-  const settingsUrl = configuredFront("SETTINGS_FRONT_URL");
-  const hrefs = {
-    dashboard: configuredFront("DASHBOARD_FRONT_URL"),
-    projects: configuredFront("PROJECT_FRONT_URL"),
-    messages: configuredFront("MESSAGE_FRONT_URL"),
-    training: configuredFront("ELEARNING_FRONT_URL"),
-    calendar: configuredFront("CALENDAR_FRONT_URL"),
-    settings: settingsUrl,
-    profile: settingsUrl,
-    admin: configuredFront("ADMINISTRATION_FRONT_URL"),
-  };
+  const hrefs = loginShellHrefs();
 
   if (!redirectUrl) {
     return (
