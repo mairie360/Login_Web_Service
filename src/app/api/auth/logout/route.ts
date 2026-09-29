@@ -26,5 +26,14 @@ export function POST(request: NextRequest) {
     maxAge: 0,
     ...(cookieDomain ? { domain: cookieDomain } : {}),
   });
+  response.cookies.set("refreshToken", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/api",
+    expires: new Date(0),
+    maxAge: 0,
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
+  });
   return response;
 }

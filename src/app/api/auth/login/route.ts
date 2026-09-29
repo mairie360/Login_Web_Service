@@ -1,4 +1,4 @@
-import type { LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
+import type { AuthTokenResponse, LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
 import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
@@ -10,7 +10,6 @@ type LoginBody = {
 
 type FirstConnectionResponse = Partial<PostAuthLogin412>;
 
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN?.trim();
 const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60;
 const UNKNOWN_ACCESS_TOKEN_MAX_AGE = 60 * 60;
 const PASSWORD_CHANGE_TOKEN_MAX_AGE = 10 * 60;
@@ -98,6 +97,12 @@ function getPasswordChangeToken(body: unknown) {
   return typeof token === "string" && token ? token : null;
 }
 
+function getRefreshToken(body: unknown) {
+  if (typeof body !== "object" || body === null) return null;
+  const { refresh_token: token } = body as Partial<AuthTokenResponse>;
+  return typeof token === "string" && token.length > 0 && token.trim() === token ? token : null;
+}
+
 export async function POST(request: NextRequest) {
   let body: LoginBody;
 
@@ -130,6 +135,14 @@ export async function POST(request: NextRequest) {
   if (!configuredBffUrl()) {
     return NextResponse.json(
       { message: "Le service de connexion n’est pas configuré." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  const cookieDomain = process.env.COOKIE_DOMAIN?.trim();
+  if (process.env.NODE_ENV === "production" && !cookieDomain) {
+    return NextResponse.json(
+      { message: "La session partagée n’est pas configurée." },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
@@ -191,6 +204,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const refreshToken = getRefreshToken(upstreamBody);
+    if (!refreshToken) {
+      return NextResponse.json(
+        { message: "Le service de connexion a renvoyé une réponse invalide." },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     const accessTokenMaxAge = getAccessTokenMaxAge(accessToken);
     if (accessTokenMaxAge <= 0) {
       return NextResponse.json(
@@ -199,7 +220,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } });
 
     response.cookies.set("accessToken", accessToken, {
       httpOnly: true,
@@ -207,7 +228,15 @@ export async function POST(request: NextRequest) {
       sameSite: "strict",
       path: "/",
       maxAge: accessTokenMaxAge,
-      ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
+    });
+
+    response.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/api",
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     return response;

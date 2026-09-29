@@ -77,7 +77,7 @@ Values below are local examples or explicitly described behavior, not production
 | Variable or precedence | Example / stated fallback | Purpose |
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Left-to-right precedence; explicitly configure an HTTP(S) URL. Missing or invalid configuration returns an uncached 503 without an upstream call. |
-| `COOKIE_DOMAIN` | — | Cookie domain; keep it consistent with Login and BFF User. |
+| `COOKIE_DOMAIN` | — | Shared cookie domain; required for sign-in in production and must match the frontend domain used for logout. Local development may use host-only cookies. |
 | `TRUST_INGRESS_IP_HEADERS` | `false` | Set to `true` only when the frontend is reachable exclusively through an ingress that owns `X-Forwarded-For` and `X-Real-IP` (with direct pod access blocked). Then the login, password-change and proxied routes relay those headers to BFF User for per-client rate limiting. Direct/local requests discard them by default. BFF User must separately trust its proxy; this frontend flag does not configure the BFF. |
 | `DASHBOARD_FRONT_URL` | — | Default destination when `redirect` is absent or invalid. Required unless an explicit allowed return URL is supplied. |
 | `PROJECT_FRONT_URL` | — | Projects origin allowed for an explicit `redirect`; no longer the default. |
@@ -141,7 +141,7 @@ These data paths are exposed at the same origin through the proxy; Next.js pages
 
 ## Session, permissions and errors
 
-The `accessToken` cookie is HttpOnly, SameSite strict, scoped to `/`, has a 24-hour cookie lifetime and is Secure in production. It comes only from the sign-in response’s Bearer header, never from a refresh token. `passwordChangeToken` is HttpOnly, scoped to `/api/auth` and expires after 10 minutes. Successful password change removes that cookie; the sign-in flow must then be completed. Dedicated adapters have a 10-second timeout and distinguish 502 from 504.
+The `accessToken` cookie is HttpOnly, SameSite strict, scoped to `/` and Secure in production. Its lifetime never exceeds the JWT `exp` or 24 hours; opaque or malformed access tokens receive a one-hour fallback, and expired JWTs are rejected. It comes only from the sign-in response’s Bearer header. The contract-required `refresh_token` is kept in a separate HttpOnly, SameSite strict, session-only `refreshToken` cookie scoped to `/api` on the same configured domain; it is never returned to browser JavaScript. Login rejects a missing or malformed refresh token instead of opening a partial session. Logout expires both cookies. This storage does not yet enable transparent refresh or prove server-side revocation: those require the separately published BFF contract and shared proxy. `passwordChangeToken` is HttpOnly, scoped to `/api/auth` and expires after 10 minutes. Successful password change removes that cookie; the sign-in flow must then be completed. Dedicated adapters have a 10-second timeout and distinguish 502 and 504.
 
 The generic proxy returns 400 for an invalid path, 404 for a path outside the contract, 405 for a disallowed method and 502 when the service is unreachable or times out. Upstream responses are preserved, including empty 204/205/304 bodies.
 
