@@ -146,7 +146,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     assert.deepEqual(await response.json(), { success: true });
     const cookie = response.cookies.get('accessToken');
     assert.equal(cookie.value, 'access-token');
-    assert.deepEqual({ httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path, maxAge: cookie.maxAge, domain: cookie.domain }, { httpOnly: true, sameSite: 'strict', path: '/', maxAge: 86400, domain: COOKIE_DOMAIN });
+    assert.deepEqual({ httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path, maxAge: cookie.maxAge, domain: cookie.domain }, { httpOnly: true, sameSite: 'strict', path: '/', maxAge: 3600, domain: COOKIE_DOMAIN });
     const [call] = bff.calls('/auth/login', 'POST');
     assert.equal(bff.requests.length, 1);
     assert.deepEqual(call.body, { email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123', device_info: USER_AGENT });
