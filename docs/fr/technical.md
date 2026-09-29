@@ -77,7 +77,7 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 | Variable ou priorité | Exemple / repli indiqué | Rôle |
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Priorité de gauche à droite; configurer explicitement une URL HTTP(S). Une configuration absente ou invalide renvoie un 503 non mis en cache, sans appel réseau. |
-| `COOKIE_DOMAIN` | — | Domaine des cookies; vérifier sa cohérence avec Login et BFF User. |
+| `COOKIE_DOMAIN` | — | Domaine des cookies partagés ; obligatoire pour la connexion en production et cohérent avec le domaine utilisé par la déconnexion. En local, les cookies peuvent rester limités à l’hôte. |
 | `TRUST_INGRESS_IP_HEADERS` | `false` | Mettre à `true` uniquement si le front n’est joignable que par un ingress qui contrôle `X-Forwarded-For` et `X-Real-IP` (accès direct au pod bloqué). Les routes de connexion, de changement de mot de passe et le proxy transmettent alors ces en-têtes à BFF User pour limiter le débit par client. Par défaut, les requêtes directes/locales les écartent. La confiance du proxy côté BFF User se configure séparément ; cette variable ne configure pas le BFF. |
 | `DASHBOARD_FRONT_URL` | — | Destination par défaut si `redirect` est absent ou invalide. Nécessaire sauf retour explicite autorisé. |
 | `PROJECT_FRONT_URL` | — | Origine Projects autorisée pour un `redirect` explicite ; ce n’est plus le repli. |
@@ -141,7 +141,7 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 
 ## Session, permissions et erreurs
 
-Le cookie `accessToken` est HttpOnly, SameSite strict, limité à `/`, valable 24 heures côté cookie et Secure en production. Il provient uniquement de l’en-tête Bearer de la réponse de connexion, jamais d’un refresh token. `passwordChangeToken` est HttpOnly, limité à `/api/auth` et expire après 10 minutes. Le succès du changement de mot de passe supprime ce cookie; il faut ensuite terminer le parcours de connexion. Les adaptateurs dédiés ont un délai de 10 secondes et distinguent 502 et 504.
+Le cookie `accessToken` est HttpOnly, SameSite strict, limité à `/` et Secure en production. Sa durée ne dépasse jamais l’expiration `exp` du JWT ni 24 heures ; un jeton opaque ou malformé reçoit une durée de repli d’une heure et un JWT expiré est refusé. Il provient uniquement de l’en-tête Bearer de la réponse de connexion. Le `refresh_token` obligatoire du contrat est conservé séparément dans un cookie de session `refreshToken`, HttpOnly, SameSite strict et limité à `/api` sur le même domaine configuré ; il n’est jamais renvoyé au JavaScript du navigateur. Un refresh token absent ou malformé empêche la création d’une session partielle. La déconnexion expire les deux cookies. Ce stockage n’active pas encore le renouvellement transparent et ne prouve pas la révocation côté serveur : il faut pour cela le contrat BFF publié et le proxy partagé prévus séparément. `passwordChangeToken` est HttpOnly, limité à `/api/auth` et expire après 10 minutes. Le succès du changement de mot de passe supprime ce cookie ; il faut ensuite terminer le parcours de connexion. Les adaptateurs dédiés ont un délai de 10 secondes et distinguent 502 et 504.
 
 Le proxy générique répond 400 pour un chemin invalide, 404 pour un chemin hors contrat, 405 pour une méthode interdite et 502 si le service est injoignable ou dépasse le délai. Les réponses amont sont conservées, y compris les corps vides 204/205/304.
 

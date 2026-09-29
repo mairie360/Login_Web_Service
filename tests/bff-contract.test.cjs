@@ -31,7 +31,7 @@ let proxy;
 
 before(async () => {
   await bff.start();
-  // Le route handler de connexion lit COOKIE_DOMAIN au chargement : il est importé après.
+  // Les requêtes de connexion et de déconnexion utilisent le même domaine de cookie de test.
   process.env.BFF_USER_API_URL = `${bff.url}/`;
   if (originalTrustIngressIpHeaders === undefined) delete process.env.TRUST_INGRESS_IP_HEADERS;
   else process.env.TRUST_INGRESS_IP_HEADERS = originalTrustIngressIpHeaders;
@@ -147,6 +147,10 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     const cookie = response.cookies.get('accessToken');
     assert.equal(cookie.value, 'access-token');
     assert.deepEqual({ httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path, maxAge: cookie.maxAge, domain: cookie.domain }, { httpOnly: true, sameSite: 'strict', path: '/', maxAge: 3600, domain: COOKIE_DOMAIN });
+    const refreshCookie = response.cookies.get('refreshToken');
+    assert.deepEqual({ value: refreshCookie.value, httpOnly: refreshCookie.httpOnly, sameSite: refreshCookie.sameSite, path: refreshCookie.path, maxAge: refreshCookie.maxAge, domain: refreshCookie.domain }, {
+      value: 'refresh-token', httpOnly: true, sameSite: 'strict', path: '/api', maxAge: undefined, domain: COOKIE_DOMAIN,
+    });
     const [call] = bff.calls('/auth/login', 'POST');
     assert.equal(bff.requests.length, 1);
     assert.deepEqual(call.body, { email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123', device_info: USER_AGENT });
@@ -209,6 +213,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
 
     assert.equal(response.status, 502);
     assert.equal(response.cookies.get('accessToken'), undefined);
+    assert.equal(response.cookies.get('refreshToken'), undefined);
   });
 
   for (const [name, body] of [['invalid JSON', '{'], ['missing password', { email: 'alice.dupont@mairie360.fr' }], ['blank email', { email: '   ', password: 'x' }], ['non-string credentials', { email: 42, password: true }], ['an email the BFF LoginView rejects', { email: 'alice@mairie360', password: 'x' }], ['an email with a space', { email: 'alice dupont@mairie360.fr', password: 'x' }]]) {
