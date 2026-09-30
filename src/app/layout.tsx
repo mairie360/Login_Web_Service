@@ -25,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="font-sans antialiased">
-        {children}
+        <main className="flex min-h-dvh items-center justify-center bg-[#F5F3F0]">
+          {children}
+        </main>
       </body>
     </html>
   );

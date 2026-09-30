@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Logout from '@/components/Logout';
+import LogoutPage from '@/app/logout/page';
 
 let fetchMock;
 const response = (ok) => ({ ok });
@@ -13,6 +14,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('central logout handoff', () => {
+  it('renders the logout page without application navigation or footer on error', async () => {
+    fetchMock.mockResolvedValue(response(false));
+    render(<LogoutPage />);
+    expect((await screen.findByRole('alert')).textContent).toContain('n’a pas abouti');
+    expect(screen.getByRole('heading', { name: 'Déconnexion' })).toBeTruthy();
+    expect(document.querySelector('header, aside, nav, footer')).toBeNull();
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(screen.queryByText(/©.*Mairie360/)).toBeNull();
+  });
   it('calls the existing BFF proxy before expiring the browser cookie, then returns to Login', async () => {
     fetchMock.mockResolvedValue(response(true));
     const navigate = vi.fn();

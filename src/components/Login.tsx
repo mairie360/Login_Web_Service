@@ -145,7 +145,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
   };
 
   return (
-    <div className="flex min-h-full w-full flex-col items-center justify-center bg-[#F5F3F0] py-8">
+    <div className="flex w-full flex-col items-center justify-center px-6 py-8">
       <Image
         src="/logo.png"
         alt="Logo Mairie360"
