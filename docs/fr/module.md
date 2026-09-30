@@ -13,6 +13,7 @@ Domaine fonctionnel: Identité et administration.
 ## Fonctions disponibles
 
 - Formulaire de connexion avec remontée des erreurs serveur.
+- Écrans de connexion, de premier changement de mot de passe, de configuration indisponible et de déconnexion autonomes : aucun AppShell, header, sidebar ou footer applicatif avant le retour vers un module authentifié.
 - Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
 - Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le tableau de bord configuré.
 

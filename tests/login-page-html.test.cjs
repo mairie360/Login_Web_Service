@@ -22,6 +22,7 @@ const contract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'o
 const bff = new ContractMockServer('BFF_USER', contract);
 const front = new BrowserFront(bff);
 let Home;
+let RootLayout;
 let resolveLoginRedirect;
 let view;
 let window;
@@ -31,6 +32,8 @@ const savedProjectUrl = process.env.PROJECT_FRONT_URL;
 before(async () => {
   await bff.start();
   front.install();
+  stubModule(path.join(__dirname, '..', 'src/app/globals.css'), {});
+  RootLayout = requireTs('src/app/layout.tsx').default;
   Home = requireTs('src/app/page.tsx').default;
   resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
 });
@@ -51,6 +54,7 @@ afterEach(() => {
   else process.env.DASHBOARD_FRONT_URL = savedDashboardUrl;
   if (savedProjectUrl === undefined) delete process.env.PROJECT_FRONT_URL;
   else process.env.PROJECT_FRONT_URL = savedProjectUrl;
+  if (view) assertStandalone(view.html);
   view?.unmount();
   view = undefined;
   delete global.window;
@@ -61,8 +65,13 @@ const apiError = (status, message) => ({ status, body: { code: 'UPSTREAM_ERROR',
 const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
 const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
+const assertStandalone = (html) => {
+  assert.match(html, /<main[^>]*min-h-dvh/);
+  assert.doesNotMatch(html, /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
+  assert.doesNotMatch(html, /© 2026 Mairie360/);
+};
 const renderLogin = async (searchParams = {}) => {
-  view = mount(await Home({ searchParams: Promise.resolve(searchParams) }));
+  view = mount(React.createElement(RootLayout, null, await Home({ searchParams: Promise.resolve(searchParams) })));
 };
 
 test('missing or invalid default destinations render an unavailable state without a sign-in form', async () => {
@@ -71,7 +80,7 @@ test('missing or invalid default destinations render an unavailable state withou
     else process.env.DASHBOARD_FRONT_URL = value;
     await renderLogin();
     assert.match(view.text(), /Connexion temporairement indisponible/);
-    assert.match(view.html, /aria-label="Navigation principale"/);
+    assertStandalone(view.html);
     assert.doesNotMatch(view.html, /<form|localhost/);
     assert.deepEqual(front.browserCalls, []);
     view.unmount();
@@ -101,11 +110,7 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
 
   assert.equal(view.passes, 1);
   assert.match(view.html, /<img[^>]*src="\/logo\.png" alt="Logo Mairie360"/);
-  assert.match(view.html, /aria-label="Navigation principale"/);
-  assert.match(view.html, /aria-label="Menu principal"/);
-  assert.doesNotMatch(view.html, /data-slot="dropdown-menu"/, 'anonymous Login must not expose a signed-in account menu');
-  assert.match(view.html, /Tableau de bord/);
-  assert.match(view.html, /Projets/);
+  assertStandalone(view.html);
   assert.match(view.html, /<form[^>]*method="post"/);
   assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
@@ -113,23 +118,18 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
   assert.match(view.html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
-  assert.match(view.text(), /© 2026 Mairie360/);
 });
 
-test('the anonymous shell only offers configured frontend destinations', async () => {
+test('configured module URLs do not add application navigation to Login', async () => {
   const previousAdmin = process.env.ADMINISTRATION_FRONT_URL;
   const previousMessages = process.env.MESSAGE_FRONT_URL;
   process.env.ADMINISTRATION_FRONT_URL = 'https://admin.mairie.test/';
   process.env.MESSAGE_FRONT_URL = 'javascript:alert(1)';
   try {
     await renderLogin();
-    assert.match(view.html, /Tableau de bord/);
-    assert.match(view.html, /Projets/);
-    assert.doesNotMatch(view.html, /Messagerie|Administration|javascript:alert/);
-    assert.deepEqual(front.browserCalls, []);
-
-    await view.fire((props, text, tag) => tag === 'button' && text === 'Projets', 'onClick');
-    assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/']);
+    assertStandalone(view.html);
+    assert.doesNotMatch(view.html, /Tableau de bord|Projets|Messagerie|Administration|javascript:alert/);
+    assert.deepEqual(window.location.assigned, []);
     assert.deepEqual(front.browserCalls, []);
   } finally {
     if (previousAdmin === undefined) delete process.env.ADMINISTRATION_FRONT_URL;
@@ -261,6 +261,7 @@ test('a first connection switches to the password change form, then signs in wit
   const change = await view.waitFor((current) => current.includes('Nouveau mot de passe'));
 
   assert.match(change, /<h1[^>]*>Nouveau mot de passe<\/h1>/);
+  assertStandalone(change);
   assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
   assert.match(change, /<input id="new-password"[^>]*type="password"/);
   assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
