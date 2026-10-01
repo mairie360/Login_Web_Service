@@ -1,5 +1,14 @@
 # Login_Web_Service — Documentation technique
 
+## Pied de page partagé — MAIR-180
+
+Le paquet est épinglé à `@mairie360/lib-components@0.6.5`, publié par
+[lib-components #388](https://github.com/mairie360/lib-components/pull/388).
+Login reste une page de connexion seule : aucun AppShell, header, sidebar ou footer
+n’est ajouté par cette mise à jour.
+Les contrats, les API/BFF et les approbations de déploiement sont inchangés.
+Le suivi de l’adoption reste dans [l’issue partagée #387](https://github.com/mairie360/lib-components/issues/387).
+
 ## Destinations frontend explicites (MAIR-177, MAIR-360)
 
 Les redirections utilisent uniquement des URL HTTP(S) configurées, sans

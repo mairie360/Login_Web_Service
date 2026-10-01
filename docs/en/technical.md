@@ -1,5 +1,14 @@
 # Login_Web_Service — Technical documentation
 
+## Shared footer — MAIR-180
+
+The package is pinned to published `@mairie360/lib-components@0.6.5` from
+[lib-components #388](https://github.com/mairie360/lib-components/pull/388).
+Login remains a standalone authentication page: this update adds no AppShell,
+header, sidebar or footer.
+Contracts, APIs/BFFs and deployment approvals are unchanged. Consumer adoption
+is tracked in [shared issue #387](https://github.com/mairie360/lib-components/issues/387).
+
 ## Explicit frontend destinations (MAIR-177, MAIR-360)
 
 Frontend redirects use only explicitly configured HTTP(S) URLs without embedded
