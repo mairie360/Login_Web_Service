@@ -2,8 +2,8 @@
 
 ## Shared footer — MAIR-180
 
-The package is pinned to published `@mairie360/lib-components@0.6.5` from
-[lib-components #388](https://github.com/mairie360/lib-components/pull/388).
+The package is pinned to published `@mairie360/lib-components@0.6.8` from
+[the successful 0.6.8 publication](https://github.com/mairie360/lib-components/actions/runs/36836970818), including the sidebar-footer correction #388.
 Login remains a standalone authentication page: this update adds no AppShell,
 header, sidebar or footer.
 Contracts, APIs/BFFs and deployment approvals are unchanged. Consumer adoption

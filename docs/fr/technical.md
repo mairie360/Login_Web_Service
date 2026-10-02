@@ -2,8 +2,8 @@
 
 ## Pied de page partagé — MAIR-180
 
-Le paquet est épinglé à `@mairie360/lib-components@0.6.5`, publié par
-[lib-components #388](https://github.com/mairie360/lib-components/pull/388).
+Le paquet est épinglé à `@mairie360/lib-components@0.6.8`, publié par
+[la publication réussie de 0.6.8](https://github.com/mairie360/lib-components/actions/runs/36836970818), qui inclut la correction du pied de page #388.
 Login reste une page de connexion seule : aucun AppShell, header, sidebar ou footer
 n’est ajouté par cette mise à jour.
 Les contrats, les API/BFF et les approbations de déploiement sont inchangés.
