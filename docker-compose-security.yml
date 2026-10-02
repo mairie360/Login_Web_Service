@@ -11,6 +11,10 @@
 # WARN/FAIL non neutralisée dans .zap/rules.tsv (les alertes informatives y sont
 # passées à IGNORE).
 
+secrets:
+  node_auth_token:
+    environment: NODE_AUTH_TOKEN
+
 volumes:
   postgres-data:
   redis-data:
@@ -172,8 +176,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:-}
+      secrets:
+        - node_auth_token
     depends_on:
       bff-user-ready:
         condition: service_completed_successfully

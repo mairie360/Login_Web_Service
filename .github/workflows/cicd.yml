@@ -11,11 +11,43 @@ permissions:
   id-token: write
 
 jobs:
+  # #139: preserve the required legacy name with BOTH real blocking scanners.
+  # Never emit synthetic success or remove/bypass the required status.
+  required_security_scan:
+    name: CICD / Code Security Audit (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout frontend history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout reviewed scanner actions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mairie360/CICD
+          ref: 539847726d4058a9565c4f682c2d1d8302874b06 # published v4.0.1
+          path: cicd-repo
+          persist-credentials: false
+      - name: Run blocking Semgrep scan
+        uses: ./cicd-repo/actions/semgrep
+        with:
+          config: p/typescript p/react p/owasp-top-ten p/secrets p/dockerfile p/github-actions
+          fail_on_findings: "true"
+          artifact_name: semgrep-required-check-sarif
+      - name: Run blocking redacted Gitleaks scan
+        uses: ./cicd-repo/actions/gitleaks
+        with:
+          fail_on_findings: "true"
+
   CICD:
     uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@v4.0.2
     with:
       package_name: "login-front"
-      node_version: "24"
+      node_version: "24.21.0"
       cicd_version: "v4.0.2"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
