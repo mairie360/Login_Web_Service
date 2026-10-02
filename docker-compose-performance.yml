@@ -7,6 +7,10 @@
 # k6-perf-test sort en échec si un seuil de load-test.js est dépassé.
 # TARGET_IMAGE (optionnel) : image front pré-construite à tester au lieu du build local.
 
+secrets:
+  node_auth_token:
+    environment: NODE_AUTH_TOKEN
+
 volumes:
   postgres-data:
   redis-data:
@@ -168,8 +172,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        NODE_AUTH_TOKEN: ${NODE_AUTH_TOKEN:-}
+      secrets:
+        - node_auth_token
     depends_on:
       bff-user-ready:
         condition: service_completed_successfully
