@@ -43,6 +43,11 @@ npm credentials. Complete app image build/push, blocking Trivy and signature
 must be verified separately in the existing main pipeline before closing #139.
 Login remains standalone without AppShell, header, sidebar or footer.
 
+The legacy required `CICD / Code Security Audit (Semgrep)` check runs both real
+blocking scanners from immutable reviewed CICD actions, with read-only checkout
+permissions and full frontend history. The shared v4 audit remains enabled;
+no required status is synthesized, removed or bypassed when its name changes.
+
 - [BFF.md](BFF.md)
 - [BACKEND.md](BACKEND.md)
 - [contracts/openapi.json](contracts/openapi.json)

@@ -32,6 +32,30 @@ test('the reusable frontend workflow receives only its declared named secrets', 
   assert.doesNotMatch(workflow, /semgrep_fail_on_findings:\s*false|semgrep_config:|continue-on-error:/);
 });
 
+test('the legacy required security name runs real immutable blocking scanners', () => {
+  const workflow = read('.github/workflows/cicd.yml');
+  const job = workflow.split('  required_security_scan:\n')[1]?.split('\n  CICD:')[0];
+  assert.ok(job, 'the legacy required check needs its own executable scan job');
+  assert.match(job, /name: CICD \/ Code Security Audit \(Semgrep\)/);
+  assert.match(job, /permissions:\s*\n      contents: read\s*\n    steps:/);
+  assert.match(job, /timeout-minutes: 20/);
+  assert.doesNotMatch(job, /continue-on-error:|\bif:|\bsecrets:|\btoken:|security-events:|packages:|id-token:|\brun:|\bexclude:|\bpaths:/);
+  const actions = [...job.matchAll(/uses: ([^\s@]+)@([^\s#]+)/g)];
+  assert.equal(actions.length, 2);
+  for (const [, name, sha] of actions) {
+    assert.equal(name, 'actions/checkout');
+    assert.equal(sha, '3d3c42e5aac5ba805825da76410c181273ba90b1');
+  }
+  assert.match(job, /fetch-depth: 0/);
+  assert.equal([...job.matchAll(/persist-credentials: false/g)].length, 2);
+  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: 539847726d4058a9565c4f682c2d1d8302874b06/);
+  assert.match(job, /uses: \.\/cicd-repo\/actions\/semgrep/);
+  assert.match(job, /config: p\/typescript p\/react p\/owasp-top-ten p\/secrets p\/dockerfile p\/github-actions/);
+  assert.match(job, /artifact_name: semgrep-required-check-sarif/);
+  assert.match(job, /uses: \.\/cicd-repo\/actions\/gitleaks/);
+  assert.equal([...job.matchAll(/fail_on_findings: "true"/g)].length, 2);
+});
+
 test('npm resolution keeps the seven-day window except for the internal UI package', () => {
   const config = read('.npmrc');
   assert.match(config, /^min-release-age\s*=\s*7\s*$/m);
