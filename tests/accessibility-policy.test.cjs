@@ -45,6 +45,9 @@ test('browser workflow runs a fresh real build/test with read-only immutable act
   assert.match(workflow, /run: npm run build/);
   assert.match(workflow, /run: npm run test:accessibility/);
   assert.match(workflow, /playwright install --with-deps chromium/);
+  const jobEnv = workflow.split('    env:\n')[1].split('    steps:\n')[0];
+  assert.doesNotMatch(jobEnv, /runner\./, 'runner context is available to steps, not job env');
+  assert.match(workflow, /run: npm run test:accessibility\s*\n        env:\s*\n          LOGIN_A11Y_OUTPUT_DIR: \$\{\{ runner\.temp \}\}/);
   assert.doesNotMatch(workflow, /continue-on-error|LOGIN_A11Y_RUNTIME_DIR|secrets: inherit|id-token:|contents: write|packages: write|audit-level/);
   for (const [, action, ref] of workflow.matchAll(/uses: ([^\s@]+)@([^\s#]+)/g)) {
     assert.match(ref, /^[a-f0-9]{40}$/, `${action} must be immutable`);
