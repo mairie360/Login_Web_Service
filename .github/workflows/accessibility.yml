@@ -1,0 +1,49 @@
+name: Login browser accessibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  login-accessibility:
+    name: Login route accessibility (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_OPTIONS: --max-old-space-size=768
+      NEXT_TELEMETRY_DISABLED: '1'
+      LOGIN_A11Y_OUTPUT_DIR: ${{ runner.temp }}/login-a11y-results
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the frontend Node version
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.21.0'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+      - name: Install official Chromium test runtime
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Build the actual frontend and CSS
+        run: npm run build
+      - name: Check all declared browser states
+        run: npm run test:accessibility
+      - name: Preserve full scans, incomplete results, screenshots and console evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: login-route-accessibility
+          path: ${{ runner.temp }}/login-a11y-results
+          if-no-files-found: warn
+          retention-days: 7

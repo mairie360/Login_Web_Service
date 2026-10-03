@@ -19,6 +19,12 @@ Les guides décrivent le module implémenté, ses limites actuelles, le démarra
 
 `npm test` runs the contract/security Node tests and the Vitest component/accessibility suite. Use `npm run test:node` or `npm run test:components` to run one group independently. Component tests stub the existing frontend auth proxy and use synthetic credentials only inside tests; they do not change the BFF contract or production data.
 
+`npm run test:accessibility` additionally checks actual compiled Login UI routes
+in Chromium with full-page axe, keyboard flows, 320px reflow, native 200% browser
+zoom and text spacing. Build first; see [the declared scope and limits](docs/accessibility.md)
+for isolated fixtures, temporary evidence and manual criteria. This is not a
+blanket RGAA or authentication compliance claim.
+
 ## Contracts and background / Contrats et compléments
 
 ### Image packaging (MAIR-436 / issue #139)
