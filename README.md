@@ -43,6 +43,23 @@ npm credentials. Complete app image build/push, blocking Trivy and signature
 must be verified separately in the existing main pipeline before closing #139.
 Login remains standalone without AppShell, header, sidebar or footer.
 
+### Reference font scale (MAIR-462)
+
+The standalone authentication screens retain the preserved prototype's default
+17px root scale. Rem-based text and form fields inherit that scale; the existing
+Arial/Helvetica font family, contrast, authentication logic and redirect policy
+are unchanged. No demo preferences, demonstration data or pre-authentication
+navigation are loaded. `tests/login-presentation.test.cjs` guards the scale and
+font family; `tests/login-page-html.test.cjs` guards the absence of AppShell on
+sign-in, first connection and unavailable states. Native responsive checks must
+also verify computed font size, keyboard validation and horizontal overflow.
+
+Les écrans de connexion conservent la base de 17 px du prototype, sans rétablir
+son AppShell ni ses préférences de démonstration. La police, le contraste, les
+contrats et les parcours d'authentification existants restent inchangés. Les
+tests statiques/HTML ne remplacent pas une recette native desktop/mobile et ne
+certifient ni une authentification réelle ni un déploiement.
+
 The legacy required `CICD / Code Security Audit (Semgrep)` check runs both real
 blocking scanners from immutable reviewed CICD actions, with read-only checkout
 permissions and full frontend history. The shared v4 audit remains enabled;
