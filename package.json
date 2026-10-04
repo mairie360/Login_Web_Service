@@ -13,6 +13,7 @@
     "test:contracts": "node --test tests/*.test.cjs",
     "test:node": "mkdir -p coverage && node --test --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
     "test:components": "vitest run",
+    "test:accessibility": "playwright test --config=playwright.accessibility.config.mjs",
     "test": "npm run test:node && npm run test:components"
   },
   "dependencies": {
@@ -30,6 +31,8 @@
     }
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
