@@ -66,6 +66,21 @@ contrats et les parcours d'authentification existants restent inchangés. Les
 tests statiques/HTML ne remplacent pas une recette native desktop/mobile et ne
 certifient ni une authentification réelle ni un déploiement.
 
+### Composed Login candidate / Candidat Login composé
+
+The reference scale, route accessibility checks and published shared UI 0.6.10
+are exercised together. The actual-browser scope now checks the computed 17px
+root scale on every declared route/state, including real browser zoom, rather
+than inferring it from source CSS. Existing standalone authentication screens,
+auth/proxy/session logic and the already integrated Node/BuildKit packaging
+remain unchanged. Keep issue #144, Login accessibility #138 and cross-frontend
+alignment #142 open until their own remaining criteria and integration pass.
+
+La recette combinée ne remplace pas les preuves historiques des branches
+isolées : chaque résultat garde son commit et son périmètre. Les vérifications
+automatisées et réponses de test ne certifient ni une connexion réelle, ni RGAA,
+ni une livraison `main`/locale. Ne pas contourner une CI de sécurité rouge.
+
 The legacy required `CICD / Code Security Audit (Semgrep)` check runs both real
 blocking scanners from immutable reviewed CICD actions, with read-only checkout
 permissions and full frontend history. The shared v4 audit remains enabled;

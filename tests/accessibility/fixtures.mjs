@@ -189,11 +189,15 @@ export async function inspect(page, mode, testInfo, state) {
   const metrics = await page.evaluate(() => ({
     width: innerWidth, documentWidth: document.documentElement.scrollWidth,
     dpr: devicePixelRatio, cssZoom: getComputedStyle(document.documentElement).zoom,
+    rootFontSize: getComputedStyle(document.documentElement).fontSize,
   }));
   // Detect ignored native zoom preferences; CSS zoom/DPI/pinch are not substitutes.
   expect(metrics.dpr).toBeCloseTo(mode.zoom, 1);
   expect(metrics.width).toBeCloseTo(mode.width / mode.zoom, 0);
   expect(Number(metrics.cssZoom)).toBe(1);
+  // Exercise the composed typography + published UI candidate on every route/state.
+  // Native zoom must change browser geometry, never this reference CSS scale.
+  expect(metrics.rootFontSize).toBe('17px');
   expect(metrics.documentWidth).toBeLessThanOrEqual(metrics.width);
   const boxes = await page.locator('input, button, h1, label, p, img').evaluateAll((elements) => elements.filter((element) => element.getClientRects().length).map((element) => {
     const rect = element.getBoundingClientRect();
