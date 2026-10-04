@@ -2,6 +2,11 @@
 
 @source "../../node_modules/@mairie360/lib-components/dist/";
 
+/* Preserve the reference form scale without loading demo preferences or AppShell. */
+html {
+  font-size: 17px;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
