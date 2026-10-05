@@ -22,7 +22,9 @@ export default function Logout({ navigate = goToLogin }: LogoutProps) {
         credentials: "same-origin",
         cache: "no-store",
       });
-      if (!upstream.ok) throw new Error("BFF logout failed");
+      // A rejected session must not trap the user with stale local cookies.
+      // Clearing them on HTTP 401 is local recovery, not proof of server-side revocation.
+      if (!upstream.ok && upstream.status !== 401) throw new Error("BFF logout failed");
 
       const local = await fetch("/api/auth/logout", {
         method: "POST",

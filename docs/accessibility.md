@@ -27,6 +27,7 @@ pages. They are not omitted UI routes or accessibility exemptions.
 | `/` | Destination configuration unavailable | Separate frontend process without Dashboard URL, meaningful heading/message, no form |
 | `/logout` | Pending | Delayed first response, real live status |
 | `/logout` | Upstream refused | HTTP 503, alert/retry, local cookie-expiry request not attempted |
+| `/logout` → `/` | Already rejected session | HTTP401 then confirmed local cookie expiry; standalone sign-in, no server-revocation claim |
 | `/logout` | Local expiry refused | HTTP 503, alert/retry, no navigation |
 | `/logout` → `/` | Success after keyboard retry | Existing request order, observed root navigation and sign-in rendered |
 

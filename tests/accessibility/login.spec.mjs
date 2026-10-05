@@ -147,6 +147,34 @@ for (const mode of modes) {
       } finally { gate.release(); }
     });
 
+    test('already rejected sign-out waits for confirmed local expiry and supports explicit retry', async ({ page, frontend }, info) => {
+      const gate = deferred();
+      const upstream = await responses(page, frontend.origin, '/auth/logout', [
+        { status: 401, json: { message: 'Session déjà refusée.' } },
+        { status: 401, json: { message: 'Session déjà refusée.' } },
+      ]);
+      const local = await responses(page, frontend.origin, '/api/auth/logout', [
+        { gate, status: 503 }, { json: { success: true } },
+      ]);
+      try {
+        await page.goto(`${frontend.origin}/logout`);
+        await expect.poll(() => local.length).toBe(1);
+        await expect(page.getByRole('status')).toHaveText('Déconnexion en cours…');
+        await inspect(page, mode, info, 'rejected-session-local-expiry-pending');
+        gate.release();
+        await expect(page.getByRole('main').getByRole('alert')).toHaveText('La déconnexion n’a pas abouti. Veuillez réessayer.');
+        await expect(page).toHaveURL(`${frontend.origin}/logout`);
+        expect(upstream).toHaveLength(1);
+        await inspect(page, mode, info, 'rejected-session-local-expiry-refused');
+        await page.getByRole('button', { name: 'Réessayer' }).press('Enter');
+        await expect(page).toHaveURL(`${frontend.origin}/`);
+        await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
+        await inspect(page, mode, info, 'rejected-session-standalone-return');
+        expect(upstream).toHaveLength(2);
+        expect(local).toHaveLength(2);
+      } finally { gate.release(); }
+    });
+
     test.describe('missing frontend destination', () => {
       test.use({ configured: false });
       test('unavailable configuration has meaningful standalone content', async ({ page, frontend }, info) => {
