@@ -174,6 +174,78 @@ test('an empty first-password submission is rejected without locking or sending 
   assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.disabled, false);
 });
 
+// Defensive browser-response tests, not BFF fixtures: real frontend handlers always supply a message.
+test('sign-in without an error message keeps generic feedback and unlocks the form', async () => {
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login') {
+      this.browserCalls.push({ method: init.method, path: input });
+      return Response.json({}, { status: 400 });
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    assert.match(view.text(), /La connexion a échoué\./);
+    assert.match(view.html, /role="alert"/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(view.hostElements((props) => props.id === 'password')[0].props.disabled, false);
+    assert.equal(front.browserCalls.length, 1);
+    assert.deepEqual(bff.requests, []);
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+});
+
+test('first-password refusal without a message keeps the draft for an explicit retry', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/force_change_password') {
+      this.browserCalls.push({ method: init.method, path: input });
+      return Response.json({}, { status: 400 });
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await submit();
+    assert.match(view.text(), /Le mot de passe n’a pas pu être modifié\./);
+    assert.match(view.html, /role="alert"/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    for (const id of ['new-password', 'new-password-confirmation']) {
+      const [input] = view.hostElements((props) => props.id === id);
+      assert.equal(input.props.value, 'N3w-secret');
+      assert.equal(input.props.disabled, false);
+    }
+    assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
+    assert.equal(front.browserCalls.length, 2);
+    assert.equal(bff.requests.length, 1, 'the faulty browser response never reached the handler');
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+  bff.on('POST', '/auth/force_change_password', { status: 204 });
+  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } });
+  await submit();
+  assert.equal(front.browserCalls.length, 4);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.equal(front.cookies.get('passwordChangeToken'), undefined);
+  assert.match(view.text(), /Connexion réussie\./);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
 test('a refused first-password mutation keeps the draft, and an expired token returns to standalone sign-in', async () => {
   bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
   bff.on('POST', '/auth/force_change_password', validatedError(400, 'Disposable refusal'));

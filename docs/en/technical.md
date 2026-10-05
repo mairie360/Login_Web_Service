@@ -177,6 +177,8 @@ Coverage only counts modules loaded by a test. `tests/login-page-html.test.cjs` 
 
 Pending/recovery regressions hold validated HTTP mock replies behind explicitly released gates rather than racing timers. They assert disabled credential fields, `aria-busy`, repeated-submit suppression, empty first-password validation, preserved refused drafts, expired-token return and a lock spanning confirmation plus dependent sign-in. Browser transport failures are injected only in the disposable browser adapter before a handler is reached; explicit retry uses the real existing frontend handler against the contract mock. No product API/BFF, authentication/session behavior or coverage threshold is changed, and no mutation is automatically replayed. Test gates/adapters are restored and HTTP mocks stopped after use.
 
+Two defensive consumer tests inject a failed browser response without a `message` before reaching a handler. They verify generic error feedback, unlocked fields and preserved first-password drafts, then restore the adapter for an explicit retry through the real handler and contract mock. These empty bodies are **not** BFF fixtures or evidence of a published server response: the actual frontend handlers always supply their own message. The transpiling Node harness currently reports generated-code offsets against source files; inspect the executed branch before interpreting an uncovered source line. No coverage file is hand-edited, no branch excluded and no threshold reduced.
+
 For documentation-only changes, check links, accuracy in both languages and `git diff --check`; do not regenerate contracts without changing the package version.
 
 ## CI/CD and Docker execution
