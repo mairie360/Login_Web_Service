@@ -14,8 +14,10 @@ Domaine fonctionnel: Identité et administration.
 
 - Formulaire de connexion avec remontée des erreurs serveur.
 - Écrans de connexion, de premier changement de mot de passe, de configuration indisponible et de déconnexion autonomes : aucun AppShell, header, sidebar ou footer applicatif avant le retour vers un module authentifié.
+- Pendant la connexion ou la confirmation du premier mot de passe, les champs et le bouton sont désactivés et le formulaire annonce son attente. Un verrou synchrone ignore les soumissions répétées, y compris pendant la reconnexion automatique dépendante. Un refus réseau efface le message de reconnexion devenu obsolète et permet une reprise explicite, sans rejouer automatiquement une mutation.
 - Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
 - Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le tableau de bord configuré.
+- La déconnexion centrale revient vers Login standalone après un succès amont ou401 d'une session déjà refusée, uniquement après confirmation de l'expiration des deux cookies par la route locale existante. Un403, un échec service/réseau ou un refus d'expiration locale conserve l'erreur et l'action Réessayer. Le nettoyage local ne prouve pas la révocation des jetons côté serveur ni des sessions Keycloak/n8n (MAIR-143).
 
 ## Parcours type
 

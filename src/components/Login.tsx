@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Button } from "@mairie360/lib-components";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 type LoginResponse = {
   success?: boolean;
@@ -30,6 +30,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const submissionPending = useRef(false);
 
   const redirectAfterLogin = () => {
     if (redirectUrl) {
@@ -70,6 +71,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submissionPending.current) return;
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -78,19 +80,23 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
       return;
     }
 
+    submissionPending.current = true;
     setIsLoading(true);
 
     try {
       await loginWithPassword(password);
     } catch {
+      setSuccessMessage("");
       setErrorMessage("Impossible de joindre le service de connexion.");
     } finally {
+      submissionPending.current = false;
       setIsLoading(false);
     }
   };
 
   const handlePasswordChange = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submissionPending.current) return;
     setErrorMessage("");
     setSuccessMessage("");
 
@@ -104,6 +110,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
       return;
     }
 
+    submissionPending.current = true;
     setIsLoading(true);
 
     try {
@@ -138,8 +145,10 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
       setSuccessMessage("Mot de passe modifié. Connexion en cours…");
       await loginWithPassword(updatedPassword);
     } catch {
+      setSuccessMessage("");
       setErrorMessage("Impossible de joindre le service de connexion.");
     } finally {
+      submissionPending.current = false;
       setIsLoading(false);
     }
   };
@@ -159,6 +168,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
         // method="post" : si le JavaScript n'est pas exécuté (robot, JS désactivé),
         // une soumission native ne doit jamais placer les identifiants dans l'URL.
         method="post"
+        aria-busy={isLoading}
         onSubmit={isPasswordChange ? handlePasswordChange : handleLogin}
         className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0"
       >
@@ -185,6 +195,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 autoComplete="new-password"
+                disabled={isLoading}
                 required
                 className={inputClassName}
               />
@@ -205,6 +216,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
                   setNewPasswordConfirmation(event.target.value)
                 }
                 autoComplete="new-password"
+                disabled={isLoading}
                 required
                 className={inputClassName}
               />
@@ -223,6 +235,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
+                disabled={isLoading}
                 placeholder="exemple@domaine.com"
                 required
                 className={inputClassName}
@@ -241,6 +254,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
+                disabled={isLoading}
                 required
                 className={inputClassName}
               />

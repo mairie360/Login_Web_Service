@@ -19,6 +19,12 @@ Les guides décrivent le module implémenté, ses limites actuelles, le démarra
 
 `npm test` runs the contract/security Node tests and the Vitest component/accessibility suite. Use `npm run test:node` or `npm run test:components` to run one group independently. Component tests stub the existing frontend auth proxy and use synthetic credentials only inside tests; they do not change the BFF contract or production data.
 
+`npm run test:accessibility` additionally checks actual compiled Login UI routes
+in Chromium with full-page axe, keyboard flows, 320px reflow, native 200% browser
+zoom and text spacing. Build first; see [the declared scope and limits](docs/accessibility.md)
+for isolated fixtures, temporary evidence and manual criteria. This is not a
+blanket RGAA or authentication compliance claim.
+
 ## Contracts and background / Contrats et compléments
 
 ### Image packaging (MAIR-436 / issue #139)
@@ -43,6 +49,38 @@ npm credentials. Complete app image build/push, blocking Trivy and signature
 must be verified separately in the existing main pipeline before closing #139.
 Login remains standalone without AppShell, header, sidebar or footer.
 
+### Reference font scale (MAIR-462)
+
+The standalone authentication screens retain the preserved prototype's default
+17px root scale. Rem-based text and form fields inherit that scale; the existing
+Arial/Helvetica font family, contrast, authentication logic and redirect policy
+are unchanged. No demo preferences, demonstration data or pre-authentication
+navigation are loaded. `tests/login-presentation.test.cjs` guards the scale and
+font family; `tests/login-page-html.test.cjs` guards the absence of AppShell on
+sign-in, first connection and unavailable states. Native responsive checks must
+also verify computed font size, keyboard validation and horizontal overflow.
+
+Les écrans de connexion conservent la base de 17 px du prototype, sans rétablir
+son AppShell ni ses préférences de démonstration. La police, le contraste, les
+contrats et les parcours d'authentification existants restent inchangés. Les
+tests statiques/HTML ne remplacent pas une recette native desktop/mobile et ne
+certifient ni une authentification réelle ni un déploiement.
+
+### Composed Login candidate / Candidat Login composé
+
+The reference scale, route accessibility checks and published shared UI 0.6.10
+are exercised together. The actual-browser scope now checks the computed 17px
+root scale on every declared route/state, including real browser zoom, rather
+than inferring it from source CSS. Existing standalone authentication screens,
+auth/proxy/session logic and the already integrated Node/BuildKit packaging
+remain unchanged. Keep issue #144, Login accessibility #138 and cross-frontend
+alignment #142 open until their own remaining criteria and integration pass.
+
+La recette combinée ne remplace pas les preuves historiques des branches
+isolées : chaque résultat garde son commit et son périmètre. Les vérifications
+automatisées et réponses de test ne certifient ni une connexion réelle, ni RGAA,
+ni une livraison `main`/locale. Ne pas contourner une CI de sécurité rouge.
+
 The legacy required `CICD / Code Security Audit (Semgrep)` check runs both real
 blocking scanners from immutable reviewed CICD actions, with read-only checkout
 permissions and full frontend history. The shared v4 audit remains enabled;
@@ -55,3 +93,19 @@ no required status is synthesized, removed or bypassed when its name changes.
 `BACKEND.md`, when present, includes proposed backend requirements; use the guides and versioned OpenAPI contract to identify current behavior.
 
 `BACKEND.md`, lorsqu’il est présent, contient des besoins backend proposés; consulter les guides et le contrat OpenAPI versionné pour identifier le comportement actuel.
+
+## Shared UI alignment / Alignement UI partagé — MAIR-180
+
+This consumer pins the published `@mairie360/lib-components@0.6.10`, including
+its exact download URL and SHA512 integrity. Only the shared UI entry changes
+in the lockfile; all other dependencies and security policies are preserved.
+Tracking: [MAIR-180](https://mairie-360.atlassian.net/browse/MAIR-180) and
+[cross-frontend issue](https://github.com/mairie360/Login_Web_Service/issues/142).
+Login stays standalone without header/sidebar/footer; authenticated module
+shells and the existing Elearning confirmation/rating features are preserved.
+No API/BFF, contract, runtime configuration, demo data or deployment approval change.
+
+Le pin exact et l'intégrité du package publié sont alignés sur Elearning sans
+le rétrograder. Les tests de release vérifient le manifeste, le lockfile et le
+vrai package installé. Une validation isolée ne remplace pas la CI verte,
+l'intégration des sept consommateurs et la recette de la copie locale livrée.

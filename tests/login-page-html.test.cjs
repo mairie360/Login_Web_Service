@@ -74,6 +74,264 @@ const renderLogin = async (searchParams = {}) => {
   view = mount(React.createElement(RootLayout, null, await Home({ searchParams: Promise.resolve(searchParams) })));
 };
 
+const assertPending = (ids) => {
+  assert.match(view.html, /<form[^>]*aria-busy="true"/);
+  for (const id of ids) {
+    const [input] = view.hostElements((props, _text, tag) => tag === 'input' && props.id === id);
+    assert.equal(input?.props.disabled, true, `${id} must be locked while a request is pending`);
+  }
+  const [button] = view.hostElements((props, _text, tag) => tag === 'button' && props.type === 'submit');
+  assert.equal(button?.props.disabled, true);
+};
+
+const validatedError = (status, message) => {
+  const reply = apiError(status, message);
+  assert.deepEqual(contract.validate(contract.document.components.schemas.ApiErrorResponse, reply.body), []);
+  return reply;
+};
+
+// Hold a validated HTTP mock reply without racing a timer; never alter a product/BFF handler.
+const holdMockReply = (pathname) => {
+  const previousReply = bff.reply;
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  bff.reply = async function (req, res, method, reply) {
+    if (new URL(req.url, this.url).pathname === pathname) await gate;
+    return previousReply.call(this, req, res, method, reply);
+  };
+  return { release, restore() { release(); bff.reply = previousReply; } };
+};
+
+test('pending sign-in locks credentials, ignores repeated submissions and allows only an explicit retry', async () => {
+  const gate = holdMockReply('/auth/login');
+  bff.on('POST', '/auth/login', validatedError(401, 'Refused disposable login'));
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'wrong');
+  const first = submit();
+  try {
+    await view.waitFor((html) => html.includes('aria-busy="true"'));
+    assertPending(['email', 'password']);
+    await submit();
+    assert.equal(front.browserCalls.length, 1);
+  } finally {
+    gate.release();
+    try { await first; } finally { gate.restore(); }
+  }
+  assert.match(view.html, /Email ou mot de passe incorrect/);
+  assert.match(view.html, /aria-busy="false"/);
+  assert.equal(view.hostElements((props) => props.id === 'email')[0].props.disabled, false);
+  assert.equal(bff.requests.length, 1);
+  assert.deepEqual(window.location.assigned, []);
+  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  await submit();
+  assert.equal(front.browserCalls.length, 2);
+  assert.equal(bff.requests.length, 2);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('a browser transport failure releases sign-in and supports a subsequent explicit attempt', async () => {
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login') {
+      this.browserCalls.push({ method: init.method, path: input });
+      throw new TypeError('Disposable browser transport failure before reaching the frontend handler');
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    assert.match(view.html, /Impossible de joindre le service de connexion/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(front.browserCalls.length, 1);
+    assert.deepEqual(bff.requests, []);
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  await submit();
+  assert.equal(front.browserCalls.length, 2);
+  assert.equal(bff.requests.length, 1);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('an empty first-password submission is rejected without locking or sending a mutation', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await submit();
+  assert.match(view.html, /Veuillez renseigner votre nouveau mot de passe/);
+  assert.match(view.html, /aria-busy="false"/);
+  assert.equal(front.browserCalls.length, 1);
+  assert.equal(bff.requests.length, 1);
+  assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.disabled, false);
+});
+
+// Defensive browser-response tests, not BFF fixtures: real frontend handlers always supply a message.
+test('sign-in without an error message keeps generic feedback and unlocks the form', async () => {
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login') {
+      this.browserCalls.push({ method: init.method, path: input });
+      return Response.json({}, { status: 400 });
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    assert.match(view.text(), /La connexion a échoué\./);
+    assert.match(view.html, /role="alert"/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(view.hostElements((props) => props.id === 'password')[0].props.disabled, false);
+    assert.equal(front.browserCalls.length, 1);
+    assert.deepEqual(bff.requests, []);
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+});
+
+test('first-password refusal without a message keeps the draft for an explicit retry', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/force_change_password') {
+      this.browserCalls.push({ method: init.method, path: input });
+      return Response.json({}, { status: 400 });
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await submit();
+    assert.match(view.text(), /Le mot de passe n’a pas pu être modifié\./);
+    assert.match(view.html, /role="alert"/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    for (const id of ['new-password', 'new-password-confirmation']) {
+      const [input] = view.hostElements((props) => props.id === id);
+      assert.equal(input.props.value, 'N3w-secret');
+      assert.equal(input.props.disabled, false);
+    }
+    assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
+    assert.equal(front.browserCalls.length, 2);
+    assert.equal(bff.requests.length, 1, 'the faulty browser response never reached the handler');
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+  bff.on('POST', '/auth/force_change_password', { status: 204 });
+  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } });
+  await submit();
+  assert.equal(front.browserCalls.length, 4);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.equal(front.cookies.get('passwordChangeToken'), undefined);
+  assert.match(view.text(), /Connexion réussie\./);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('a refused first-password mutation keeps the draft, and an expired token returns to standalone sign-in', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  bff.on('POST', '/auth/force_change_password', validatedError(400, 'Disposable refusal'));
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  await submit();
+  assert.match(view.text(), /Le nouveau mot de passe est invalide\./);
+  assert.match(view.html, /role="alert"/);
+  assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.value, 'N3w-secret');
+  assert.equal(view.hostElements((props) => props.id === 'new-password-confirmation')[0].props.value, 'N3w-secret');
+  assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
+  assert.equal(front.browserCalls.length, 2);
+  assert.deepEqual(window.location.assigned, []);
+  bff.on('POST', '/auth/force_change_password', validatedError(403, 'Disposable expired token'));
+  await submit();
+  assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
+  assert.match(view.html, /role="alert"/);
+  assert.match(view.text(), /Le lien de changement de mot de passe est invalide ou expiré\. Reconnectez-vous\./);
+  assert.doesNotMatch(view.html, /id="new-password"|N3w-secret/);
+  assert.equal(front.cookies.get('passwordChangeToken'), undefined);
+  assert.equal(front.browserCalls.length, 3);
+  assert.equal(bff.requests.length, 3);
+  assert.deepEqual(window.location.assigned, []);
+});
+
+test('one lock spans first-password confirmation and lost reconnection without stale success feedback or replay', async () => {
+  const confirmation = holdMockReply('/auth/force_change_password');
+  const originalFetch = front.fetch;
+  let release;
+  const reconnect = new Promise((resolve) => { release = resolve; });
+  let logins = 0;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login' && ++logins === 2) {
+      this.browserCalls.push({ method: init.method, path: input });
+      await reconnect;
+      throw new TypeError('Disposable browser transport failure on dependent reconnection');
+    }
+    return originalFetch.call(this, input, init);
+  };
+  let pending;
+  try {
+    bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+    bff.on('POST', '/auth/force_change_password', { status: 204 });
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    await typeInto('new-password', 'N3w-secret');
+    await typeInto('new-password-confirmation', 'N3w-secret');
+    pending = submit();
+    await view.waitFor((html) => html.includes('Modification…'));
+    assertPending(['new-password', 'new-password-confirmation']);
+    await submit();
+    assert.equal(front.browserCalls.length, 2);
+    confirmation.release();
+    await view.waitFor((html) => html.includes('Mot de passe modifié. Connexion en cours…'));
+    assertPending(['email', 'password']);
+    await submit();
+    assert.equal(front.browserCalls.length, 3);
+    release();
+    await pending;
+    assert.match(view.html, /Impossible de joindre le service de connexion/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(bff.requests.length, 2, 'lost browser transport never reached the BFF mock');
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    confirmation.release();
+    release();
+    try { await pending; } finally {
+      confirmation.restore();
+      front.fetch = originalFetch;
+    }
+  }
+  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } });
+  await submit();
+  assert.equal(front.browserCalls.length, 4);
+  assert.equal(bff.requests.length, 3);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
 test('missing or invalid default destinations render an unavailable state without a sign-in form', async () => {
   for (const value of [undefined, '', '  ', 'http://%', 'ftp://dashboard.mairie.test/', 'https://user:password@dashboard.mairie.test/']) {
     if (value === undefined) delete process.env.DASHBOARD_FRONT_URL;

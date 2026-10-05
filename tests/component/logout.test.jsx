@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Logout from '@/components/Logout';
 import LogoutPage from '@/app/logout/page';
+import { StrictMode } from 'react';
 
 let fetchMock;
 const response = (ok) => ({ ok });
@@ -56,5 +57,24 @@ describe('central logout handoff', () => {
 
     expect((await screen.findByRole('alert')).textContent).toContain('n’a pas abouti');
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('recovers an unauthorized session once even when StrictMode replays the mount effect', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 401 }).mockResolvedValueOnce(response(true));
+    const navigate = vi.fn();
+    render(<StrictMode><Logout navigate={navigate} /></StrictMode>);
+    await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith('/'));
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/auth/logout', '/api/auth/logout']);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('keeps the rejection visible when401 is followed by refused local expiry', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 401 }).mockResolvedValueOnce(response(false));
+    const navigate = vi.fn();
+    render(<Logout navigate={navigate} />);
+    await screen.findByRole('alert');
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/auth/logout', '/api/auth/logout']);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Réessayer' }).disabled).toBe(false);
   });
 });
