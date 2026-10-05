@@ -24,12 +24,17 @@ for (const mode of modes) {
         await enterCredentials(page);
         await page.getByRole('button', { name: 'Se connecter' }).press('Enter');
         await expect(page.getByRole('button', { name: 'Connexion…' })).toBeDisabled();
+        await expect(page.getByLabel('Email professionnel')).toBeDisabled();
+        await expect(page.getByLabel('Mot de passe', { exact: true })).toBeDisabled();
+        await expect(page.locator('form')).toHaveAttribute('aria-busy', 'true');
         await inspect(page, mode, info, 'sign-in-pending');
         gate.release();
         await expect(page.getByRole('main').getByRole('alert')).toHaveText('Identifiants refusés.');
         await inspect(page, mode, info, 'sign-in-refused');
         expect(calls).toEqual([credentials]);
         await expect(page.getByRole('button', { name: 'Se connecter' })).toBeEnabled();
+        await expect(page.getByLabel('Email professionnel')).toBeEnabled();
+        await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
       } finally { gate.release(); }
     });
 
@@ -60,6 +65,8 @@ for (const mode of modes) {
         await page.getByLabel('Confirmer le mot de passe').fill(updatedPassword);
         await page.getByRole('button', { name: 'Modifier le mot de passe' }).click();
         await expect(page.getByRole('button', { name: 'Modification…' })).toBeDisabled();
+        await expect(page.getByLabel('Nouveau mot de passe', { exact: true })).toBeDisabled();
+        await expect(page.getByLabel('Confirmer le mot de passe')).toBeDisabled();
         await inspect(page, mode, info, 'password-pending');
         gate.release();
         await expect(page.getByRole('main').getByRole('alert')).toHaveText('Le nouveau mot de passe est refusé.');
@@ -90,6 +97,8 @@ for (const mode of modes) {
         await page.getByLabel('Confirmer le mot de passe').fill(updatedPassword);
         await page.getByRole('button', { name: 'Modifier le mot de passe' }).click();
         await expect(page.getByRole('status')).toHaveText('Mot de passe modifié. Connexion en cours…');
+        await expect(page.getByLabel('Email professionnel')).toBeDisabled();
+        await expect(page.getByLabel('Mot de passe', { exact: true })).toBeDisabled();
         await inspect(page, mode, info, 'password-success-reconnecting');
         signInGate.release();
         await expect(page).toHaveURL(destination);

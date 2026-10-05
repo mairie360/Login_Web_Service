@@ -14,6 +14,7 @@ Business domain: Identity and administration.
 
 - Sign-in form with server error feedback.
 - Standalone sign-in, first-password-change, unavailable-configuration and logout screens: no application AppShell, header, sidebar or footer before returning to an authenticated module.
+- While sign-in or first-password confirmation is pending, all credential fields and the submit button are disabled and the form announces its busy state. A synchronous guard suppresses repeated submissions, including during the dependent automatic sign-in. A transport failure clears stale reconnecting feedback and enables an explicit retry; it never replays a mutation automatically.
 - First-sign-in flow with a temporary token and a new password.
 - Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Dashboard module.
 
