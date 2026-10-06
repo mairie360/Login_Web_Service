@@ -1,15 +1,10 @@
 # Stack de test de performance ISOLÉE pour le front Login (Login_Web_Service).
 #
-#   ./performance_test.sh          (local, NODE_AUTH_TOKEN exporté pour le build)
-#   docker compose -f docker-compose-performance.yml up --build \
-#       --abort-on-container-exit --exit-code-from k6-perf-test   (CI)
+#   ./performance_test.sh          (local: builds the front when IMAGE_REF is empty,
+#                                   NODE_AUTH_TOKEN exported for the build)
+#   IMAGE_REF=<image>:dev-<sha> ./performance_test.sh   (CI, MAIR-317: the published image)
 #
-# k6-perf-test sort en échec si un seuil de load-test.js est dépassé.
-# TARGET_IMAGE (optionnel) : image front pré-construite à tester au lieu du build local.
-
-secrets:
-  node_auth_token:
-    environment: NODE_AUTH_TOKEN
+# k6-perf-test fails when a threshold of load-test.js is exceeded.
 
 volumes:
   postgres-data:
@@ -166,14 +161,9 @@ services:
       - backend
 
   login-front:
-    image: ${TARGET_IMAGE:-login-front:perf}
+    # Published image (dev-<sha> in the CI, MAIR-317); the test script builds one locally.
+    image: ${IMAGE_REF:?IMAGE_REF must name the front image to test}
     container_name: login-front-perf-front
-    # Image de production (Next.js standalone), identique à celle publiée par la CI.
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - node_auth_token
     depends_on:
       bff-user-ready:
         condition: service_completed_successfully
