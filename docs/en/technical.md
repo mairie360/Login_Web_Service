@@ -150,6 +150,22 @@ These data paths are exposed at the same origin through the proxy; Next.js pages
 
 ## Session, permissions and errors
 
+`Logout.tsx` starts the existing `POST /auth/logout` only from an explicit
+button action, never from a mount effect. A synchronous ref guards the whole
+upstream → local `POST /api/auth/logout` → `location.replace('/')` chain,
+including repeated clicks and the navigation handoff. HTTP401 follows the
+same local-cleanup path as success; other upstream refusals and local-expiry
+failures release the guard for an explicit retry without claiming success.
+No route handler, proxy, cookie policy or published contract is changed.
+
+The real consumer HTTP tests load `Login.tsx` and `Logout.tsx` through the TSX
+loader, retaining inline source maps so Node coverage counts their actual
+source lines. Existing 60% gates remain unchanged. Error-status mocks use
+explicit contract exceptions with validated `ApiErrorResponse` bodies.
+Native loopback verification uses a disposable cookie jar; it is not proof
+of real authentication, global revocation or deployment. RGAA work remains
+separate; existing main checks are neither disabled nor reconfigured.
+
 The `accessToken` cookie is HttpOnly, SameSite strict, scoped to `/` and Secure in production. Its lifetime never exceeds the JWT `exp` or 24 hours; opaque or malformed access tokens receive a one-hour fallback, and expired JWTs are rejected. It comes only from the sign-in response’s Bearer header. The contract-required `refresh_token` is kept in a separate HttpOnly, SameSite strict, session-only `refreshToken` cookie scoped to `/api` on the same configured domain; it is never returned to browser JavaScript. Login rejects a missing or malformed refresh token instead of opening a partial session. Logout expires both cookies. This storage does not yet enable transparent refresh or prove server-side revocation: those require the separately published BFF contract and shared proxy. `passwordChangeToken` is HttpOnly, scoped to `/api/auth` and expires after 10 minutes. Successful password change removes that cookie; the sign-in flow must then be completed. Dedicated adapters have a 10-second timeout and distinguish 502 and 504.
 
 The generic proxy returns 400 for an invalid path, 404 for a path outside the contract, 405 for a disallowed method and 502 when the service is unreachable or times out. Upstream responses are preserved, including empty 204/205/304 bodies.
@@ -171,7 +187,7 @@ npm run build
 
 The package contains orval TypeScript, not `openapi.json`: [scripts/orval-contract.mjs](../../scripts/orval-contract.mjs) rebuilds the OpenAPI document from it and `contracts:sync` writes it to `contracts/openapi.json` (read by the proxy and the tests). `contracts:check` fails if the version is not exact, if the installed package differs from `package.json`, if a second `@mairie360/bff-*-openapi` package appears or if the snapshot is stale. Route handlers import their types from `@mairie360/bff-user-openapi/model`. Also move the `bff-user` image tag of the `docker-compose*.yml` files to the same version. `npm test` runs the Node tests and fails below 60% line, branch or function coverage of `src/**` (`test:contracts` runs the same tests without coverage).
 
-Unit tests run the route handlers and the proxy with the real `fetch` against a fake BFF User served over HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) and driven by `contracts/openapi.json`: any request outside the contract (path, method, parameter, body), any mocked response that does not match its declared status, or any call to another origin fails the test. Error responses, which the package does not type, are checked against its `ApiErrorResponse` model. Every contract operation is exercised through the proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventories every network call in `src/` (server and browser): each must target a contract operation or a local route handler, BFF User is the only BFF and the proxy is the only dynamic call allowed. [tests/package-contract.test.cjs](../../tests/package-contract.test.cjs) checks the exact version, the snapshot and the Docker image tags. Coverage only counts modules loaded by a test; React components (`.tsx`) are not measured.
+Unit tests run the route handlers and the proxy with the real `fetch` against a fake BFF User served over HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) and driven by `contracts/openapi.json`: any request outside the contract (path, method, parameter, body), any mocked response that does not match its declared status, or any call to another origin fails the test. Error responses, which the package does not type, are checked against its `ApiErrorResponse` model. Every contract operation is exercised through the proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventories every network call in `src/` (server and browser): each must target a contract operation or a local route handler, BFF User is the only BFF and the proxy is the only dynamic call allowed. [tests/package-contract.test.cjs](../../tests/package-contract.test.cjs) checks the exact version, the snapshot and the Docker image tags. Coverage counts loaded modules, including the real Login and Logout TSX source loaded by their HTTP consumer suites; it does not certify every component or a deployed browser session.
 
 For documentation-only changes, check links, accuracy in both languages and `git diff --check`; do not regenerate contracts without changing the package version.
 

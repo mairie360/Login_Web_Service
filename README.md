@@ -21,6 +21,24 @@ Les guides décrivent le module implémenté, ses limites actuelles, le démarra
 
 ## Contracts and background / Contrats et compléments
 
+### Functional-only stabilization (MAIR-403 / MAIR-143)
+
+Opening `/logout` waits for **Se déconnecter**; it makes no mount-time request.
+A synchronous single-flight guard covers the existing upstream call, local
+cookie expiry and return to standalone Login. A rejected session (HTTP401)
+still requires successful local expiry; other refusals offer explicit retry.
+Pending sign-in/password-change requests also reject duplicate submissions
+and freeze their inputs. No frontend HTTP adapter, API/BFF, contract, security
+check, workflow or deployment configuration changes in this correction.
+
+Ouvrir `/logout` reste sans effet jusqu'au clic **Se déconnecter**. La garde
+synchrone couvre aussi l'expiration locale et le retour à Login ; les refus
+permettent une reprise explicite sans faux succès. Les champs de connexion
+restent figés pendant l'envoi. Les tests HTTP mesurent réellement les TSX,
+avec les seuils existants inchangés ; les cookies jetables de recette ne
+prouvent pas une révocation réelle. Les nouveaux travaux RGAA de la branche
+mixte restent séparés et les contrôles présents sur main sont conservés.
+
 ### Image packaging (MAIR-436 / issue #139)
 
 Docker and the CICD, contracts and Next.js workflows use Node 24.21.0. The

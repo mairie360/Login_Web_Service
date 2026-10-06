@@ -11,7 +11,7 @@
     "contracts:check": "node scripts/contracts.mjs --check",
     "contracts:sync": "node scripts/contracts.mjs --sync",
     "test:contracts": "node --test tests/*.test.cjs",
-    "test:node": "mkdir -p coverage && node --test --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
+    "test:node": "mkdir -p coverage && node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
     "test:components": "vitest run",
     "test": "npm run test:node && npm run test:components"
   },

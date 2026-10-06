@@ -150,6 +150,23 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 
 ## Session, permissions et erreurs
 
+`Logout.tsx` lance le `POST /auth/logout` existant uniquement sur une action
+explicite, jamais dans un effet de montage. Une ref synchrone protège toute
+la chaîne amont → `POST /api/auth/logout` local → `location.replace('/')`,
+y compris les clics répétés et le passage à la navigation. HTTP401 suit le
+même nettoyage local qu'un succès ; les autres refus amont et les échecs
+d'expiration libèrent la garde pour une reprise explicite, sans faux succès.
+Aucun route handler, proxy, contrat publié ou règle de cookie ne change.
+
+Les tests HTTP du vrai consommateur chargent `Login.tsx` et `Logout.tsx` avec
+les source maps TSX embarquées : la couverture Node mesure leurs vraies
+lignes source. Les seuils existants de 60 % restent inchangés. Les statuts
+d'erreur mockés sont des exceptions explicites au contrat avec corps
+`ApiErrorResponse` validé. La recette native loopback utilise des cookies
+jetables, sans certifier une authentification réelle, une révocation globale
+ou un déploiement. Les travaux RGAA restent séparés ; les contrôles déjà
+sur main ne sont ni désactivés ni reconfigurés.
+
 Le cookie `accessToken` est HttpOnly, SameSite strict, limité à `/` et Secure en production. Sa durée ne dépasse jamais l’expiration `exp` du JWT ni 24 heures ; un jeton opaque ou malformé reçoit une durée de repli d’une heure et un JWT expiré est refusé. Il provient uniquement de l’en-tête Bearer de la réponse de connexion. Le `refresh_token` obligatoire du contrat est conservé séparément dans un cookie de session `refreshToken`, HttpOnly, SameSite strict et limité à `/api` sur le même domaine configuré ; il n’est jamais renvoyé au JavaScript du navigateur. Un refresh token absent ou malformé empêche la création d’une session partielle. La déconnexion expire les deux cookies. Ce stockage n’active pas encore le renouvellement transparent et ne prouve pas la révocation côté serveur : il faut pour cela le contrat BFF publié et le proxy partagé prévus séparément. `passwordChangeToken` est HttpOnly, limité à `/api/auth` et expire après 10 minutes. Le succès du changement de mot de passe supprime ce cookie ; il faut ensuite terminer le parcours de connexion. Les adaptateurs dédiés ont un délai de 10 secondes et distinguent 502 et 504.
 
 Le proxy générique répond 400 pour un chemin invalide, 404 pour un chemin hors contrat, 405 pour une méthode interdite et 502 si le service est injoignable ou dépasse le délai. Les réponses amont sont conservées, y compris les corps vides 204/205/304.
@@ -171,7 +188,7 @@ npm run build
 
 Le paquet contient du TypeScript orval, pas de `openapi.json` : [scripts/orval-contract.mjs](../../scripts/orval-contract.mjs) en reconstruit le document OpenAPI et `contracts:sync` l’écrit dans `contracts/openapi.json` (lu par le proxy et les tests). `contracts:check` échoue si la version n’est pas exacte, si le paquet installé diffère de `package.json`, si un second paquet `@mairie360/bff-*-openapi` apparaît ou si la copie est périmée. Les route handlers importent leurs types depuis `@mairie360/bff-user-openapi/model`. Aligner aussi le tag de l’image `bff-user` des fichiers `docker-compose*.yml` sur la même version. `npm test` exécute les tests Node et échoue sous 60 % de couverture des lignes, branches ou fonctions de `src/**` (`test:contracts` lance les mêmes tests sans couverture).
 
-Les tests unitaires exécutent les route handlers et le proxy avec le vrai `fetch` contre un faux BFF User servi en HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) et piloté par `contracts/openapi.json` : toute requête hors contrat (chemin, méthode, paramètre, corps), toute réponse mockée non conforme au statut déclaré ou tout appel vers une autre origine fait échouer le test. Les réponses d’erreur, que le paquet ne type pas, sont vérifiées contre son modèle `ApiErrorResponse`. Chaque opération du contrat est exercée à travers le proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventorie tous les appels réseau de `src/` (serveur et navigateur) : chacun doit viser une opération du contrat ou un route handler local, BFF User est le seul BFF et le proxy est le seul appel dynamique autorisé. [tests/package-contract.test.cjs](../../tests/package-contract.test.cjs) vérifie la version exacte, la copie du contrat et les tags d’images Docker. La couverture ne compte que les modules chargés par un test ; les composants React (`.tsx`) ne sont pas mesurés.
+Les tests unitaires exécutent les route handlers et le proxy avec le vrai `fetch` contre un faux BFF User servi en HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) et piloté par `contracts/openapi.json` : toute requête hors contrat (chemin, méthode, paramètre, corps), toute réponse mockée non conforme au statut déclaré ou tout appel vers une autre origine fait échouer le test. Les réponses d’erreur, que le paquet ne type pas, sont vérifiées contre son modèle `ApiErrorResponse`. Chaque opération du contrat est exercée à travers le proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventorie tous les appels réseau de `src/` (serveur et navigateur) : chacun doit viser une opération du contrat ou un route handler local, BFF User est le seul BFF et le proxy est le seul appel dynamique autorisé. [tests/package-contract.test.cjs](../../tests/package-contract.test.cjs) vérifie la version exacte, la copie du contrat et les tags d’images Docker. La couverture compte les modules chargés, dont les vraies sources TSX Login et Logout de leurs suites HTTP consommateur ; elle ne certifie pas tous les composants ni une session navigateur déployée.
 
 Pour une modification uniquement documentaire, vérifier les liens, l’exactitude des deux langues et `git diff --check`; ne pas régénérer les contrats sans changer la version du paquet.
 
