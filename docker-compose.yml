@@ -37,7 +37,7 @@ x-service: &service-template
 
 services:
   postgres:
-    image: ghcr.io/mairie360/database:1.3.0
+    image: ghcr.io/mairie360/database:3.0.0
     restart: always
     container_name: mairie360-db-login-front #change front name
     environment:
@@ -57,7 +57,7 @@ services:
       retries: 5
 
   liquibase:
-    image: ghcr.io/mairie360/liquibase-migrations:1.3.0
+    image: ghcr.io/mairie360/liquibase-migrations:3.0.0
     container_name: mairie360-liquibase-login-front #change front name
     depends_on:
       postgres:
