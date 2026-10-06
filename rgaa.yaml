@@ -77,10 +77,20 @@ states:
     steps:
       - click: { role: button, name: Se connecter }
   - id: login-wrong-credentials
-    description: Error message after a refused login (the seed password of user 2 is not a valid hash)
+    description: Error message after a refused login (unknown account)
+    route: /
+    steps:
+      - fill: { label: Email professionnel, value: inconnu@mairie360.fr }
+      - fill: { label: Mot de passe, value: wrong-password }
+      - click: { role: button, name: Se connecter }
+      # The request is over when the button reads "Se connecter" again (it shows "Connexion…"
+      # meanwhile); the error region (role="alert") exists, empty, from the start.
+      - wait_for: { role: button, name: Se connecter, exact: true }
+  - id: login-password-change
+    description: Forced password change (bff-user answers 412 for the seed user 2)
     route: /
     steps:
       - fill: { label: Email professionnel, value: perf-tester@mairie360.fr }
-      - fill: { label: Mot de passe, value: wrong-password }
+      - fill: { label: Mot de passe, value: any-password }
       - click: { role: button, name: Se connecter }
-      - wait_for: { role: alert }
+      - wait_for: { label: Nouveau mot de passe }
