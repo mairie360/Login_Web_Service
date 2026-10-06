@@ -6,3 +6,8 @@ dist
 
 # testing
 /coverage
+
+# RGAA engine (mairie360/CICD tests/a11y): local clone, report and AI verdict cache
+/cicd-repo/
+/rgaa-report/
+/.rgaa-ai-cache/

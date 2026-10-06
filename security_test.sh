@@ -3,8 +3,17 @@
 COMPOSE_FILE="docker-compose-security.yml"
 SERVICE_NAME="security-scan"
 
+# The CI exports IMAGE_REF (the image published by release-dev, MAIR-317). Locally, build the
+# front from the Dockerfile (NODE_AUTH_TOKEN needed) and point the stack at it.
+if [ -z "${IMAGE_REF:-}" ]; then
+  echo "==> [0/4] Building login-front:local from the Dockerfile..."
+  docker build -t login-front:local --secret id=node_auth_token,env=NODE_AUTH_TOKEN . || exit 1
+  export IMAGE_REF="login-front:local"
+fi
+echo "==> Front under test: $IMAGE_REF"
+
 echo "==> [1/4] Démarrage de la stack et lancement du scan ZAP..."
-docker compose -f "$COMPOSE_FILE" up -d --build
+docker compose -f "$COMPOSE_FILE" up -d
 
 echo "==> [2/4] Attente de la fin du scan de sécurité..."
 docker compose -f "$COMPOSE_FILE" wait "$SERVICE_NAME"

@@ -44,11 +44,14 @@ jobs:
           fail_on_findings: "true"
 
   CICD:
-    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@v4.0.2
+    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@mair-320-rgaa-ai-preaudit  # TEMPORARY (MAIR-316): RGAA CI test, back to the release before merging
     with:
       package_name: "login-front"
       node_version: "24.21.0"
-      cicd_version: "v4.0.2"
+      cicd_version: "mair-320-rgaa-ai-preaudit"
+      # TEMPORARY (MAIR-316): RGAA check of the CICD branch on a published image, removed before merging.
+      rgaa_preview_image: "ghcr.io/mairie360/login-front:dev"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

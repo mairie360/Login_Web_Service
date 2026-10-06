@@ -1,8 +1,8 @@
 # Stack de test de sécurité dynamique (DAST) ISOLÉE pour le front Login (Login_Web_Service).
 #
-#   ./security_test.sh            (local, NODE_AUTH_TOKEN exporté pour le build)
-#   docker compose -f docker-compose-security.yml up --build \
-#       --abort-on-container-exit --exit-code-from security-scan   (CI)
+#   ./security_test.sh            (local: builds the front when IMAGE_REF is empty,
+#                                  NODE_AUTH_TOKEN exported for the build)
+#   IMAGE_REF=<image>:dev-<sha> ./security_test.sh   (CI, MAIR-317: the published image)
 #
 # security-scan (OWASP ZAP baseline) explore l'application Next.js servie par
 # l'image de production (Dockerfile, sortie standalone) avec un cookie de session
@@ -10,10 +10,6 @@
 # en-têtes HTTP et routes relayées vers BFF User. Sort en échec sur toute alerte
 # WARN/FAIL non neutralisée dans .zap/rules.tsv (les alertes informatives y sont
 # passées à IGNORE).
-
-secrets:
-  node_auth_token:
-    environment: NODE_AUTH_TOKEN
 
 volumes:
   postgres-data:
@@ -170,14 +166,9 @@ services:
       - backend
 
   login-front:
-    image: ${TARGET_IMAGE:-login-front:security}
+    # Published image (dev-<sha> in the CI, MAIR-317); the test script builds one locally.
+    image: ${IMAGE_REF:?IMAGE_REF must name the front image to test}
     container_name: login-front-sec-front
-    # Image de production (Next.js standalone), identique à celle publiée par la CI.
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - node_auth_token
     depends_on:
       bff-user-ready:
         condition: service_completed_successfully
@@ -185,6 +176,11 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: 5000
       BFF_USER_API_URL: http://bff-user:4000
+      # Default post-login destination: without it the page only shows "Connexion temporairement
+      # indisponible" (src/app/page.tsx). Not served by this stack, only used as a redirect target.
+      DASHBOARD_FRONT_URL: http://localhost:5008/
+      # Required in production mode, otherwise every login answers 503 before calling bff-user.
+      COOKIE_DOMAIN: login-front
     expose:
       - "5000"
     networks:
