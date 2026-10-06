@@ -176,6 +176,11 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: 5000
       BFF_USER_API_URL: http://bff-user:4000
+      # Default post-login destination: without it the page only shows "Connexion temporairement
+      # indisponible" (src/app/page.tsx). Not served by this stack, only used as a redirect target.
+      DASHBOARD_FRONT_URL: http://localhost:5008/
+      # Required in production mode, otherwise every login answers 503 before calling bff-user.
+      COOKIE_DOMAIN: login-front
     expose:
       - "5000"
     networks:
