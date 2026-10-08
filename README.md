@@ -1,5 +1,21 @@
 # Login_Web_Service
 
+## Runtime maintenance / Maintenance des dépendances — 8 October 2026
+
+Next and eslint-config-next are pinned to `16.3.8`; the existing scoped
+image runtime resolves sharp `0.35.5` and source-map-js `1.2.2`. The public
+seven-day release policy, published BFF contract and shared UI pins are
+retained. The full blocking audit remains required; braces is independently
+unresolved. Candidate changes require their own checks and protected main
+integration before delivery is declared complete.
+
+Next et eslint-config-next sont épinglés à `16.3.8` ; le moteur d’images
+ciblé utilise sharp `0.35.5`, et source-map-js est verrouillé à `1.2.2`.
+Le délai public de sept jours, les contrats BFF publiés et les versions de
+l’UI sont conservés. L’audit bloquant reste requis ; braces demeure un
+blocage indépendant. Les vérifications du candidat et son intégration
+protégée sur main restent nécessaires avant de déclarer la livraison.
+
 Provide the Mairie360 sign-in entry point and mandatory first-sign-in password change. The service turns BFF User responses into session cookies usable by the other interfaces.
 
 Fournir le point d’entrée de connexion de Mairie360 et le parcours de changement de mot de passe obligatoire à la première connexion. Le service transforme les réponses de BFF User en cookies de session utilisables par les autres interfaces.
