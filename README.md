@@ -1,5 +1,14 @@
 # Login_Web_Service
 
+## Published shared library — 9 October 2026
+
+This frontend pins the real `@mairie360/lib-components@0.6.11` artifact published from library main `f2433185c5f52125698428b2610701a834efccf4`. Registry integrity and downloaded distribution files were verified. Only the exact UI pin and its root/package lock entries change; other dependencies, published BFF contracts, layouts, security and RGAA controls remain unchanged. Cross-consumer tests and browser evidence are recorded separately from main/dev delivery.
+
+Dependency selection uses verified immutable registry metadata because npm 11.15 rejects the fresh release under the existing seven-day chooser and warns that its existing internal UI exclusion key is unsupported. Configuration remains unchanged; a normal locked installation must verify this candidate.
+
+Ce front utilise le paquet réellement publié 0.6.11. Le verrou reprend les métadonnées et l’intégrité vérifiées du registre, sans changer les autres dépendances, la politique sept jours ou les contrats publiés. Installation, contrôles du consommateur, intégration main, snapshot et recette dev restent des étapes distinctes.
+
+
 ## Runtime maintenance / Maintenance des dépendances — 8 October 2026
 
 Next and eslint-config-next are pinned to `16.3.8`; the existing scoped
