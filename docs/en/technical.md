@@ -211,3 +211,12 @@ For a proxy error, compare the path and method with the inventory, then check th
 - [docker-compose.yml](../../docker-compose.yml)
 
 Historical supplements: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). Proposed requirements must remain distinct from implemented behavior.
+
+## Legal pages (MAIR-292)
+
+`/mentions-legales` (legal notice) and `/confidentialite` (privacy policy) are public pages of this
+front, rendered at request time from `LEGAL_CONFIG`: the JSON of the instance's `global.legal`,
+passed by the Devops/Deploiment chart (mairie's identity, publication director, DPO, host, retention
+periods and subprocessors decided in `compliance/<org>/`). One image serves every mairie; a missing
+value is shown as "À compléter par la mairie", never invented. Every page of this front links to
+both (layout footer); the other fronts link to them through `LOGIN_FRONT_URL`.

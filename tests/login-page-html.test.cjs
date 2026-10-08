@@ -65,9 +65,13 @@ const apiError = (status, message) => ({ status, body: { code: 'UPSTREAM_ERROR',
 const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
 const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
+// The only footer is the legal one (MAIR-292): links to the legal notice and the privacy policy,
+// no application navigation.
+const LEGAL_FOOTER = /<footer\b[^>]*><nav aria-label="Informations légales"[^>]*><a href="\/mentions-legales"[^>]*>Mentions légales<\/a><a href="\/confidentialite"[^>]*>Politique de confidentialité<\/a><\/nav><\/footer>/;
 const assertStandalone = (html) => {
   assert.match(html, /<main[^>]*min-h-dvh/);
-  assert.doesNotMatch(html, /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
+  assert.match(html, LEGAL_FOOTER);
+  assert.doesNotMatch(html.replace(LEGAL_FOOTER, ''), /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
   assert.doesNotMatch(html, /© 2026 Mairie360/);
 };
 const renderLogin = async (searchParams = {}) => {
