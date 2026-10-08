@@ -13,12 +13,12 @@ test('the installed shared UI matches the exact published sidebar-footer release
   const lock = read('package-lock.json');
   const entry = lock.packages['node_modules/@mairie360/lib-components'];
   const installed = read('node_modules/@mairie360/lib-components/package.json');
-  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.10');
-  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.10');
-  assert.equal(entry.version, '0.6.10');
-  assert.equal(installed.version, '0.6.10');
-  assert.equal(entry.resolved, 'https://npm.pkg.github.com/download/@mairie360/lib-components/0.6.10/38568caa3192d43f0688702156e0a9a24857c4d1');
-  assert.equal(entry.integrity, 'sha512-XiNfwabCcSDI3l8CpD9iVeVwtOlHbA4ZSkq7py0D6YMhjJtX9WgtN4PRc7sQ7mIWqESbQlvXz7OzDi/hhTod2g==');
+  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.11');
+  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.11');
+  assert.equal(entry.version, '0.6.11');
+  assert.equal(installed.version, '0.6.11');
+  assert.equal(entry.resolved, 'https://npm.pkg.github.com/download/@mairie360/lib-components/0.6.11/4b06cd4483f4b21b82ebaac3b72e99acd99309a2');
+  assert.equal(entry.integrity, 'sha512-uvJ4ORpW65K5C2kS/LhfXyyuM74J+RlaRDnzrLodxzBirHflMdny3NxkJN8vBj/lvDKpj4pebgEl3/0ezn2ThA==');
 });
 
 test('the published shell keeps copyright inside the sidebar without a fictitious version', () => {
@@ -48,11 +48,11 @@ test('supplied product, year, real version and actionable links remain in sideba
     footerProps: {
       productName: 'Produit fourni',
       year: 2024,
-      version: '0.6.10',
+      version: '0.6.11',
       links: [{ label: 'Documentation', href: 'https://docs.example/' }],
     },
   }, React.createElement('p', null, 'Contenu du module')));
-  assert.match(html, /<aside\b[^]*?<footer\b[^]*?© 2024 Produit fourni[^]*?Version 0\.6\.10[^]*?<a\b[^>]*href="https:\/\/docs\.example\/"[^>]*>Documentation<\/a>[^]*?<\/footer>[^]*?<\/aside>/);
+  assert.match(html, /<aside\b[^]*?<footer\b[^]*?© 2024 Produit fourni[^]*?Version 0\.6\.11[^]*?<a\b[^>]*href="https:\/\/docs\.example\/"[^>]*>Documentation<\/a>[^]*?<\/footer>[^]*?<\/aside>/);
   assert.doesNotMatch(html, /<\/main>\s*<footer\b/);
   assert.doesNotMatch(html, /Utilisateur/);
 });
