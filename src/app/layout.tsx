@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import LegalLinks from "../components/LegalLinks";
 
 // Rendu à la demande obligatoire : une page prérendue au build ne porterait pas le
 // nonce CSP propre à chaque requête, et ses scripts seraient bloqués.
@@ -28,6 +29,8 @@ export default function RootLayout({
         <main className="flex min-h-dvh items-center justify-center bg-[#F5F3F0]">
           {children}
         </main>
+        {/* Every page links to the legal notice and the privacy policy (MAIR-292). */}
+        <LegalLinks />
       </body>
     </html>
   );

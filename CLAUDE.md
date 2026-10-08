@@ -86,6 +86,14 @@ These commands run offline. After a bump, also move the `bff-user` image tags in
 - `.github/workflows/nextjs.yml` additionally runs lint + build on Node 20 for pushes/PRs to `main` (redundant with the reusable CICD).
 - `Dockerfile`: two-stage `node:<ver>-bookworm-slim` build, standalone output, non-root `nextjs` user, `PORT=5000`, `CMD node server.js`.
 
+## Legal pages (MAIR-292)
+
+`src/app/mentions-legales/page.tsx` and `src/app/confidentialite/page.tsx` render `LEGAL_CONFIG`
+(JSON of the chart's `global.legal`, read at request time by `src/lib/legal-config.ts`, missing
+values shown as "À compléter par la mairie"); `src/components/LegalLinks.tsx` is the layout footer
+linking to both on every page (the only footer `tests/login-page-html.test.cjs` allows). The other
+fronts link there through `LOGIN_FRONT_URL`. Tests: `tests/legal-pages.test.cjs`.
+
 ## Isolated security & performance tests
 
 Same pattern as the APIs/BFFs, adapted to a web front. Not part of `npm test`; they need Docker and `NODE_AUTH_TOKEN` (the front image is built from the production `Dockerfile`).

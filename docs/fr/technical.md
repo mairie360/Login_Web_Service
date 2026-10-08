@@ -211,3 +211,13 @@ En cas d’erreur de proxy, comparer la route et la méthode à l’inventaire, 
 - [docker-compose.yml](../../docker-compose.yml)
 
 Compléments historiques: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). Les besoins proposés doivent rester distincts du comportement effectivement implémenté.
+
+## Pages légales (MAIR-292)
+
+`/mentions-legales` et `/confidentialite` sont des pages publiques de ce front, rendues à la demande
+à partir de `LEGAL_CONFIG` : le JSON de `global.legal` de l'instance, transmis par le chart de
+Devops/Deploiment (identité de la mairie, directeur de la publication, DPO, hébergeur, durées de
+conservation et sous-traitants décidés dans `compliance/<org>/`). Une seule image sert toutes les
+mairies ; une valeur absente s'affiche « À compléter par la mairie », jamais inventée. Chaque page
+de ce front renvoie vers les deux (pied de page du layout) ; les autres fronts y renvoient via
+`LOGIN_FRONT_URL`.
