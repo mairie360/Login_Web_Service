@@ -11,14 +11,14 @@
     "contracts:check": "node scripts/contracts.mjs --check",
     "contracts:sync": "node scripts/contracts.mjs --sync",
     "test:contracts": "node --test tests/*.test.cjs",
-    "test:node": "mkdir -p coverage && node --test --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
+    "test:node": "mkdir -p coverage && node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
     "test:components": "vitest run",
     "test": "npm run test:node && npm run test:components"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.5.0",
-    "@mairie360/lib-components": "0.6.8",
-    "next": "16.3.6",
+    "@mairie360/lib-components": "0.6.10",
+    "next": "16.3.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -26,7 +26,7 @@
     "next": {
       ".": "$next",
       "postcss": "^8.5.23",
-      "sharp": "^0.35.4"
+      "sharp": "^0.35.5"
     }
   },
   "devDependencies": {
@@ -37,7 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.3.8",
     "jest-axe": "11.0.0",
     "jsdom": "30.1.1",
     "tailwindcss": "^4",

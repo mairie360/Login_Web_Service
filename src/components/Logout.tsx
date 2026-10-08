@@ -1,18 +1,20 @@
 "use client";
 
 import { Button } from "@mairie360/lib-components";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 type LogoutProps = { navigate?: (url: string) => void };
 
 const goToLogin = (url: string) => window.location.replace(url);
 
 export default function Logout({ navigate = goToLogin }: LogoutProps) {
-  const started = useRef(false);
-  const [pending, setPending] = useState(true);
+  const inFlight = useRef(false);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
 
   const logout = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setPending(true);
     setError(false);
 
@@ -22,7 +24,9 @@ export default function Logout({ navigate = goToLogin }: LogoutProps) {
         credentials: "same-origin",
         cache: "no-store",
       });
-      if (!upstream.ok) throw new Error("BFF logout failed");
+      // A rejected session must not trap the user with stale local cookies.
+      // Clearing them on HTTP 401 is local recovery, not proof of server-side revocation.
+      if (!upstream.ok && upstream.status !== 401) throw new Error("BFF logout failed");
 
       const local = await fetch("/api/auth/logout", {
         method: "POST",
@@ -33,22 +37,22 @@ export default function Logout({ navigate = goToLogin }: LogoutProps) {
 
       navigate("/");
     } catch {
+      inFlight.current = false;
       setError(true);
       setPending(false);
     }
   }, [navigate]);
 
-  useEffect(() => {
-    // React StrictMode can replay mount effects; one handoff must make one BFF request.
-    if (started.current) return;
-    started.current = true;
-    void logout();
-  }, [logout]);
-
   return (
     <div className="flex min-h-full w-full items-center justify-center bg-[#F5F3F0] p-6">
       <section aria-labelledby="logout-heading" className="w-full max-w-md rounded-2xl border border-[#E5E7EB] bg-white p-8 text-gray-900 shadow-lg">
         <h1 id="logout-heading" className="text-2xl font-bold">Déconnexion</h1>
+        {!pending && !error ? (
+          <>
+            <p className="mt-4 text-gray-600">Choisissez « Se déconnecter » pour fermer votre session.</p>
+            <Button type="button" label="Se déconnecter" onClick={() => void logout()} className="mt-5" />
+          </>
+        ) : null}
         {pending ? <p role="status" className="mt-4 text-gray-600">Déconnexion en cours…</p> : null}
         {error ? (
           <>

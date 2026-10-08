@@ -13,6 +13,8 @@ Domaine fonctionnel: Identité et administration.
 ## Fonctions disponibles
 
 - Formulaire de connexion avec remontée des erreurs serveur.
+- Les champs de connexion et de changement obligatoire de mot de passe sont figés pendant une requête ; les doubles soumissions sont bloquées immédiatement et un échec efface les anciens messages de succès.
+- Ouvrir `/logout` ne lance aucune requête. Choisir **Se déconnecter**, ou **Réessayer** après un refus ; le retour à Login n'arrive qu'après le succès de l'expiration locale existante. Une reprise après HTTP401 nettoie la session locale sans prouver la révocation amont.
 - Écrans de connexion, de premier changement de mot de passe, de configuration indisponible et de déconnexion autonomes : aucun AppShell, header, sidebar ou footer applicatif avant le retour vers un module authentifié.
 - Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
 - Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le tableau de bord configuré.

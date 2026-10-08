@@ -13,6 +13,8 @@ Business domain: Identity and administration.
 ## Available capabilities
 
 - Sign-in form with server error feedback.
+- Sign-in and mandatory-password-change inputs are frozen while a request is pending; duplicate submissions are ignored synchronously and failed replies clear stale success feedback.
+- Opening `/logout` is read-only. Choose **Se déconnecter** to start logout, or **Réessayer** after a refusal; the page returns to Login only after the existing local cookie-expiry request succeeds. HTTP401 recovery means local session cleanup, not proof of upstream revocation.
 - Standalone sign-in, first-password-change, unavailable-configuration and logout screens: no application AppShell, header, sidebar or footer before returning to an authenticated module.
 - First-sign-in flow with a temporary token and a new password.
 - Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Dashboard module.
