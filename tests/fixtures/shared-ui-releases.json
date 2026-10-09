@@ -21,6 +21,27 @@
         "dist/index.js.map": "8f456ef79513f5d5c62bf4c9105539c76902caacd5ed99e3d79be845e8a6f571",
         "dist/styles.css": "40bb57b56c0775878715681349e67096e35ac46d1699f16e4073ce15f307cdb7"
       }
+    },
+    "0.6.12": {
+      "publishedAt": "2026-10-09T07:23:22Z",
+      "registry": "https://npm.pkg.github.com",
+      "gitHead": "6c022cb53da535fd16d4fa80a5cdb943d3791f31",
+      "tarball": "https://npm.pkg.github.com/download/@mairie360/lib-components/0.6.12/5a29ab7448f9d6927d8323d46eb010cd7b3a5f19",
+      "integrity": "sha512-0A1GA0PeHw/87K6oKv/I2UXyqUQZaR6eETr+pyTx0KNUpAFv+ctucQTr4k7OVzFFht5r6iaqU/3UjPzh7a4rEQ==",
+      "entryPoints": {
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts"
+      },
+      "sha256": {
+        "dist/index.js": "b3ab3aeee7c65366f42addf8894d835f3825013982a7660b47c578c852d7ba5c",
+        "dist/index.cjs": "575c6d6f09f5417a362282b01d8e50f117ddd4bf8c627ae7456ae4a168d8da1d",
+        "dist/index.d.cts": "b6887b320f52e25b54915f43183bc28276e8306e0f3d1f184b916ac02d35b7b3",
+        "dist/index.d.ts": "b6887b320f52e25b54915f43183bc28276e8306e0f3d1f184b916ac02d35b7b3",
+        "dist/index.cjs.map": "e65ec657e3359822cd3cc0b39b3fd1e30fadc1cfd5492afec1f016fc7e0a1cb7",
+        "dist/index.js.map": "cb516cdefaeffbf335d01e337fd5060cfbb72d7711f5f86ced5ef68539413572",
+        "dist/styles.css": "81d54d0f044217e7f583700a620106eecd5612cc0d7fb6fb296858210c9f0b03"
+      }
     }
   }
 }
