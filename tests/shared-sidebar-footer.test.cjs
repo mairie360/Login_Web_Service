@@ -1,24 +1,14 @@
+const { assertPublishedSharedUi } = require('./helpers/published-shared-ui.cjs');
+const sharedUiReleases = require('./fixtures/shared-ui-releases.json');
 const assert = require('node:assert/strict');
-const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const { test } = require('node:test');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { AppShell, Footer } = require('@mairie360/lib-components');
 
-test('the installed shared UI matches the exact published sidebar-footer release', () => {
-  const root = join(__dirname, '..');
-  const read = (file) => JSON.parse(readFileSync(join(root, file), 'utf8'));
-  const manifest = read('package.json');
-  const lock = read('package-lock.json');
-  const entry = lock.packages['node_modules/@mairie360/lib-components'];
-  const installed = read('node_modules/@mairie360/lib-components/package.json');
-  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.11');
-  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.11');
-  assert.equal(entry.version, '0.6.11');
-  assert.equal(installed.version, '0.6.11');
-  assert.equal(entry.resolved, 'https://npm.pkg.github.com/download/@mairie360/lib-components/0.6.11/4b06cd4483f4b21b82ebaac3b72e99acd99309a2');
-  assert.equal(entry.integrity, 'sha512-uvJ4ORpW65K5C2kS/LhfXyyuM74J+RlaRDnzrLodxzBirHflMdny3NxkJN8vBj/lvDKpj4pebgEl3/0ezn2ThA==');
+test('the installed shared UI matches the reviewed published artifact', () => {
+  assertPublishedSharedUi(join(__dirname, '..'), sharedUiReleases);
 });
 
 test('the published shell keeps copyright inside the sidebar without a fictitious version', () => {

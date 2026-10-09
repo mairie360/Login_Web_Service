@@ -1,0 +1,26 @@
+{
+  "package": "@mairie360/lib-components",
+  "releases": {
+    "0.6.11": {
+      "publishedAt": "2026-10-08T19:18:55Z",
+      "registry": "https://npm.pkg.github.com",
+      "gitHead": "f2433185c5f52125698428b2610701a834efccf4",
+      "tarball": "https://npm.pkg.github.com/download/@mairie360/lib-components/0.6.11/4b06cd4483f4b21b82ebaac3b72e99acd99309a2",
+      "integrity": "sha512-uvJ4ORpW65K5C2kS/LhfXyyuM74J+RlaRDnzrLodxzBirHflMdny3NxkJN8vBj/lvDKpj4pebgEl3/0ezn2ThA==",
+      "entryPoints": {
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts"
+      },
+      "sha256": {
+        "dist/index.cjs": "d738b619d4982e1ad816fa1a08f59dab4cdd7b56cbe2728d94ec2dab2f1b30b3",
+        "dist/index.cjs.map": "528a9371bbcc1a1fda6988444b35ff0f3ae98ebc45863e4b64b1122f725fc9ed",
+        "dist/index.d.cts": "8f854e29a9d25c5ee3f0b300f6f3905d5920aefa821622625893a3bf08a66b61",
+        "dist/index.d.ts": "8f854e29a9d25c5ee3f0b300f6f3905d5920aefa821622625893a3bf08a66b61",
+        "dist/index.js": "d558d802b86010089f9338a0b1a147b134b6bd226dccc74300fdfe0fc3f0b578",
+        "dist/index.js.map": "8f456ef79513f5d5c62bf4c9105539c76902caacd5ed99e3d79be845e8a6f571",
+        "dist/styles.css": "40bb57b56c0775878715681349e67096e35ac46d1699f16e4073ce15f307cdb7"
+      }
+    }
+  }
+}
