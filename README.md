@@ -70,7 +70,7 @@ mixte restent séparés et les contrôles présents sur main sont conservés.
 
 ### Image packaging (MAIR-436 / issue #139)
 
-Docker and the CICD, contracts and Next.js workflows use Node 24.21.0. The
+Docker and the CICD and contracts workflows use Node 24.21.0. The
 official bookworm-slim base is pinned by digest in both dependency and runtime
 stages. The existing `node_auth_token` BuildKit secret is required only for
 `npm ci`; the tracked placeholder-only `.npmrc` is a read-only policy mount.
@@ -135,3 +135,5 @@ Le pin exact et l'intégrité du package publié sont alignés sur Elearning san
 le rétrograder. Les tests de release vérifient le manifeste, le lockfile et le
 vrai package installé. Une validation isolée ne remplace pas la CI verte,
 l'intégration des sept consommateurs et la recette de la copie locale livrée.
+
+The shared frontend CICD is the single lint/build pipeline. The redundant `nextjs.yml` workflow was removed for MAIR-403; contract consistency and the existing Dev dependency exception remain separate. Required branch checks, security scanners, environments and approvals are unchanged.
