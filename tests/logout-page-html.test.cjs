@@ -17,7 +17,7 @@ const realFetch = global.fetch;
 const origin = 'http://localhost:5000';
 const saved = Object.fromEntries(['BFF_USER_API_URL','USER_BFF_URL','LOGIN_FRONT_URL','COOKIE_DOMAIN','NODE_ENV'].map(k=>[k,process.env[k]]));
 const savedWindow = global.window;
-let view, calls, navigations, cookies, gate;
+let view, calls, navigations, cookies, gate, frontendReceiptFault;
 const success = (revoked = true, extras = {}) => ({body:{message:'Disposable logout result',session_revoked:revoked,...extras}});
 const fault = status => {
   const op = contract.match('POST','/auth/logout');
@@ -29,13 +29,15 @@ after(async()=>{global.fetch=realFetch;for(const [k,v] of Object.entries(saved))
 afterEach(()=>assert.deepEqual(bff.violations,[]));
 beforeEach(()=>{
   bff.reset();process.env.BFF_USER_API_URL=bff.url;delete process.env.USER_BFF_URL;process.env.LOGIN_FRONT_URL=origin;process.env.COOKIE_DOMAIN='localhost';process.env.NODE_ENV='production';
-  calls=[];navigations=[];gate=undefined;cookies=new Map([['accessToken','disposable-session'],['refreshToken','disposable-refresh']]);
+  calls=[];navigations=[];gate=undefined;frontendReceiptFault=undefined;cookies=new Map([['accessToken','disposable-session'],['refreshToken','disposable-refresh']]);
   global.window={location:{replace:href=>navigations.push(href)}};
   global.fetch=async(input,init={})=>{
     const url=new URL(String(input),origin);if(url.origin===bff.url)return realFetch(input,init);assert.equal(url.origin,origin,'No real identity service is reachable');assert.equal(url.pathname,'/api/auth/logout');
     calls.push({path:url.pathname,init});if(gate)await gate.promise;
     const headers=new Headers(init.headers);headers.set('origin',origin);headers.set('sec-fetch-site','same-origin');headers.set('cookie',[...cookies].map(([k,v])=>`${k}=${v}`).join('; '));
-    const result=await owner.POST(new NextRequest(url,{...init,headers}));for(const header of result.headers.getSetCookie()){const [pair]=header.split(';');const [name,value]=pair.split('=');if(/;\s*Max-Age=0(?:;|$)/i.test(header))cookies.delete(name);else cookies.set(name,value);}return result;
+    const result=await owner.POST(new NextRequest(url,{...init,headers}));for(const header of result.headers.getSetCookie()){const [pair]=header.split(';');const [name,value]=pair.split('=');if(/;\s*Max-Age=0(?:;|$)/i.test(header))cookies.delete(name);else cookies.set(name,value);}
+    // A disposable frontend transport fault, never a new User BFF response shape.
+    return frontendReceiptFault === undefined ? result : Response.json(frontendReceiptFault);
   };
 });
 const render=()=>{view=mount(React.createElement(Logout,{navigate:href=>navigations.push(href)}));};
@@ -80,4 +82,22 @@ test('an untrusted IdP receipt preserves cookies and remains a visible failure',
 
 test('an upstream network failure offers retry without false cookie expiry',async()=>{
  bff.on('POST','/auth/logout',{dropConnection:true});render();await command('Se déconnecter');await settled();assert.equal(cookies.size,2);assert.deepEqual(navigations,[]);assert.match(view.html,/Réessayer/);
+});
+
+for (const [name, receipt] of [
+  ['null receipt', null],
+  ['missing revocation result', { message: 'Invalid frontend receipt' }],
+  ['nonboolean revocation result', { session_revoked: 'true' }],
+  ['nonstring destination', { session_revoked: true, logout_url: 42 }],
+  ['unsafe destination', { session_revoked: true, logout_url: 'javascript:alert(1)' }],
+]) test(`a ${name} from frontend transport cannot trigger navigation or claim closure`, async () => {
+  bff.on('POST', '/auth/logout', success());
+  frontendReceiptFault = receipt;
+  render();
+  await command('Se déconnecter');
+  await settled();
+  assert.deepEqual(navigations, []);
+  assert.match(view.html, /La déconnexion n’a pas abouti/);
+  assert.equal(view.hostElements((_props, text, tag) => tag === 'button' && text === 'Réessayer').length, 1);
+  assert.equal(bff.requests.length, 1);
 });
