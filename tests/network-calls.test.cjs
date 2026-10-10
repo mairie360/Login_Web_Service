@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 const ts = require('typescript');
+const policy = require('./support/source-policy.cjs');
 const { requireTs } = require('./support/load-ts.cjs');
 const { OpenApiContract } = require('./support/openapi-contract.cjs');
 
@@ -136,7 +137,10 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
     }
   }
   assert.deepEqual([...bffEnvironment.keys()].sort(), ['src/lib/bff-user.ts BFF_USER_API_URL', 'src/lib/bff-user.ts USER_BFF_URL']);
-  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /return forwardToBff\(request, configuredBffUrl\(\), /);
+  const forwards = policy.calls(policy.parse(PROXY_FILE), 'forwardToBff');
+  assert.equal(forwards.length, 1);
+  assert.ok(policy.parameterReference(forwards[0].arguments[0]));
+  assert.ok(policy.configuredUrl(forwards[0].arguments[1]));
   assert.equal(requireTs(PROXY_FILE).configuredBffUrl, requireTs('src/lib/bff-user.ts').configuredBffUrl);
 });
 
