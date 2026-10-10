@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
+import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
 
 type LoginBody = {
   email?: unknown;
@@ -198,8 +199,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessToken =
-      getAuthorizationToken(upstreamResponse);
+    const cookieSession = readBffCookieSession(upstreamResponse);
+    if (cookieSession && (typeof upstreamBody !== "object" || upstreamBody === null || !("message" in upstreamBody) || typeof upstreamBody.message !== "string")) {
+      return NextResponse.json(
+        { message: "Le service de connexion a renvoyé une réponse invalide." },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const accessToken = cookieSession === undefined
+      ? getAuthorizationToken(upstreamResponse)
+      : cookieSession?.accessToken;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -208,7 +217,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const refreshToken = getRefreshToken(upstreamBody);
+    const refreshToken = cookieSession === undefined
+      ? getRefreshToken(upstreamBody)
+      : cookieSession?.refreshToken;
     if (!refreshToken) {
       return NextResponse.json(
         { message: "Le service de connexion a renvoyé une réponse invalide." },
@@ -216,7 +227,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessTokenMaxAge = getAccessTokenMaxAge(accessToken);
+    const accessTokenMaxAge = Math.min(getAccessTokenMaxAge(accessToken), cookieSession?.maxAge ?? Infinity);
     if (accessTokenMaxAge <= 0) {
       return NextResponse.json(
         { message: "Le service de connexion a renvoyé une session expirée." },
