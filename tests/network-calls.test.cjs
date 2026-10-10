@@ -131,6 +131,7 @@ test('browser calls stay same-origin and land on an existing route handler or a 
   assert.deepEqual(browserCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/components/Login.tsx POST /api/auth/force_change_password',
     'src/components/Login.tsx POST /api/auth/login',
+    'src/components/Login.tsx POST /api/auth/refresh',
     'src/components/Logout.tsx POST /api/auth/logout',
   ]);
 });

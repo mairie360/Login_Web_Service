@@ -12,6 +12,7 @@ const ROUTES = {
   '/api/auth/login': 'src/app/api/auth/login/route.ts',
   '/api/auth/force-change-password': 'src/app/api/auth/force-change-password/route.ts',
   '/api/auth/force_change_password': 'src/app/api/auth/force_change_password/route.ts',
+  '/api/auth/refresh': 'src/app/api/auth/refresh/route.ts',
 };
 
 class BrowserFront {
