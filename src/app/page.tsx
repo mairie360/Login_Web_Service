@@ -2,14 +2,19 @@ export const dynamic = 'force-dynamic';
 
 import Login from "../components/Login";
 import { resolveLoginRedirect } from "../lib/login-redirect";
+import { parseFrontUrl } from "../lib/front-url";
 
 type HomeProps = {
-  searchParams: Promise<{ redirect?: string | string[] }>;
+  searchParams: Promise<{ redirect?: string | string[]; resumeSession?: string | string[] }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { redirect } = await searchParams;
+  const { redirect, resumeSession } = await searchParams;
   const redirectUrl = resolveLoginRedirect(redirect);
+  const requested = typeof redirect === "string" ? parseFrontUrl(redirect) : undefined;
+  const login = parseFrontUrl(process.env.LOGIN_FRONT_URL);
+  const canResume = Boolean(login && requested && resumeSession === "1" &&
+    requested.href === redirectUrl && requested.origin !== login.origin);
 
   if (!redirectUrl) {
     return (
@@ -21,5 +26,5 @@ export default async function Home({ searchParams }: HomeProps) {
       </div>
     );
   }
-  return <Login redirectUrl={redirectUrl} />;
+  return <Login key={`${canResume ? "resume" : "signin"}:${redirectUrl}`} redirectUrl={redirectUrl} resumeSession={canResume} />;
 }
