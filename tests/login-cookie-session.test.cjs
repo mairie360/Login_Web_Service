@@ -59,13 +59,25 @@ for (const [name, cookies] of [
   ['expired access', [access + '; Max-Age=0', refresh]],
   ['invalid lifetime', [access + '; Max-Age=invalid', refresh]],
   ['invalid expiry', [access + '; Expires=invalid', refresh]],
+  ['overflowing lifetime', [access + '; Max-Age=' + '9'.repeat(400), refresh]],
   ['duplicate access', [access, access.replace('cookie-access', 'other-access'), refresh]],
   ['duplicate refresh', [access, refresh, refresh.replace('cookie-refresh', 'other-refresh')]],
   ['control characters', ['accessToken=cookie%0Aaccess; Path=/; HttpOnly', refresh]],
   ['whitespace', ['accessToken=cookie%20access; Path=/; HttpOnly', refresh]],
+  ['malformed refresh', [access, 'refreshToken=cookie%0Arefresh; Path=/auth; HttpOnly']],
 ]) test(name + ' cookie session never falls back to legacy credentials or opens a partial session', async () => {
   global.fetch = async () => cookieResponse(cookies, { body: { refresh_token: 'legacy-refresh' }, authorization: 'Bearer legacy-access' });
   const response = await login.POST(request()); assert.equal(response.status, 502); assert.equal(response.headers.get('set-cookie'), null); assert.doesNotMatch(JSON.stringify(await response.json()), /cookie-access|cookie-refresh|legacy-access|legacy-refresh/);
+});
+for (const name of ['accessToken', 'refreshToken']) test(name + ' with less than a full second left cannot open a zero-lifetime session', async () => {
+  const realNow = Date.now;
+  const boundary = Date.UTC(2040, 0, 1, 0, 0, 1);
+  try {
+    Date.now = () => boundary - 100;
+    const cookies = [name === 'accessToken' ? access + '; Expires=' + new Date(boundary).toUTCString() : access, name === 'refreshToken' ? refresh + '; Expires=' + new Date(boundary).toUTCString() : refresh];
+    global.fetch = async () => cookieResponse(cookies);
+    const response = await login.POST(request()); assert.equal(response.status, 502); assert.equal(response.headers.get('set-cookie'), null);
+  } finally { Date.now = realNow; }
 });
 test('an expired cookie JWT cannot open a session even with a live cookie attribute', async () => {
   const token = `head.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 })).toString('base64url')}.signature`;

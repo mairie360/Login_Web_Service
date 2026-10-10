@@ -27,10 +27,9 @@ export function readBffCookieSession(response: Response) {
     const limits: number[] = [];
     if (cookie.maxAge !== undefined) limits.push(cookie.maxAge);
     if (cookie.expires !== undefined) {
-      const expiresAt = typeof cookie.expires === "number" ? cookie.expires : cookie.expires.getTime();
+      const expiresAt = cookie.expires.valueOf();
       limits.push(Math.floor((expiresAt - Date.now()) / 1000));
     }
-    if (limits.some(limit => !Number.isFinite(limit) || limit <= 0)) return 0;
     return Math.min(Infinity, ...limits);
   };
   const maxAge = lifetime(access);
