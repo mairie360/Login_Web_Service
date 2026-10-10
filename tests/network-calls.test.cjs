@@ -60,7 +60,7 @@ function describeCall(file, source, node) {
   const [target, init] = node.arguments;
   let method = 'GET';
   if (init && ts.isObjectLiteralExpression(init)) {
-    const property = init.properties.find((candidate) => candidate.name?.getText(source) === 'method');
+    const property = init.properties.find((candidate) => policy.propertyName(candidate.name) === 'method');
     if (property) method = ts.isPropertyAssignment(property) && ts.isStringLiteralLike(property.initializer) ? property.initializer.text.toUpperCase() : null;
   } else if (init) {
     method = null;
@@ -132,7 +132,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   const bffEnvironment = new Map();
   for (const file of sourceFiles(path.join(ROOT, 'src'))) {
     const relative = path.relative(ROOT, file).split(path.sep).join('/');
-    for (const [, name] of fs.readFileSync(file, 'utf8').matchAll(/process\.env\.([A-Z0-9_]*BFF[A-Z0-9_]*)/g)) {
+    for (const name of policy.envNames(policy.parse(relative)).filter(name => typeof name === 'string' && name.includes('BFF'))) {
       bffEnvironment.set(`${relative} ${name}`, true);
     }
   }
