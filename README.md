@@ -33,6 +33,8 @@ Provide the Mairie360 sign-in entry point and mandatory first-sign-in password c
 
 Fournir le point d’entrée de connexion de Mairie360 et le parcours de changement de mot de passe obligatoire à la première connexion. Le service transforme les réponses de BFF User en cookies de session utilisables par les autres interfaces.
 
+Authentication POST requests require `Sec-Fetch-Site: same-origin`; an Origin header must match the public `LOGIN_FRONT_URL` (or the request origin when unset). Login and first-password-change routes also require `application/json`. The same checks protect the matching published BFF proxy operations. Refused requests return uncached403/415 before any BFF call or cookie change.
+
 ## Documentation
 
 | Language / Langue | Module | Technical / Technique |

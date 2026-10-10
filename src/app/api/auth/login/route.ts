@@ -2,6 +2,7 @@ import type { AuthTokenResponse, LoginView, PostAuthLogin412 } from '@mairie360/
 import { NextRequest, NextResponse } from "next/server";
 import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
+import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 
 type LoginBody = {
   email?: unknown;
@@ -104,6 +105,9 @@ function getRefreshToken(body: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  const rejected = rejectUnsafeAuthRequest(request, true);
+  if (rejected) return rejected;
+
   let body: LoginBody;
 
   try {

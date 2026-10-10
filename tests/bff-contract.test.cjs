@@ -67,13 +67,13 @@ afterEach(() => {
 
 const loginRequest = (body, headers = {}) => new NextRequest('http://localhost:5000/api/auth/login', {
   method: 'POST',
-  headers: Object.fromEntries(Object.entries({ 'Content-Type': 'application/json', 'User-Agent': USER_AGENT, ...headers }).filter(([, value]) => value !== null)),
+  headers: Object.fromEntries(Object.entries({ 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json', 'User-Agent': USER_AGENT, ...headers }).filter(([, value]) => value !== null)),
   body: typeof body === 'string' ? body : JSON.stringify(body),
 });
 
 const changeRequest = (body, token = 'first-connection-token', url = 'http://localhost:5000/api/auth/force-change-password', extraHeaders = {}) => new NextRequest(url, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', ...(token ? { cookie: `passwordChangeToken=${token}` } : {}), ...extraHeaders },
+  headers: { 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json', ...(token ? { cookie: `passwordChangeToken=${token}` } : {}), ...extraHeaders },
   body: typeof body === 'string' ? body : JSON.stringify(body),
 });
 
@@ -112,7 +112,7 @@ describe('trusted ingress client IP headers', () => {
     await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, ipHeaders));
     await forceChangePassword.POST(changeRequest({ newPassword: 'NouveauMotDePasse123' }, 'first-connection-token', undefined, ipHeaders));
     await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', {
-      method: 'POST', headers: { ...ipHeaders, cookie: 'accessToken=session-token' },
+      method: 'POST', headers: { 'Sec-Fetch-Site': 'same-origin', ...ipHeaders, cookie: 'accessToken=session-token' },
     }), { params: Promise.resolve({ path: ['auth', 'logout'] }) });
 
     for (const route of ['/auth/login', '/auth/force_change_password', '/auth/logout']) {
@@ -350,7 +350,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
 
       const result = await catchAll[operation.method](new NextRequest(`http://localhost:5000${pathname}${search}`, {
         method: operation.method,
-        headers: { cookie: 'accessToken=session-token; other=1', 'x-nonce': 'page-nonce', ...(requestBody ? { 'Content-Type': 'application/json' } : {}) },
+        headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token; other=1', 'x-nonce': 'page-nonce', ...(requestBody ? { 'Content-Type': 'application/json' } : {}) },
         ...(requestBody ? { body: JSON.stringify(requestBody) } : {}),
       }), context(pathname));
 
@@ -396,7 +396,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   test('HEAD is forwarded as the declared GET without a body', async () => {
     bff.on('GET', '/me', { body: contract.sample(contract.schema('SessionResponse')) });
 
-    const result = await catchAll.HEAD(new NextRequest('http://localhost:5000/me', { method: 'HEAD', headers: { cookie: 'accessToken=session-token' } }), context('/me'));
+    const result = await catchAll.HEAD(new NextRequest('http://localhost:5000/me', { method: 'HEAD', headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/me'));
 
     assert.equal(result.status, 200);
     assert.equal(await result.text(), '');
@@ -425,7 +425,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   test('BFF errors, their message and Set-Cookie are relayed', async () => {
     bff.on('POST', '/auth/logout', { ...apiError(500, 'Erreur serveur'), headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
 
-    const result = await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', { method: 'POST', headers: { cookie: 'accessToken=session-token' } }), context('/auth/logout'));
+    const result = await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', { method: 'POST', headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/auth/logout'));
 
     assert.equal(result.status, 500);
     assert.deepEqual(await result.json(), { message: 'Erreur serveur' });

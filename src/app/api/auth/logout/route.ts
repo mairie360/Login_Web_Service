@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 
 /** Expire the browser cookie after the existing BFF logout proxy has succeeded. */
 export function POST(request: NextRequest) {
-  const fetchSite = request.headers.get("sec-fetch-site");
-  const origin = request.headers.get("origin");
-  if ((fetchSite && fetchSite !== "same-origin") || (origin && origin !== request.nextUrl.origin)) {
-    return new NextResponse(null, { status: 403, headers: { "Cache-Control": "no-store" } });
-  }
+  const rejected = rejectUnsafeAuthRequest(request);
+  if (rejected) return rejected;
 
   const cookieDomain = process.env.COOKIE_DOMAIN?.trim();
   if (process.env.NODE_ENV === "production" && !cookieDomain) {

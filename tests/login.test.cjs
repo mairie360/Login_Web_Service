@@ -21,7 +21,7 @@ afterEach(() => {
   if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
   else process.env.NODE_ENV = originalNodeEnv;
 });
-const loginRequest = () => new NextRequest('http://localhost/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'alice@example.test', password: 'fixture-password' }) });
+const loginRequest = () => new NextRequest('http://localhost/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Sec-Fetch-Site': 'same-origin' }, body: JSON.stringify({ email: 'alice@example.test', password: 'fixture-password' }) });
 
 test('the access cookie uses the Authorization token returned by the BFF', async () => {
   global.fetch = async () => Response.json({ refresh_token: 'refresh-fixture' }, { headers: { Authorization: 'Bearer access-fixture' } });

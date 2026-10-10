@@ -55,6 +55,8 @@ beforeEach(() => {
     headers.set('origin', origin);
     headers.set('sec-fetch-site', 'same-origin');
     headers.set('cookie', [...cookies].map(([key, value]) => `${key}=${value}`).join('; '));
+    headers.set('sec-fetch-site', 'same-origin');
+    headers.set('origin', origin);
     const request = new NextRequest(url, { ...init, headers });
     if (url.pathname === '/auth/logout') {
       const response = await proxy.POST(request, { params: Promise.resolve({ path: ['auth', 'logout'] }) });
