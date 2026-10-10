@@ -1,60 +1,29 @@
 import { NextRequest } from 'next/server';
+import { proxyPublishedBffRequest } from '@mairie360/lib-components/next';
 import contract from '../../contracts/openapi.json';
+import { POST as login } from '../app/api/auth/login/route';
+import { POST as changePassword } from '../app/api/auth/force-change-password/route';
+import { POST as logout } from '../app/api/auth/logout/route';
 import { configuredBffUrl } from './bff-user';
 import { trustedClientIpHeaders } from './trusted-client-ip';
-import { rejectUnsafeAuthRequest } from './auth-request';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
-type ContractPaths = Record<string, Record<string, unknown>>;
 
 export { configuredBffUrl } from './bff-user';
 
-export async function forwardToBff(request: NextRequest, baseUrl: string, path: string) {
-  if (request.method === 'POST' && ['/auth/login', '/auth/force_change_password', '/auth/logout'].includes(path)) {
-    const rejected = rejectUnsafeAuthRequest(request, path !== '/auth/logout');
-    if (rejected) return rejected;
-  }
-
-  if (!baseUrl) {
-    return Response.json({ error: { message: 'Le service n’est pas configuré.' } }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
-  }
-  const headers = new Headers(request.headers);
-  // x-nonce / content-security-policy sont ajoutés par le middleware et ne concernent pas le BFF.
-  for (const name of ['host', 'connection', 'content-length', 'accept-encoding', 'cookie', 'x-nonce', 'content-security-policy', 'x-forwarded-for', 'x-real-ip']) headers.delete(name);
-  for (const [name, value] of Object.entries(trustedClientIpHeaders(request))) headers.set(name, value);
-  const accessToken = request.cookies.get('accessToken')?.value;
-  if (!headers.has('authorization') && accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-  const target = new URL(`${baseUrl.replace(/\/+$/, '')}${path}`);
-  target.search = new URL(request.url).search;
-  try {
-    const upstream = await fetch(target, {
-      method: request.method, headers, cache: 'no-store', redirect: 'manual',
-      signal: AbortSignal.timeout(15_000),
-      ...(!['GET', 'HEAD'].includes(request.method) ? { body: await request.arrayBuffer() } : {}),
-    });
-    const responseHeaders = new Headers(upstream.headers);
-    for (const name of ['content-encoding', 'content-length', 'transfer-encoding', 'connection']) responseHeaders.delete(name);
-    responseHeaders.set('Cache-Control', 'no-store');
-    return new Response(request.method === 'HEAD' || [204, 205, 304].includes(upstream.status) ? null : upstream.body, {
-      status: upstream.status, statusText: upstream.statusText, headers: responseHeaders,
-    });
-  } catch {
-    return Response.json({ error: { message: 'Le service est indisponible.' } }, { status: 502, headers: { 'Cache-Control': 'no-store' } });
-  }
-}
-
+/** Authentication aliases use the same guarded handlers and cookie owner as the UI. */
 export async function proxyBffRequest(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
-  if (path.some((part) => !part || part === '.' || part === '..' || part.includes('/'))) {
-    return Response.json({ error: { message: 'Chemin invalide.' } }, { status: 400 });
+  if (request.method === 'POST' && path.length === 2 && path[0] === 'auth') {
+    if (path[1] === 'login') return login(request);
+    if (path[1] === 'force_change_password') return changePassword(request);
+    if (path[1] === 'logout') return logout(request);
   }
-  const route = Object.entries(contract.paths as ContractPaths).find(([template]) => {
-    const segments = template.split('/').filter(Boolean);
-    return segments.length === path.length && segments.every((part, index) => /^\{[^}]+\}$/.test(part) || part === path[index]);
+  return proxyPublishedBffRequest(request, path, {
+    baseUrl: configuredBffUrl,
+    paths: contract.paths,
+    loginUrl: () => process.env.LOGIN_FRONT_URL?.trim() ?? '',
+    frontUrl: () => process.env.LOGIN_FRONT_URL?.trim() ?? '',
+    trustedHeaders: trustedClientIpHeaders,
   });
-  if (!route) return Response.json({ error: { message: 'Route inconnue.' } }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
-  const allowed = Object.keys(route[1]).filter((method) => ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method)).map((method) => method.toUpperCase());
-  if (allowed.includes('GET') && !allowed.includes('HEAD')) allowed.push('HEAD');
-  if (!allowed.includes(request.method)) return Response.json({ error: { message: 'Méthode non autorisée.' } }, { status: 405, headers: { Allow: allowed.join(', ') } });
-  return forwardToBff(request, configuredBffUrl(), `/${path.map(encodeURIComponent).join('/')}`);
 }

@@ -101,25 +101,25 @@ describe('trusted ingress client IP headers', () => {
     assert.equal(call.headers['x-real-ip'], undefined);
   });
 
-  test('an explicitly trusted ingress chain reaches login, password change, and JWT logout', async () => {
+  test('an explicitly trusted ingress chain reaches login, password change, and shared business proxy', async () => {
     process.env.TRUST_INGRESS_IP_HEADERS = 'true';
     bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
     bff.on('POST', '/auth/force_change_password', { status: 204 });
-    bff.on('POST', '/auth/logout', { body: contract.sample(contract.schema('LogoutResponse')) });
+    bff.on('GET', '/me', { body: contract.sample(contract.schema('SessionResponse')) });
 
     await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, ipHeaders));
     await forceChangePassword.POST(changeRequest({ newPassword: 'NouveauMotDePasse123' }, 'first-connection-token', undefined, ipHeaders));
-    await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', {
-      method: 'POST', headers: { 'Sec-Fetch-Site': 'same-origin', ...ipHeaders, cookie: 'accessToken=session-token' },
-    }), { params: Promise.resolve({ path: ['auth', 'logout'] }) });
+    await catchAll.GET(new NextRequest('http://localhost:5000/api/bff/me', {
+      headers: { 'Sec-Fetch-Site': 'same-origin', ...ipHeaders, cookie: 'accessToken=session-token' },
+    }), { params: Promise.resolve({ path: ['me'] }) });
 
-    for (const route of ['/auth/login', '/auth/force_change_password', '/auth/logout']) {
-      const [call] = bff.calls(route, 'POST');
+    for (const route of ['/auth/login', '/auth/force_change_password', '/me']) {
+      const [call] = bff.calls(route, route === '/me' ? 'GET' : 'POST');
       assert.equal(call.headers['x-forwarded-for'], ipHeaders['X-Forwarded-For'], route);
       assert.equal(call.headers['x-real-ip'], ipHeaders['X-Real-IP'], route);
     }
-    assert.equal(bff.calls('/auth/logout', 'POST')[0].headers.authorization, 'Bearer session-token');
-    assert.equal(bff.calls('/auth/logout', 'POST')[0].headers.cookie, undefined);
+    assert.equal(bff.calls('/me', 'GET')[0].headers.authorization, 'Bearer session-token');
+    assert.equal(bff.calls('/me', 'GET')[0].headers.cookie, undefined);
   });
 });
 
@@ -334,7 +334,8 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     for (const method of [...declared, 'HEAD']) assert.equal(catchAll[method], proxy.proxyBffRequest, `${method} non exporté par src/app/[...path]/route.ts`);
   });
 
-  for (const operation of contract.operations()) {
+  // Authentication aliases are verified separately against their guarded UI handlers.
+  for (const operation of contract.operations().filter(x => !['/auth/login','/auth/force_change_password','/auth/logout'].includes(x.template))) {
     test(`${operation.method} ${operation.template} reaches the BFF unchanged and its response comes back`, async () => {
       const [code, response] = Object.entries(operation.operation.responses).find(([candidate]) => candidate.startsWith('2'));
       const status = code === '2XX' ? 200 : Number(code);
@@ -415,24 +416,23 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     }
   }
 
-  test('without session cookie no Authorization is invented, and empty 401 bodies stay empty', async () => {
+  test('without session cookie no Authorization is invented and 401 explicitly requires Login', async () => {
     bff.on('GET', '/session/me', (request) => ({ status: request.headers.authorization ? 200 : 401, outOfContract: true }));
 
     const result = await catchAll.GET(new NextRequest('http://localhost:5000/session/me'), context('/session/me'));
 
     assert.equal(result.status, 401);
-    assert.equal(await result.text(), '');
+    assert.equal(result.headers.get('X-Mairie360-Login-Required'), 'true');
+    assert.match((await result.json()).error.message, /session a expiré/);
     assert.equal(bff.calls('/session/me')[0].headers.authorization, undefined);
   });
 
-  test('BFF errors, their message and Set-Cookie are relayed', async () => {
-    bff.on('POST', '/auth/logout', { ...apiError(500, 'Erreur serveur'), headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
-
-    const result = await catchAll.POST(new NextRequest('http://localhost:5000/auth/logout', { method: 'POST', headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/auth/logout'));
-
+  test('ordinary business errors preserve their message but cannot clear session cookies', async () => {
+    bff.on('GET', '/me', { ...apiError(500, 'Erreur serveur'), headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
+    const result = await catchAll.GET(new NextRequest('http://localhost:5000/api/bff/me', { headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/me'));
     assert.equal(result.status, 500);
     assert.deepEqual(await result.json(), { message: 'Erreur serveur' });
-    assert.match(result.headers.get('set-cookie'), /Max-Age=0/);
+    assert.equal(result.headers.get('set-cookie'), null);
   });
 
   test('an unreachable or dropping BFF yields a controlled 502', async () => {
