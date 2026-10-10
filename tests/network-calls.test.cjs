@@ -13,7 +13,7 @@ const { OpenApiContract } = require('./support/openapi-contract.cjs');
 //   le seul BFF, et src/lib/bff-user.ts le seul endroit qui connaît son URL ;
 // - côté navigateur, `fetch('/chemin', { method })` same-origin vers un route handler de src/app/api
 //   (lui-même inventorié ici) ou vers une opération du contrat (relayée par le proxy) ;
-// - le seul appel dynamique autorisé est celui du proxy, borné au contrat par tests/bff-contract.test.cjs.
+// - le proxy commun publié porte le seul transport générique, borné aux chemins du contrat.
 // Tout autre appel (URL absolue, construite, autre API réseau) fait échouer le test.
 
 const ROOT = path.join(__dirname, '..');
@@ -96,11 +96,10 @@ test('no network API other than fetch is used in src/', () => {
 });
 
 test('every fetch call is a verifiable call: BFF operation, same-origin route, or the contract-gated proxy', () => {
-  // Le proxy relaie l'URL et la méthode de la requête reçue : il est le seul appel non littéral autorisé.
-  const isProxy = (call) => call.kind === 'dynamic' && call.file === PROXY_FILE && call.url === 'target';
-  const unverifiable = calls.filter((call) => !isProxy(call) && (call.kind === 'dynamic' || call.method === null));
+  // Le transport générique appartient au paquet publié ; tous les fetch locaux restent littéraux.
+  const unverifiable = calls.filter((call) => call.kind === 'dynamic' || call.method === null);
   assert.deepEqual(unverifiable.map(({ where, url }) => `${where} fetch(${url})`), []);
-  assert.equal(calls.filter((call) => call.kind === 'dynamic').length, 1, 'le proxy doit rester le seul appel dynamique');
+  assert.equal(calls.filter((call) => call.kind === 'dynamic').length, 0, 'generic forwarding belongs to the published server entry');
 });
 
 test('server-side BFF calls go through bffUserUrl to operations declared in the BFF User contract', () => {
@@ -145,10 +144,24 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
     }
   }
   assert.deepEqual([...bffEnvironment.keys()].sort(), ['src/lib/bff-user.ts BFF_USER_API_URL', 'src/lib/bff-user.ts USER_BFF_URL']);
-  const forwards = policy.calls(policy.parse(PROXY_FILE), 'forwardToBff');
+  const source = policy.parse(PROXY_FILE);
+  const forwards = policy.calls(source, 'proxyPublishedBffRequest');
   assert.equal(forwards.length, 1);
   assert.ok(policy.parameterReference(forwards[0].arguments[0]));
-  assert.ok(policy.configuredUrl(forwards[0].arguments[1]));
+  const config = forwards[0].arguments[2];
+  assert.ok(ts.isObjectLiteralExpression(config));
+  const properties = new Map(config.properties.filter(ts.isPropertyAssignment).map(p => [policy.propertyName(p.name), p.initializer.getText(source)]));
+  assert.equal(properties.get('baseUrl'), 'configuredBffUrl');
+  assert.equal(properties.get('paths'), 'contract.paths');
+  assert.equal(properties.get('trustedHeaders'), 'trustedClientIpHeaders');
+  assert.match(properties.get('loginUrl'), /process\.env\.LOGIN_FRONT_URL/);
+  assert.match(properties.get('frontUrl'), /process\.env\.LOGIN_FRONT_URL/);
+  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /from '@mairie360\/lib-components\/next'/);
+  const proxy = requireTs(PROXY_FILE).proxyBffRequest;
+  for (const file of ['src/app/[...path]/route.ts','src/app/api/bff/[...path]/route.ts']) {
+    const exports = requireTs(file);
+    for (const method of [...new Set(contract.operations().map(x => x.method)), 'HEAD']) assert.equal(exports[method], proxy);
+  }
   assert.equal(requireTs(PROXY_FILE).configuredBffUrl, requireTs('src/lib/bff-user.ts').configuredBffUrl);
 });
 

@@ -22,7 +22,7 @@ const routes = [
   ['password change', req => change.POST(req), true],
   ['password change alias', req => changeAlias.POST(req), true],
   ['session logout', req => logout.POST(req), true],
-  ...['login', 'force_change_password', 'logout'].map(path => ['contract proxy ' + path, req => proxyBffRequest(req, { params: Promise.resolve({ path: ['auth', path] }) }), path !== 'logout']),
+  ...['login', 'force_change_password', 'logout'].map(path => ['contract proxy ' + path, req => proxyBffRequest(req, { params: Promise.resolve({ path: ['auth', path] }) }), true]),
 ];
 
 for (const [name, handle, json] of routes) {
