@@ -60,6 +60,8 @@ class BrowserFront {
 
     const headers = new Headers(init.headers);
     headers.set('user-agent', USER_AGENT);
+    headers.set('sec-fetch-site', 'same-origin');
+    headers.set('origin', ORIGIN);
     if (this.cookies.size) headers.set('cookie', [...this.cookies].map(([name, value]) => `${name}=${value}`).join('; '));
     const response = await handler(new NextRequest(url, { method, headers, body: init.body }));
     for (const header of response.headers.getSetCookie()) {

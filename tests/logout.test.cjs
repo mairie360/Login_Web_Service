@@ -15,7 +15,7 @@ after(() => {
 });
 
 const request = (headers = {}) => new NextRequest('https://login.dev.mairie360-eip.fr/api/auth/logout', {
-  method: 'POST', headers,
+  method: 'POST', headers: { 'sec-fetch-site': 'same-origin', ...headers },
 });
 
 test('Login expires both shared session cookies with their original domain and paths', () => {

@@ -19,11 +19,11 @@ afterEach(() => {
 });
 
 const loginRequest = () => new NextRequest('http://localhost/api/auth/login', {
-  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  method: 'POST', headers: { 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' },
   body: JSON.stringify({ email: 'alice@example.test', password: 'fixture-password' }),
 });
 const changeRequest = () => new NextRequest('http://localhost/api/auth/force-change-password', {
-  method: 'POST', headers: { 'Content-Type': 'application/json', cookie: 'passwordChangeToken=fixture-token' },
+  method: 'POST', headers: { 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json', cookie: 'passwordChangeToken=fixture-token' },
   body: JSON.stringify({ newPassword: 'fixture-password-new' }),
 });
 

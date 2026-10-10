@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import contract from '../../contracts/openapi.json';
 import { configuredBffUrl } from './bff-user';
 import { trustedClientIpHeaders } from './trusted-client-ip';
+import { rejectUnsafeAuthRequest } from './auth-request';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 type ContractPaths = Record<string, Record<string, unknown>>;
@@ -9,6 +10,11 @@ type ContractPaths = Record<string, Record<string, unknown>>;
 export { configuredBffUrl } from './bff-user';
 
 export async function forwardToBff(request: NextRequest, baseUrl: string, path: string) {
+  if (request.method === 'POST' && ['/auth/login', '/auth/force_change_password', '/auth/logout'].includes(path)) {
+    const rejected = rejectUnsafeAuthRequest(request, path !== '/auth/logout');
+    if (rejected) return rejected;
+  }
+
   if (!baseUrl) {
     return Response.json({ error: { message: 'Le service n’est pas configuré.' } }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }

@@ -62,7 +62,7 @@ test('contract rejects unknown routes and methods before contacting the BFF', as
 });
 test('BFF errors and cookie changes are preserved', async () => {
   global.fetch = async () => Response.json({ message: 'Denied' }, { status: 403, headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
-  const result = await forwardToBff(new NextRequest('http://localhost/logout', { method: 'POST' }), 'http://bff.example', '/auth/logout');
+  const result = await forwardToBff(new NextRequest('http://localhost/logout', { method: 'POST', headers: { 'sec-fetch-site': 'same-origin' } }), 'http://bff.example', '/auth/logout');
   assert.equal(result.status, 403); assert.deepEqual(await result.json(), { message: 'Denied' }); assert.match(result.headers.get('Set-Cookie'), /Max-Age=0/);
 });
 test('unavailable BFF produces a controlled error', async () => {
