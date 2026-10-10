@@ -133,7 +133,6 @@ test('browser calls stay same-origin and land on an existing route handler or a 
     'src/components/Login.tsx POST /api/auth/force_change_password',
     'src/components/Login.tsx POST /api/auth/login',
     'src/components/Logout.tsx POST /api/auth/logout',
-    'src/components/Logout.tsx POST /auth/logout',
   ]);
 });
 

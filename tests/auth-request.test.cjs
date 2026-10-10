@@ -21,7 +21,7 @@ const routes = [
   ['login', req => login.POST(req), true],
   ['password change', req => change.POST(req), true],
   ['password change alias', req => changeAlias.POST(req), true],
-  ['cookie expiry', req => logout.POST(req), false],
+  ['session logout', req => logout.POST(req), true],
   ...['login', 'force_change_password', 'logout'].map(path => ['contract proxy ' + path, req => proxyBffRequest(req, { params: Promise.resolve({ path: ['auth', path] }) }), path !== 'logout']),
 ];
 
@@ -49,8 +49,9 @@ for (const [name, handle, json] of routes) {
     process.env.BFF_USER_API_URL = 'https://bff.example.test';
     delete process.env.LOGIN_FRONT_URL;
     global.fetch = async () => { throw new Error('unexpected call'); };
+    process.env.LOGIN_FRONT_URL = 'https://login.example.test';
     for (const mediaType of ['', 'text/plain', 'application/x-www-form-urlencoded', 'multipart/form-data; boundary=fixture', 'application/jsonp']) {
-      const response = await handle(request({ 'sec-fetch-site': 'same-origin', 'content-type': mediaType }));
+      const response = await handle(request({ 'sec-fetch-site': 'same-origin', origin: 'https://login.example.test', 'content-type': mediaType }));
       assert.equal(response.status, 415);
       assert.equal(response.headers.get('set-cookie'), null);
     }
