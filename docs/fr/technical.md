@@ -232,3 +232,10 @@ En cas d’erreur de proxy, comparer la route et la méthode à l’inventaire, 
 - [docker-compose.yml](../../docker-compose.yml)
 
 Compléments historiques: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). Les besoins proposés doivent rester distincts du comportement effectivement implémenté.
+
+
+### Propriétaire de la session partagée
+
+Login porte POST /api/auth/refresh et POST /api/auth/logout via l’entrée serveur optionnelle publiée de lib-components. Les huit origines frontend configurées peuvent déléguer le renouvellement avec le cookie HttpOnly existant. URL User BFF, domaine des cookies et confiance ingress restent configurés comme auparavant. La coordination des rotations est locale à un processus Login ; un déploiement avec chevauchement ou plusieurs processus reste à vérifier.
+
+La page de déconnexion envoie un seul POST JSON après commande explicite. Le reçu session_revoked distingue la fermeture locale des cookies de la révocation Core. Une fermeture serveur non confirmée reste visible jusqu’au retour explicite à Login. Une logout_url Keycloak validée est visitée lorsqu’elle est fournie ; refus et erreurs réseau permettent une reprise explicite. Les tests locaux avec mocks ne certifient pas l’authentification Dev, Core ou l’IdP réels.

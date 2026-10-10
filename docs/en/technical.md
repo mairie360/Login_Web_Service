@@ -231,3 +231,10 @@ For a proxy error, compare the path and method with the inventory, then check th
 - [docker-compose.yml](../../docker-compose.yml)
 
 Historical supplements: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). Proposed requirements must remain distinct from implemented behavior.
+
+
+### Shared session owner
+
+Login now owns POST /api/auth/refresh and POST /api/auth/logout through the published optional server entry of lib-components. The configured eight frontend origins may delegate renewal using the existing HttpOnly refresh cookie. The User BFF URL, cookie domain and ingress IP trust policy retain their existing configuration. One Login process coordinates concurrent rotations and a short handover; cross-process coordination during a rolling update or scaling is not certified.
+
+The logout page sends one JSON POST to the owner after an explicit command. Successful local cookie expiry is distinguished from Core revocation by session_revoked. An unconfirmed receipt remains visible until the user explicitly returns to Login. A validated Keycloak logout_url is visited when present; refusals and network errors retain an explicit retry. Unit/React/HTTP-mock evidence does not certify real Dev authentication, Core revocation or the identity provider.

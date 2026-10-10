@@ -42,6 +42,33 @@
         "dist/index.js.map": "cb516cdefaeffbf335d01e337fd5060cfbb72d7711f5f86ced5ef68539413572",
         "dist/styles.css": "81d54d0f044217e7f583700a620106eecd5612cc0d7fb6fb296858210c9f0b03"
       }
+    },
+    "0.7.1": {
+      "publishedAt": "2026-10-10T12:45:28Z",
+      "registry": "https://npm.pkg.github.com",
+      "gitHead": "746ad73a2cce0fd4faaeeb1d16113b2007f854d0",
+      "tarball": "https://npm.pkg.github.com/download/@mairie360/lib-components/0.7.1/74ec35fdc637c044cee1b04ebdecfaa3a87868c7",
+      "integrity": "sha512-Sp/plrjwAZtZssqzZvB6TlbWwSTgQkrkSC/iXMcyuTVp4AlD6yzw3AqaS/L3rn04q/Xk9Bs5iAvHQFi/g60SOA==",
+      "entryPoints": {
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts"
+      },
+      "sha256": {
+        "dist/index.cjs": "3ab859d2005bfd63d86de4841aa97230d19c09a95e7501bc1cab80d7c3434408",
+        "dist/index.cjs.map": "33acb8222d2f0afab91d47391a5ff2cd70321a32767d0e8774339f2fe759b67d",
+        "dist/index.d.cts": "b6887b320f52e25b54915f43183bc28276e8306e0f3d1f184b916ac02d35b7b3",
+        "dist/index.d.ts": "b6887b320f52e25b54915f43183bc28276e8306e0f3d1f184b916ac02d35b7b3",
+        "dist/index.js": "ac03bc1f2b9fd208034ffe8d48a76fe74db4fae2c65ca09453db0d50d875d943",
+        "dist/index.js.map": "be5974c132ce9c6acdb3de3a55736a94fc1648c4cf720613a3154ed5c8d0dc1f",
+        "dist/next.cjs": "3f8fc05aa000fa4673501782dfafde36a3840190485e5114b6217c14da0b6bee",
+        "dist/next.cjs.map": "ecd4f1687e2856f227f61fb77ffc8c09f722c5e1417b26a035cc04e3f6fb40b4",
+        "dist/next.d.cts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d",
+        "dist/next.d.ts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d",
+        "dist/next.js": "7d44c475b46b12b36811a367208bc423508fa0e9801db0913ca937af91534788",
+        "dist/next.js.map": "a3efa3405baa8b56d8f49df6d032b8442df7aa9b75f9fec3451538e84ade5f5b",
+        "dist/styles.css": "2a5394da6a0f57fc152dd7a5820f1cc628c60d4b94cf923c017b90499c9a88af"
+      }
     }
   }
 }
