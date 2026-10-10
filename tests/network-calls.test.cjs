@@ -30,6 +30,15 @@ function sourceFiles(dir) {
   });
 }
 
+const calleePath = expression => {
+  if (ts.isIdentifier(expression)) return expression.text;
+  if (ts.isPropertyAccessExpression(expression)) {
+    const owner = calleePath(expression.expression);
+    return owner ? `${owner}.${expression.name.text}` : undefined;
+  }
+  return undefined;
+};
+
 function scan() {
   const calls = [];
   const forbidden = [];
@@ -42,7 +51,7 @@ function scan() {
       }
       if (ts.isIdentifier(node) && FORBIDDEN_CALLS.has(node.text)) forbidden.push(`${relative}: ${node.text}`);
       if (ts.isCallExpression(node)) {
-        const callee = node.expression.getText(source);
+        const callee = node.expression.kind === ts.SyntaxKind.ImportKeyword ? 'import' : calleePath(node.expression);
         if (callee === 'require' || callee === 'import') {
           const [specifier] = node.arguments;
           if (specifier && ts.isStringLiteralLike(specifier) && FORBIDDEN_MODULES.test(specifier.text)) forbidden.push(`${relative}: require ${specifier.text}`);
@@ -67,7 +76,7 @@ function describeCall(file, source, node) {
   }
   const where = `${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1}`;
   if (target && ts.isStringLiteralLike(target)) return { where, file, kind: 'same-origin', url: target.text, method };
-  if (target && ts.isCallExpression(target) && target.expression.getText(source) === 'bffUserUrl'
+  if (target && ts.isCallExpression(target) && ts.isIdentifier(target.expression) && target.expression.text === 'bffUserUrl'
     && target.arguments.length === 1 && ts.isStringLiteralLike(target.arguments[0])) {
     return { where, file, kind: 'bff', url: target.arguments[0].text, method };
   }
