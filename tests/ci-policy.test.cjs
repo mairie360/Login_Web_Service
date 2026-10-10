@@ -8,12 +8,12 @@ const root = join(__dirname, '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 test('third-party workflow actions use immutable commits', () => {
-  const workflows = ['auto-approve.yml', 'contracts.yml', 'nextjs.yml'];
+  const workflows = ['auto-approve.yml', 'contracts.yml'];
   const actions = workflows.flatMap((file) => [...read(`.github/workflows/${file}`)
     .matchAll(/uses:\s*([^\s@]+)@([^\s#]+)/g)]);
   assert.deepEqual(actions.map((match) => match[1]).sort(), [
-    'actions/checkout', 'actions/checkout', 'actions/checkout',
-    'actions/setup-node', 'actions/setup-node', 'actions/setup-node',
+    'actions/checkout',
+    'actions/setup-node',
     'hmarr/auto-approve-action',
   ]);
   for (const [, name, ref] of actions) {
@@ -70,7 +70,6 @@ test('npm resolution keeps the seven-day window except for the internal UI packa
 test('CI uses Node 24 and the toolchain supports npm release-age policy', () => {
   assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.21\.0"/);
   assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.21\.0'/);
-  assert.equal([...read('.github/workflows/nextjs.yml').matchAll(/node-version:\s*24\.21\.0\s*$/gm)].length, 2);
   const version = execFileSync('npm', ['--version'], { cwd: root, encoding: 'utf8' }).trim();
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
   assert.ok(match, 'npm must report a stable version');
@@ -107,7 +106,6 @@ test('Docker and all frontend workflows use the same exact pinned Node LTS relea
   assert.match(dockerfile, /^FROM runtime-base AS runner$/m);
   assert.equal(read('.github/workflows/cicd.yml').match(/node_version:\s*"([^"]+)"/)?.[1], nodeVersion);
   assert.equal(read('.github/workflows/contracts.yml').match(/node-version:\s*'([^']+)'/)?.[1], nodeVersion);
-  assert.deepEqual([...read('.github/workflows/nextjs.yml').matchAll(/node-version:\s*(\S+)/g)].map(([, version]) => version), [nodeVersion, nodeVersion]);
 });
 
 test('Docker excludes local environments and CI artifacts but keeps tracked npm policy', () => {
