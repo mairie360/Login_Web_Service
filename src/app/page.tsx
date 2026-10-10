@@ -4,12 +4,12 @@ import Login from "../components/Login";
 import { resolveLoginRedirect } from "../lib/login-redirect";
 
 type HomeProps = {
-  searchParams: Promise<{ redirect?: string | string[] }>;
+  searchParams: Promise<{ redirect?: string | string[]; returnUrl?: string | string[] }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { redirect } = await searchParams;
-  const redirectUrl = resolveLoginRedirect(redirect);
+  const { redirect, returnUrl } = await searchParams;
+  const redirectUrl = resolveLoginRedirect(redirect ?? returnUrl);
 
   if (!redirectUrl) {
     return (
