@@ -98,7 +98,7 @@ Inside a container, `localhost` refers to that container. Use the BFF service DN
 
 Inventory extracted from `contracts/openapi.json`, rebuilt from the published `@mairie360/bff-user-openapi` package pinned in `package.json`. Replace brace parameters with real identifiers. Detailed types and required fields are defined in that contract. The package (orval output) only types success responses, shown as `2XX`, plus responses modelled per status such as `412`: errors, formats and response headers are not part of it.
 
-These data paths are exposed at the same origin through the proxy; Next.js pages are separate. `/openapi.json` and `/swagger.json` are also forwarded. Open the `/docs` Swagger UI directly on the BFF.
+These data paths are exposed at the same origin through the proxy; Next.js pages are separate. The relay accepts only operations declared by the consumed BFF contract. `/openapi.json` and `/swagger.json` are not declared and return uncached404 without contacting the BFF, including when a session cookie or Authorization header is supplied. Open the `/docs` Swagger UI directly on the BFF.
 
 | Method | Path | Declared body | Declared statuses |
 | --- | --- | --- | --- |

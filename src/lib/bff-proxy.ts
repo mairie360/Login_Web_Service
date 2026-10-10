@@ -52,9 +52,8 @@ export async function proxyBffRequest(request: NextRequest, context: RouteContex
     const segments = template.split('/').filter(Boolean);
     return segments.length === path.length && segments.every((part, index) => /^\{[^}]+\}$/.test(part) || part === path[index]);
   });
-  const metadata = path.length === 1 && ['openapi.json', 'swagger.json'].includes(path[0]);
-  if (!route && !metadata) return Response.json({ error: { message: 'Route inconnue.' } }, { status: 404 });
-  const allowed = metadata ? ['GET', 'HEAD'] : Object.keys(route![1]).filter((method) => ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method)).map((method) => method.toUpperCase());
+  if (!route) return Response.json({ error: { message: 'Route inconnue.' } }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  const allowed = Object.keys(route[1]).filter((method) => ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method)).map((method) => method.toUpperCase());
   if (allowed.includes('GET') && !allowed.includes('HEAD')) allowed.push('HEAD');
   if (!allowed.includes(request.method)) return Response.json({ error: { message: 'Méthode non autorisée.' } }, { status: 405, headers: { Allow: allowed.join(', ') } });
   return forwardToBff(request, configuredBffUrl(), `/${path.map(encodeURIComponent).join('/')}`);

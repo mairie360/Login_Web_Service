@@ -98,7 +98,7 @@ Dans un conteneur, `localhost` désigne le conteneur lui-même. Utiliser le nom 
 
 Inventaire extrait de `contracts/openapi.json`, reconstruit depuis le paquet publié `@mairie360/bff-user-openapi` épinglé dans `package.json`. Les paramètres entre accolades sont remplacés par des identifiants réels. Les types détaillés et champs requis sont définis dans ce contrat. Le paquet (sortie orval) ne type que les réponses de succès, notées `2XX`, et les réponses modélisées par statut comme `412` : erreurs, formats et en-têtes de réponse n’en font pas partie.
 
-Ces chemins de données sont exposés à la même origine par le proxy; les pages Next.js sont distinctes. `/openapi.json` et `/swagger.json` sont également relayés. L’interface Swagger `/docs` se consulte directement sur le BFF.
+Ces chemins de données sont exposés à la même origine par le proxy; les pages Next.js sont distinctes. Le relais accepte uniquement les opérations déclarées par le contrat BFF consommé. `/openapi.json` et `/swagger.json` ne sont pas déclarés et renvoient404 sans cache ni appel BFF, même avec un cookie de session ou un en-tête Authorization. L’interface Swagger `/docs` se consulte directement sur le BFF.
 
 | Méthode | Chemin | Corps déclaré | Statuts déclarés |
 | --- | --- | --- | --- |
