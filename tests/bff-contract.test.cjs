@@ -13,9 +13,7 @@ const { ContractMockServer, unreachableUrl } = require('./support/contract-mock-
 // une violation, et un test échoue dès qu'un appel réseau sort vers une autre origine que ce faux BFF.
 
 const contract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'openapi.json'));
-const bff = new ContractMockServer('BFF_USER', contract)
-  .allowUndeclared('GET', '/openapi.json', 'Le BFF sert son propre contrat, que le proxy relaie toujours', { body: { openapi: '3.1.0' } })
-  .allowUndeclared('HEAD', '/openapi.json', 'Le BFF sert son propre contrat, que le proxy relaie toujours', { body: { openapi: '3.1.0' } });
+const bff = new ContractMockServer('BFF_USER', contract);
 
 const COOKIE_DOMAIN = '.mairie360.test';
 const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0';
@@ -403,14 +401,19 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     assert.equal(bff.calls('/me', 'HEAD').length, 1);
   });
 
-  test('the BFF OpenAPI document is always relayed', async () => {
-    const result = await catchAll.GET(new NextRequest('http://localhost:5000/openapi.json'), context('/openapi.json'));
-
-    assert.equal(result.status, 200);
-    assert.deepEqual(await result.json(), { openapi: '3.1.0' });
-    const refused = await catchAll.POST(new NextRequest('http://localhost:5000/openapi.json', { method: 'POST' }), context('/openapi.json'));
-    assert.equal(refused.status, 405);
-  });
+  for (const document of ['openapi.json', 'swagger.json']) {
+    for (const method of ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+      test(`${method} /${document} never exposes undeclared BFF metadata, even with session credentials`, async () => {
+        for (const headers of [{}, { cookie: 'accessToken=disposable-session' }, { authorization: 'Bearer disposable-session' }]) {
+          const result = await catchAll[method](new NextRequest(`http://localhost:5000/${document}?download=1`, { method, headers }), context(`/${document}`));
+          assert.equal(result.status, 404);
+          assert.equal(result.headers.get('cache-control'), 'no-store');
+          assert.equal(result.headers.get('set-cookie'), null);
+        }
+        assert.equal(bff.requests.length, 0);
+      });
+    }
+  }
 
   test('without session cookie no Authorization is invented, and empty 401 bodies stay empty', async () => {
     bff.on('GET', '/session/me', (request) => ({ status: request.headers.authorization ? 200 : 401, outOfContract: true }));
