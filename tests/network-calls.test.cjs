@@ -30,6 +30,15 @@ function sourceFiles(dir) {
   });
 }
 
+const calleePath = expression => {
+  if (ts.isIdentifier(expression)) return expression.text;
+  if (ts.isPropertyAccessExpression(expression)) {
+    const owner = calleePath(expression.expression);
+    return owner ? `${owner}.${expression.name.text}` : undefined;
+  }
+  return undefined;
+};
+
 function scan() {
   const calls = [];
   const forbidden = [];
@@ -42,7 +51,7 @@ function scan() {
       }
       if (ts.isIdentifier(node) && FORBIDDEN_CALLS.has(node.text)) forbidden.push(`${relative}: ${node.text}`);
       if (ts.isCallExpression(node)) {
-        const callee = node.expression.getText(source);
+        const callee = node.expression.kind === ts.SyntaxKind.ImportKeyword ? 'import' : calleePath(node.expression);
         if (callee === 'require' || callee === 'import') {
           const [specifier] = node.arguments;
           if (specifier && ts.isStringLiteralLike(specifier) && FORBIDDEN_MODULES.test(specifier.text)) forbidden.push(`${relative}: require ${specifier.text}`);
@@ -60,14 +69,14 @@ function describeCall(file, source, node) {
   const [target, init] = node.arguments;
   let method = 'GET';
   if (init && ts.isObjectLiteralExpression(init)) {
-    const property = init.properties.find((candidate) => candidate.name?.getText(source) === 'method');
+    const property = init.properties.find((candidate) => policy.propertyName(candidate.name) === 'method');
     if (property) method = ts.isPropertyAssignment(property) && ts.isStringLiteralLike(property.initializer) ? property.initializer.text.toUpperCase() : null;
   } else if (init) {
     method = null;
   }
   const where = `${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1}`;
   if (target && ts.isStringLiteralLike(target)) return { where, file, kind: 'same-origin', url: target.text, method };
-  if (target && ts.isCallExpression(target) && target.expression.getText(source) === 'bffUserUrl'
+  if (target && ts.isCallExpression(target) && ts.isIdentifier(target.expression) && target.expression.text === 'bffUserUrl'
     && target.arguments.length === 1 && ts.isStringLiteralLike(target.arguments[0])) {
     return { where, file, kind: 'bff', url: target.arguments[0].text, method };
   }
@@ -132,7 +141,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   const bffEnvironment = new Map();
   for (const file of sourceFiles(path.join(ROOT, 'src'))) {
     const relative = path.relative(ROOT, file).split(path.sep).join('/');
-    for (const [, name] of fs.readFileSync(file, 'utf8').matchAll(/process\.env\.([A-Z0-9_]*BFF[A-Z0-9_]*)/g)) {
+    for (const name of policy.envNames(policy.parse(relative)).filter(name => typeof name === 'string' && name.includes('BFF'))) {
       bffEnvironment.set(`${relative} ${name}`, true);
     }
   }
