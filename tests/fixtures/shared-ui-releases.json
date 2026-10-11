@@ -69,6 +69,33 @@
         "dist/next.js.map": "a3efa3405baa8b56d8f49df6d032b8442df7aa9b75f9fec3451538e84ade5f5b",
         "dist/styles.css": "2a5394da6a0f57fc152dd7a5820f1cc628c60d4b94cf923c017b90499c9a88af"
       }
+    },
+    "0.8.0": {
+      "publishedAt": "2026-10-11T11:50:47Z",
+      "registry": "https://npm.pkg.github.com",
+      "gitHead": "f15cdd1c46a7e602e6e511bf6520e07e69e531e0",
+      "tarball": "https://npm.pkg.github.com/download/@mairie360/lib-components/0.8.0/e7837dd11c3b15413500c5868627465d960d52bb",
+      "integrity": "sha512-GKMQ/WR7gNjQO9FdUwLRQ7x8gJpcIztiF9mJVFNi+ccrNCOIq6PLm8YhBKvhoBJa1fqpfI8QwTMaG5A0EaLtoA==",
+      "entryPoints": {
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts"
+      },
+      "sha256": {
+        "dist/index.cjs": "507ea4f5184f3a6898fb10026abe3d19b97fee9339395a938cf2d2643fd89f79",
+        "dist/next.cjs": "3f8fc05aa000fa4673501782dfafde36a3840190485e5114b6217c14da0b6bee",
+        "dist/styles.css": "74c529878a6e00ca867ce8b515166084bcb1db19bb0fcc574d1a7545e27ced2d",
+        "dist/index.d.cts": "4879630f1dfc30cb0400cff277f4d0d09e621ff8f56885e31da903aba7ed397d",
+        "dist/next.d.cts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d",
+        "dist/index.js": "34a3970681d47fe2038f9d9cea6a933e489b6aaf573176845b5ad09b24c08a48",
+        "dist/next.js": "7d44c475b46b12b36811a367208bc423508fa0e9801db0913ca937af91534788",
+        "dist/index.cjs.map": "5c45b99ff6f25cab1c51ad2fba5e0fa5edc94e70b3b1e91769cb0c43554886b3",
+        "dist/index.js.map": "2f2d2afe9bffdb0d7eac4450dc3120e12113062ee288aec0a156f2db0e2c7f42",
+        "dist/next.cjs.map": "ecd4f1687e2856f227f61fb77ffc8c09f722c5e1417b26a035cc04e3f6fb40b4",
+        "dist/next.js.map": "a3efa3405baa8b56d8f49df6d032b8442df7aa9b75f9fec3451538e84ade5f5b",
+        "dist/index.d.ts": "4879630f1dfc30cb0400cff277f4d0d09e621ff8f56885e31da903aba7ed397d",
+        "dist/next.d.ts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d"
+      }
     }
   }
 }
