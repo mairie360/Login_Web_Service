@@ -57,6 +57,16 @@ test('actual Home restores a scoped-cookie session through the published owner a
   assert.doesNotMatch(view.html, /<aside|<nav|<footer|disposable-old|disposable-access|disposable-new/);
 });
 
+test('a validated legacy return parameter also resumes through the existing session owner', async () => {
+  await render({ returnUrl: target, resumeSession: '1' });
+  await view.waitFor(() => destinations.length === 1);
+  assert.deepEqual(destinations, [target]);
+  assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/refresh' }]);
+  assert.equal(user.requests.length, 1);
+  assert.equal(front.cookies.get('accessToken'), 'disposable-access-' + serial);
+  assert.doesNotMatch(view.html, /<aside|<nav|<footer/);
+});
+
 for (const [label, params] of [
   ['ordinary Login', {}],
   ['unflagged return', { redirect: target }],
@@ -65,6 +75,10 @@ for (const [label, params] of [
   ['repeated flag', { redirect: target, resumeSession: ['1', '1'] }],
   ['repeated return', { redirect: [target, target], resumeSession: '1' }],
   ['return to Login', { redirect: ORIGIN + '/?resumeSession=1', resumeSession: '1' }],
+  ['foreign legacy return', { returnUrl: 'https://foreign.test/', resumeSession: '1' }],
+  ['repeated legacy return', { returnUrl: [target, target], resumeSession: '1' }],
+  ['invalid canonical return with a valid legacy return', { redirect: 'https://foreign.test/', returnUrl: target, resumeSession: '1' }],
+  ['canonical return to Login with a valid legacy return', { redirect: ORIGIN + '/', returnUrl: target, resumeSession: '1' }],
 ]) test(`${label} does not start an automatic renewal`, async () => {
   await render(params);
   assert.match(view.html, /Se connecter/);

@@ -458,6 +458,33 @@ test('a successful sign-in returns to the requested page', async () => {
   }
 });
 
+for (const { name, params, destination } of [
+  { name: 'the Calendar returnUrl keeps its path and query', params: { returnUrl: 'https://calendar.mairie.test/events?id=42' }, destination: 'https://calendar.mairie.test/events?id=42' },
+  { name: 'the Projects returnUrl keeps its path and query', params: { returnUrl: 'https://projects.mairie.test/projects?view=board' }, destination: 'https://projects.mairie.test/projects?view=board' },
+  { name: 'redirect takes precedence over returnUrl', params: { redirect: 'https://projects.mairie.test/projects', returnUrl: 'https://calendar.mairie.test/events' }, destination: 'https://projects.mairie.test/projects' },
+  { name: 'a foreign returnUrl uses Dashboard', params: { returnUrl: 'https://outside.mairie.test/events' }, destination: 'https://dashboard.mairie.test/' },
+  { name: 'a malformed returnUrl uses Dashboard', params: { returnUrl: '//calendar.mairie.test/events' }, destination: 'https://dashboard.mairie.test/' },
+  { name: 'repeated returnUrl parameters use Dashboard', params: { returnUrl: ['https://calendar.mairie.test/events', 'https://projects.mairie.test/projects'] }, destination: 'https://dashboard.mairie.test/' },
+  { name: 'an invalid explicit redirect cannot fall through to returnUrl', params: { redirect: 'https://outside.mairie.test/', returnUrl: 'https://calendar.mairie.test/events' }, destination: 'https://dashboard.mairie.test/' },
+]) {
+  test(`a successful sign-in handles ${name}`, async () => {
+    const previous = process.env.CALENDAR_FRONT_URL;
+    process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
+    try {
+      bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+      await renderLogin(params);
+      await typeInto('email', 'alice@mairie.test');
+      await typeInto('password', 'S3cret!');
+      await submit();
+      await view.waitFor((current) => current.includes('Connexion réussie.'));
+      assert.deepEqual(window.location.assigned, [destination]);
+    } finally {
+      if (previous === undefined) delete process.env.CALENDAR_FRONT_URL;
+      else process.env.CALENDAR_FRONT_URL = previous;
+    }
+  });
+}
+
 test('an empty submission is refused in the page without any network call', async () => {
   await renderLogin();
 
