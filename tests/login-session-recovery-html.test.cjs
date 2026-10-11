@@ -57,6 +57,16 @@ test('actual Home restores a scoped-cookie session through the published owner a
   assert.doesNotMatch(view.html, /<aside|<nav|<footer|disposable-old|disposable-access|disposable-new/);
 });
 
+test('a validated legacy return parameter also resumes through the existing session owner', async () => {
+  await render({ returnUrl: target, resumeSession: '1' });
+  await view.waitFor(() => destinations.length === 1);
+  assert.deepEqual(destinations, [target]);
+  assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/refresh' }]);
+  assert.equal(user.requests.length, 1);
+  assert.equal(front.cookies.get('accessToken'), 'disposable-access-' + serial);
+  assert.doesNotMatch(view.html, /<aside|<nav|<footer/);
+});
+
 for (const [label, params] of [
   ['ordinary Login', {}],
   ['unflagged return', { redirect: target }],
@@ -65,6 +75,10 @@ for (const [label, params] of [
   ['repeated flag', { redirect: target, resumeSession: ['1', '1'] }],
   ['repeated return', { redirect: [target, target], resumeSession: '1' }],
   ['return to Login', { redirect: ORIGIN + '/?resumeSession=1', resumeSession: '1' }],
+  ['foreign legacy return', { returnUrl: 'https://foreign.test/', resumeSession: '1' }],
+  ['repeated legacy return', { returnUrl: [target, target], resumeSession: '1' }],
+  ['invalid canonical return with a valid legacy return', { redirect: 'https://foreign.test/', returnUrl: target, resumeSession: '1' }],
+  ['canonical return to Login with a valid legacy return', { redirect: ORIGIN + '/', returnUrl: target, resumeSession: '1' }],
 ]) test(`${label} does not start an automatic renewal`, async () => {
   await render(params);
   assert.match(view.html, /Se connecter/);
@@ -102,10 +116,56 @@ test('an invalid successful owner reply cannot resume the page', async () => {
   assert.equal(front.cookies.get('refreshToken'), 'disposable-old-' + serial);
 });
 
+for (const [label, response] of [
+  ['browser transport failure', () => Promise.reject(new TypeError('Disposable browser network failure'))],
+  ['unreadable owner JSON', () => Promise.resolve(new Response('not-json', { status: 200, headers: { 'Content-Type': 'application/json' } }))],
+]) test(`${label} restores the manual form without replay or cookie mutation`, async () => {
+  const previousFetch = global.fetch;
+  const attempts = [];
+  global.fetch = (input, init) => {
+    if (input === '/api/auth/refresh') {
+      attempts.push({ path: input, method: init.method });
+      return response();
+    }
+    return previousFetch(input, init);
+  };
+  try {
+    await render({ returnUrl: target, resumeSession: '1' });
+    await view.waitFor(html => html.includes('role="alert"'));
+    assert.match(view.html, /temporairement indisponible/);
+    assert.match(view.html, /Se connecter/);
+    assert.doesNotMatch(view.html, /aria-busy="true"|Disposable|not-json/);
+    assert.deepEqual(attempts, [{ path: '/api/auth/refresh', method: 'POST' }]);
+    assert.deepEqual(destinations, []);
+    assert.equal(user.requests.length, 0);
+    assert.equal(front.cookies.get('refreshToken'), 'disposable-old-' + serial);
+    assert.equal(front.cookies.get('accessToken'), undefined);
+  } finally {
+    global.fetch = previousFetch;
+  }
+});
+
 test('a browser navigation failure leaves the normal form usable after a validated receipt', async () => {
   view = mount(React.createElement(Login, { redirectUrl: target, resumeSession: true, navigate() { throw new Error('disposable navigation refusal'); } }));
   await view.waitFor(html => html.includes('role="alert"'));
   assert.match(view.html, /Se connecter/);
   assert.doesNotMatch(view.html, /aria-busy="true"/);
+  assert.equal(user.requests.length, 1);
+});
+
+test('a late published owner receipt cannot navigate after Home is unmounted', async () => {
+  user.on('POST', '/auth/refresh', { delayMs: 80, body: { message: 'JWT refreshed successfully' }, headers: {
+    'Set-Cookie': [`accessToken=disposable-access-${serial}; HttpOnly; Path=/auth; Max-Age=300`, `refreshToken=disposable-new-${serial}; HttpOnly; Path=/auth`],
+  } });
+  await render({ returnUrl: target, resumeSession: '1' });
+  await view.waitFor(() => user.requests.length === 1);
+  view.unmount(); view = undefined;
+  for (let attempt = 0; attempt < 40 && front.cookies.get('accessToken') !== 'disposable-access-' + serial; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(front.cookies.get('accessToken'), 'disposable-access-' + serial, 'the delayed owner response actually completed');
+  assert.deepEqual(destinations, []);
+  assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/refresh' }]);
   assert.equal(user.requests.length, 1);
 });

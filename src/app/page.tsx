@@ -5,13 +5,14 @@ import { resolveLoginRedirect } from "../lib/login-redirect";
 import { parseFrontUrl } from "../lib/front-url";
 
 type HomeProps = {
-  searchParams: Promise<{ redirect?: string | string[]; resumeSession?: string | string[] }>;
+  searchParams: Promise<{ redirect?: string | string[]; returnUrl?: string | string[]; resumeSession?: string | string[] }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { redirect, resumeSession } = await searchParams;
-  const redirectUrl = resolveLoginRedirect(redirect);
-  const requested = typeof redirect === "string" ? parseFrontUrl(redirect) : undefined;
+  const { redirect, returnUrl, resumeSession } = await searchParams;
+  const returnDestination = redirect ?? returnUrl;
+  const redirectUrl = resolveLoginRedirect(returnDestination);
+  const requested = typeof returnDestination === "string" ? parseFrontUrl(returnDestination) : undefined;
   const login = parseFrontUrl(process.env.LOGIN_FRONT_URL);
   const canResume = Boolean(login && requested && resumeSession === "1" &&
     requested.href === redirectUrl && requested.origin !== login.origin);
