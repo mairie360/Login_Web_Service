@@ -128,9 +128,10 @@ export function writes() {
     if (!signedIn) return;
 
     // The front issues Secure cookies (production image), which the k6 jar drops over plain HTTP:
-    // replay them explicitly, exactly as the browser would send them on HTTPS.
-    const logout = http.post(`${BASE_URL}/api/auth/logout`, null, {
-      headers: { ...BROWSER_HEADERS, Cookie: session },
+    // replay them explicitly, exactly as the browser would send them on HTTPS. The handler
+    // only accepts a JSON body (415 otherwise), like the page's fetch.
+    const logout = http.post(`${BASE_URL}/api/auth/logout`, '{}', {
+      headers: { ...BROWSER_HEADERS, 'Content-Type': 'application/json', Cookie: session },
       redirects: 0,
       tags: { endpoint: 'logout' },
     });
