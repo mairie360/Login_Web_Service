@@ -47,9 +47,11 @@ const business = () => bff.on('GET','/me',req=>req.headers.authorization==='Bear
 
 test('API and legacy entries preserve the same published contract gate',async()=>{
  for(const method of ['GET','POST','PUT','PATCH','DELETE','HEAD'])assert.equal(proxy[method],legacy[method]);
- for(const name of ['openapi.json','swagger.json','auth/refresh']){
+ // /auth/refresh is declared by the published contract (POST only) since the dev package of MAIR-509:
+ // a GET is refused as an undeclared method (405), the metadata paths stay unknown (404).
+ for(const [name,status] of [['openapi.json',404],['swagger.json',404],['auth/refresh',405]]){
   const response=await proxy.GET(new NextRequest(origin+'/api/bff/'+name),{params:Promise.resolve({path:name.split('/')})});
-  assert.equal(response.status,404);assert.equal(response.headers.get('set-cookie'),null);
+  assert.equal(response.status,status,name);assert.equal(response.headers.get('set-cookie'),null);
  }
  assert.equal(bff.requests.length,0);assert.equal(ownerCalls.length,0);
 });

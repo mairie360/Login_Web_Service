@@ -9,34 +9,34 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 | Méthode | Route | Réponse / schéma |
 | --- | --- | --- |
 | POST | `/auth/force_change_password` | 2XX sans corps |
-| POST | `/auth/login` | 2XX AuthTokenResponse ; 412 PostAuthLogin412 |
+| POST | `/auth/keycloak` | 2XX AuthSessionResponse |
+| POST | `/auth/login` | 2XX AuthSessionResponse ; 412 PostAuthLogin412 |
 | POST | `/auth/logout` | 2XX LogoutResponse |
-| POST | `/auth/register` | 2XX sans corps |
+| POST | `/auth/refresh` | 2XX RefreshResponse |
 | GET | `/bff/admin/groups` | 2XX GetBffAdminGroups200 ou CoreResponse |
 | POST | `/bff/admin/groups` | 2XX CoreResponse |
-| DELETE | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
 | GET | `/bff/admin/groups/{groupId}` | 2XX GetBffAdminGroupsGroupId200 ou CoreResponse |
 | PATCH | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
+| DELETE | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
 | GET | `/bff/admin/groups/{groupId}/users` | 2XX GetBffAdminGroupsGroupIdUsers200 ou CoreResponse |
 | POST | `/bff/admin/groups/{groupId}/users` | 2XX CoreResponse |
 | DELETE | `/bff/admin/groups/{groupId}/users/{userId}` | 2XX CoreResponse |
 | GET | `/bff/admin/roles` | 2XX GetBffAdminRoles200 ou CoreResponse |
 | POST | `/bff/admin/roles` | 2XX CoreResponse |
-| DELETE | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
-| PATCH | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
 | PUT | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
+| PATCH | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
+| DELETE | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
 | GET | `/bff/admin/sessions` | 2XX GetBffAdminSessions200 ou CoreResponse |
 | GET | `/bff/admin/sessions/history` | 2XX GetBffAdminSessionsHistory200 ou CoreResponse |
-| POST | `/bff/admin/sessions/refresh` | 2XX CoreResponse |
 | POST | `/bff/admin/sessions/revoke` | 2XX CoreResponse |
 | GET | `/bff/admin/users` | 2XX AdministrationUsersPage ou CoreResponse |
 | POST | `/bff/admin/users` | 2XX CoreResponse |
-| DELETE | `/bff/admin/users/{userId}` | 2XX CoreResponse |
 | PATCH | `/bff/admin/users/{userId}` | 2XX CoreResponse |
+| DELETE | `/bff/admin/users/{userId}` | 2XX CoreResponse |
 | PATCH | `/bff/admin/users/{userId}/password` | 2XX CoreResponse |
 | POST | `/bff/admin/users/{userId}/roles` | 2XX CoreResponse |
 | DELETE | `/bff/admin/users/{userId}/roles/{roleId}` | 2XX CoreResponse |
-| GET | `/check_apis` | 2XX CheckApiResponse |
+| GET | `/check_apis` | 2XX CheckApisResponse |
 | GET | `/health` | 2XX sans corps |
 | GET | `/me` | 2XX SessionResponse |
 | GET | `/session/me` | 2XX SessionResponse |
@@ -44,4 +44,4 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 
 ## Mise à jour et validation
 
-Après une release de BFF_user publiant une nouvelle version `X.Y.Z` du paquet (jamais une pré-version `0.0.0-dev`/`staging`, jamais une copie du checkout local du BFF) : `npm install --save-exact @mairie360/bff-user-openapi@X.Y.Z`, puis `npm run contracts:sync`, `npm run contracts:check` et `npm test`. Le paquet est une sortie orval sans `openapi.json` : `scripts/orval-contract.mjs` en reconstruit le contrat. Seuls les succès (`2XX`) et les réponses modélisées par statut (`412`) y figurent ; erreurs, formats et en-têtes de réponse n’y sont pas. Le tag de l’image `bff-user` des fichiers `docker-compose*.yml` doit suivre la même version.
+Le paquet est épinglé à une version exacte : une release `X.Y.Z` de BFF_user, ou, tant qu'aucune release n'est coupée, le paquet `0.0.0-dev.<sha>` publié par la CICD pour le commit courant de son `main` (MAIR-509 ; jamais une pré-version `staging`, jamais une copie du checkout local du BFF). Mise à jour : `npm install --save-exact @mairie360/bff-user-openapi@<version>`, puis `npm run contracts:sync`, `npm run contracts:check` et `npm test`. Le paquet est une sortie orval sans `openapi.json` : `scripts/orval-contract.mjs` en reconstruit le contrat. Seuls les succès (`2XX`) et les réponses modélisées par statut (`412`) y figurent ; erreurs, formats et en-têtes de réponse n’y sont pas. Le tag de l’image `bff-user` des fichiers `docker-compose*.yml` doit être construit depuis le même commit : `X.Y.Z` pour une release, `dev-<sha7>` pour un paquet dev (`scripts/contract-version.mjs`).

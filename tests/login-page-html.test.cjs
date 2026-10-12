@@ -61,7 +61,18 @@ afterEach(() => {
   assert.deepEqual([...bff.violations, ...front.violations], []);
 });
 
-const apiError = (status, message) => ({ status, body: { code: 'UPSTREAM_ERROR', message }, outOfContract: true });
+const ERROR_CODES = { 400: 'BAD_REQUEST', 401: 'UNAUTHORIZED', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT', 429: 'TOO_MANY_REQUESTS', 500: 'INTERNAL_ERROR', 502: 'BAD_GATEWAY', 503: 'SERVICE_UNAVAILABLE', 504: 'GATEWAY_TIMEOUT' };
+const apiError = (status, message) => ({ status, body: { error: { code: ERROR_CODES[status] ?? 'INTERNAL_ERROR', message, details: [] } }, outOfContract: true });
+
+/**
+ * Connexion réussie selon le contrat courant de BFF User : le corps est AuthSessionResponse et les jetons
+ * n'arrivent que par les cookies HttpOnly accessToken / refreshToken (lus par readBffCookieSession).
+ */
+const sessionReply = (accessToken, extra = {}) => ({
+  body: { message: 'Logged in successfully' },
+  headers: { 'Set-Cookie': [`accessToken=${accessToken}; Path=/; HttpOnly; SameSite=Strict`, 'refreshToken=refresh-token; Path=/auth; HttpOnly; SameSite=Strict'] },
+  ...extra,
+});
 const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
 const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
@@ -86,7 +97,7 @@ const assertPending = (ids) => {
 
 const validatedError = (status, message) => {
   const reply = apiError(status, message);
-  assert.deepEqual(contract.validate(contract.document.components.schemas.ApiErrorResponse, reply.body), []);
+  assert.deepEqual(contract.validate(contract.document.components.schemas.ErrorResponse, reply.body), []);
   return reply;
 };
 
@@ -123,7 +134,7 @@ test('pending sign-in locks credentials, ignores repeated submissions and allows
   assert.equal(view.hostElements((props) => props.id === 'email')[0].props.disabled, false);
   assert.equal(bff.requests.length, 1);
   assert.deepEqual(window.location.assigned, []);
-  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
   await submit();
   assert.equal(front.browserCalls.length, 2);
   assert.equal(bff.requests.length, 2);
@@ -153,7 +164,7 @@ test('a browser transport failure releases sign-in and supports a subsequent exp
   } finally {
     front.fetch = originalFetch;
   }
-  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
   await submit();
   assert.equal(front.browserCalls.length, 2);
   assert.equal(bff.requests.length, 1);
@@ -237,7 +248,7 @@ test('first-password refusal without a message keeps the draft for an explicit r
     front.fetch = originalFetch;
   }
   bff.on('POST', '/auth/force_change_password', { status: 204 });
-  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } });
+  bff.on('POST', '/auth/login', sessionReply('fresh-access-token'));
   await submit();
   assert.equal(front.browserCalls.length, 4);
   assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
@@ -324,7 +335,7 @@ test('one lock spans first-password confirmation and lost reconnection without s
       front.fetch = originalFetch;
     }
   }
-  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } });
+  bff.on('POST', '/auth/login', sessionReply('fresh-access-token'));
   await submit();
   assert.equal(front.browserCalls.length, 4);
   assert.equal(bff.requests.length, 3);
@@ -445,7 +456,7 @@ test('a successful sign-in returns to the requested page', async () => {
   const previous = process.env.CALENDAR_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
   try {
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+    bff.on('POST', '/auth/login', sessionReply('access-token'));
     await renderLogin({ redirect: 'https://calendar.mairie.test/events?id=42' });
     await typeInto('email', 'alice@mairie.test');
     await typeInto('password', 'S3cret!');
@@ -471,7 +482,7 @@ for (const { name, params, destination } of [
     const previous = process.env.CALENDAR_FRONT_URL;
     process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
     try {
-      bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+      bff.on('POST', '/auth/login', sessionReply('access-token'));
       await renderLogin(params);
       await typeInto('email', 'alice@mairie.test');
       await typeInto('password', 'S3cret!');
@@ -496,7 +507,7 @@ test('an empty submission is refused in the page without any network call', asyn
 });
 
 test('valid credentials sign the user in: the cookie is set, the success is rendered and the browser leaves', async () => {
-  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
   await renderLogin();
 
   await typeInto('email', '  alice@mairie.test ');
@@ -536,7 +547,7 @@ test('a first connection switches to the password change form, then signs in wit
   let logins = 0;
   bff.on('POST', '/auth/login', () => (logins++ === 0
     ? { status: 412, body: { token: 'first-connection-token' } }
-    : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
+    : sessionReply('fresh-access-token')));
   bff.on('POST', '/auth/force_change_password', { status: 204 });
   await renderLogin({ redirect: 'https://projects.mairie.test/projects?view=board' });
 
@@ -578,7 +589,7 @@ test('a first connection without a requested page ends on Dashboard', async () =
   let logins = 0;
   bff.on('POST', '/auth/login', () => (logins++ === 0
     ? { status: 412, body: { token: 'first-connection-token' } }
-    : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
+    : sessionReply('fresh-access-token')));
   bff.on('POST', '/auth/force_change_password', { status: 204 });
   await renderLogin();
   await typeInto('email', 'alice@mairie.test');

@@ -63,6 +63,7 @@ function readModels(dir) {
     const source = parse(file);
     const enumValues = new Map();
     const enumAliases = [];
+    const nullableEnums = new Set();
 
     for (const statement of source.statements) {
       if (ts.isInterfaceDeclaration(statement)) {
@@ -73,6 +74,10 @@ function readModels(dir) {
           models.schemas[statement.name.text] ??= models.aliases[statement.name.text];
         } else if (ts.isIndexedAccessTypeNode(statement.type)) {
           enumAliases.push(statement.name.text);
+        } else if (isNullableEnumAlias(statement.type)) {
+          // `export type X = typeof X[keyof typeof X] | null` : enum orval marqué @nullable.
+          enumAliases.push(statement.name.text);
+          nullableEnums.add(statement.name.text);
         } else {
           models.schemas[statement.name.text] ??= typeSchema(statement.type);
         }
@@ -92,10 +97,19 @@ function readModels(dir) {
     for (const name of enumAliases) {
       const values = enumValues.get(name);
       if (!values) throw new Error(`Enum orval ${name} sans constante associée (${file})`);
-      models.schemas[name] = { type: 'string', enum: values };
+      models.schemas[name] = nullableEnums.has(name)
+        ? { type: ['string', 'null'], enum: [...values, null] }
+        : { type: 'string', enum: values };
     }
   }
   return models;
+}
+
+/** `typeof X[keyof typeof X] | null` (ou l'inverse) : alias d'enum orval nullable. */
+function isNullableEnumAlias(node) {
+  if (!ts.isUnionTypeNode(node) || node.types.length !== 2) return false;
+  const isNull = (member) => ts.isLiteralTypeNode(member) && member.literal.kind === ts.SyntaxKind.NullKeyword;
+  return node.types.some(ts.isIndexedAccessTypeNode) && node.types.some(isNull);
 }
 
 function readOperation(operationId, fn, models) {
@@ -246,6 +260,10 @@ function typeSchema(node) {
     if (name === 'Array' && node.typeArguments?.[0]) return { type: 'array', items: typeSchema(node.typeArguments[0]) };
     if (name === 'Record' && node.typeArguments?.[1]) return { type: 'object', additionalProperties: typeSchema(node.typeArguments[1]) };
     return { $ref: `#/components/schemas/${name}` };
+  }
+  if (ts.isIndexedAccessTypeNode(node) && ts.isTypeQueryNode(node.objectType)) {
+    // `typeof X[keyof typeof X]` écrit en ligne : même enum orval que l'alias X.
+    return { $ref: `#/components/schemas/${node.objectType.exprName.getText()}` };
   }
   if (ts.isIntersectionTypeNode(node)) return { allOf: node.types.map(typeSchema) };
   if (ts.isUnionTypeNode(node)) {
