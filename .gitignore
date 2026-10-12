@@ -23,3 +23,6 @@ dist
 # end-to-end journeys (MAIR-603)
 /e2e/node_modules
 /e2e-report
+
+# Agent dev loop state (watcher pid and log), see agent_dev.sh
+.agent/
