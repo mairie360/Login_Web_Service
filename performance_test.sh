@@ -4,7 +4,14 @@ COMPOSE_FILE="docker-compose-performance.yml"
 SERVICE_NAME="k6-perf-test"
 
 echo "==> [1/4] Démarrage de la stack et lancement du test k6..."
-docker compose -f "$COMPOSE_FILE" up -d --build
+# TARGET_IMAGE (CI, MAIR-516): test the published front image instead of rebuilding it here.
+# `up --build` would rebuild and retag it locally, so the build is skipped and the image pulled.
+if [ -n "${TARGET_IMAGE:-}" ]; then
+  echo "Image sous test : $TARGET_IMAGE (pas de build local)."
+  docker compose -f "$COMPOSE_FILE" up -d --no-build --pull missing
+else
+  docker compose -f "$COMPOSE_FILE" up -d --build
+fi
 UP_EXIT_CODE=$?
 
 echo "==> [2/4] Attente de la fin du test k6..."

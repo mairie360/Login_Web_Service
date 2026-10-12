@@ -4,31 +4,44 @@ import crypto from 'k6/crypto';
 import encoding from 'k6/encoding';
 
 // ---------------------------------------------------------------------------
-// Test de charge k6 pour le front Login (Login_Web_Service).
-// Cible les routes réellement servies par le serveur Next.js : la page de connexion (rendu Next.js),
-// /health, puis les lectures de session /me et /session/me relayées par le proxy same-origin vers BFF User.
-// L'authentification passe par le cookie accessToken, comme dans le navigateur :
-// le proxy le convertit en Authorization: Bearer vers le BFF.
+// k6 load test of the Login front (Login_Web_Service).
+// Two scenarios run side by side against the routes the Next.js server really serves:
+//   * `reads`: the sign-in page, /health, then the session reads /me and /session/me relayed by
+//     the same-origin proxy to BFF User, with the accessToken cookie a browser would hold;
+//   * `writes` (MAIR-516): the browser sign-in flow, POST /api/auth/login (BFF User -> Core API,
+//     argon2id verification, session creation) followed by POST /api/auth/logout, with the cookies
+//     the front issued, so the write path is measured and a 401/412/redirect fails the run.
 // ---------------------------------------------------------------------------
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000';
-// Doit correspondre au JWT_SECRET des services core-api / bff-user / APIs de la stack de test.
+// Must match the JWT_SECRET of the core-api / bff-user services of the test stack.
 const JWT_SECRET = __ENV.JWT_SECRET || 'b"secret"';
-// Utilisateur inséré par init-test.sql (sub du token).
+// User inserted by init-test.sql (token `sub`, sign-in credentials).
 const USER_ID = __ENV.PERF_USER_ID || '2';
+const USER_EMAIL = __ENV.PERF_USER_EMAIL || 'perf-tester@mairie360.fr';
+// Clear text of the argon2id template hash seeded by init-test.sql (Database repository).
+const USER_PASSWORD = __ENV.PERF_USER_PASSWORD || 'password_template';
+
+const STAGES = [
+  { duration: '30s', target: 20 }, // ramp up
+  { duration: '1m', target: 20 }, // plateau
+  { duration: '10s', target: 0 }, // ramp down
+];
 
 export const options = {
-  stages: [
-    { duration: '30s', target: 20 }, // montée en charge
-    { duration: '1m', target: 20 },  // maintien
-    { duration: '10s', target: 0 },  // descente
-  ],
+  scenarios: {
+    reads: { executor: 'ramping-vus', startVUs: 0, stages: STAGES, exec: 'reads', gracefulRampDown: '5s' },
+    // Few VUs on purpose: every iteration hashes a password on Core API and opens a session.
+    writes: { executor: 'constant-vus', vus: 3, duration: '1m40s', exec: 'writes' },
+  },
   thresholds: {
-    http_req_failed: ['rate<0.01'],                      // < 1% d'erreurs
-    checks: ['rate>0.99'],                               // une redirection (307) n'est pas une erreur HTTP : les checks la détectent
-    'http_req_duration{endpoint:page}': ['p(95)<800'],   // rendu page Next.js
-    'http_req_duration{endpoint:health}': ['p(95)<150'], // proxy same-origin -> BFF /health
-    'http_req_duration{endpoint:user}': ['p(95)<500'],   // proxy + agrégation BFF + upstream
+    http_req_failed: ['rate<0.01'], // < 1% of HTTP errors
+    checks: ['rate>0.99'], // a redirect (307) is not an HTTP error: the checks catch it
+    'http_req_duration{endpoint:page}': ['p(95)<800'], // Next.js page render
+    'http_req_duration{endpoint:health}': ['p(95)<150'], // same-origin proxy -> BFF /health
+    'http_req_duration{endpoint:user}': ['p(95)<500'], // proxy + BFF aggregation + upstream
+    'http_req_duration{endpoint:login}': ['p(95)<1500'], // argon2id verification + session creation
+    'http_req_duration{endpoint:logout}': ['p(95)<800'], // session revocation through BFF User
   },
 };
 
@@ -36,7 +49,7 @@ function b64url(value) {
   return encoding.b64encode(value, 'rawurl');
 }
 
-// JWT HS256 minimal accepté par Core API / BFF User (claims sub + role + exp).
+// Minimal HS256 JWT accepted by Core API / BFF User (claims sub + role + exp).
 function mintJwt() {
   const header = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
@@ -46,14 +59,22 @@ function mintJwt() {
   return `${signingInput}.${signature}`;
 }
 
+// The authentication route handlers only accept same-origin browser requests (rejectUnsafeAuthRequest).
+const BROWSER_HEADERS = {
+  Accept: 'application/json',
+  Origin: BASE_URL,
+  'Sec-Fetch-Site': 'same-origin',
+  'User-Agent': 'k6 load test',
+};
+
 export function setup() {
   return { token: mintJwt() };
 }
 
-export default function (data) {
+export function reads(data) {
   const cookie = { Cookie: `accessToken=${data.token}` };
-  // redirects: 0 : une redirection (ex. vers le front Login si le cookie est refusé)
-  // doit faire échouer le check au lieu d'être suivie hors de la stack.
+  // redirects: 0 : a redirect (e.g. to the Login page when the cookie is refused)
+  // must fail the check instead of being followed outside the stack.
   const pageParams = { headers: cookie, redirects: 0, tags: { endpoint: 'page' } };
   const dataParams = { headers: { ...cookie, Accept: 'application/json' }, redirects: 0, tags: { endpoint: 'user' } };
 
@@ -73,6 +94,47 @@ export default function (data) {
 
     const sessionMe = http.get(`${BASE_URL}/session/me`, dataParams);
     check(sessionMe, { '/session/me 200': (r) => r.status === 200 });
+  });
+
+  sleep(1);
+}
+
+// `accessToken=…; refreshToken=…` from the Set-Cookie headers of the sign-in reply, or '' when none.
+function sessionCookies(response) {
+  const names = ['accessToken', 'refreshToken'];
+  const pairs = [];
+  for (const name of names) {
+    const cookie = response.cookies[name] && response.cookies[name][0];
+    if (cookie && cookie.value) pairs.push(`${name}=${cookie.value}`);
+  }
+  return pairs.length && pairs[0].startsWith('accessToken=') ? pairs.join('; ') : '';
+}
+
+export function writes() {
+  // Each iteration is a fresh browser: no cookie survives from the previous sign-in.
+  http.cookieJar().clear(BASE_URL);
+
+  group('sign-in', () => {
+    const login = http.post(
+      `${BASE_URL}/api/auth/login`,
+      JSON.stringify({ email: USER_EMAIL, password: USER_PASSWORD }),
+      { headers: { ...BROWSER_HEADERS, 'Content-Type': 'application/json' }, redirects: 0, tags: { endpoint: 'login' } },
+    );
+    const session = sessionCookies(login);
+    const signedIn = check(login, {
+      'POST /api/auth/login 200': (r) => r.status === 200,
+      'POST /api/auth/login opens a session': (r) => Boolean(session) && !r.json('requiresPasswordChange'),
+    });
+    if (!signedIn) return;
+
+    // The front issues Secure cookies (production image), which the k6 jar drops over plain HTTP:
+    // replay them explicitly, exactly as the browser would send them on HTTPS.
+    const logout = http.post(`${BASE_URL}/api/auth/logout`, null, {
+      headers: { ...BROWSER_HEADERS, Cookie: session },
+      redirects: 0,
+      tags: { endpoint: 'logout' },
+    });
+    check(logout, { 'POST /api/auth/logout 200': (r) => r.status === 200 });
   });
 
   sleep(1);

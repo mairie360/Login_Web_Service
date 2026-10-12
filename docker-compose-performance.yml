@@ -191,6 +191,10 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: 5000
       BFF_USER_API_URL: http://bff-user:4000
+      # The production image refuses to issue the session cookie without a domain (503), and the
+      # authentication routes only accept requests whose Origin is this front (403 otherwise).
+      COOKIE_DOMAIN: login-front
+      LOGIN_FRONT_URL: http://login-front:5000
     expose:
       - "5000"
     networks:
@@ -215,6 +219,10 @@ services:
       BASE_URL: http://login-front:5000
       JWT_SECRET: 'b"secret"'
       PERF_USER_ID: "2"
+      # Credentials of that user (init-test.sql seeds the argon2id template hash of the
+      # Database repository) for the sign-in scenario of load-test.js (MAIR-516).
+      PERF_USER_EMAIL: perf-tester@mairie360.fr
+      PERF_USER_PASSWORD: password_template
     command: ["run", "/load-test.js"]
     networks:
       - backend
