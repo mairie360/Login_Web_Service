@@ -1,0 +1,20 @@
+{
+  "name": "mairie360-e2e-agent",
+  "private": true,
+  "type": "module",
+  "description": "Harnais de tests de bout en bout pilotés par un agent IA (navigateur + e-mail + base en lecture seule).",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "doctor": "node lib/doctor.mjs",
+    "users": "node lib/users.mjs",
+    "db": "node lib/db.mjs",
+    "redis": "node lib/redis.mjs",
+    "mail": "node lib/mail.mjs",
+    "check": "node --check lib/config.mjs && node --check lib/api.mjs && node --check lib/db.mjs && node --check lib/redis.mjs && node --check lib/mail.mjs && node --check lib/users.mjs && node --check lib/browser.mjs && node --check lib/doctor.mjs"
+  },
+  "dependencies": {
+    "ioredis": "5.4.1",
+    "pg": "8.13.1",
+    "playwright": "1.49.1"
+  }
+}
