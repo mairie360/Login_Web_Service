@@ -1,4 +1,4 @@
-import type { AuthTokenResponse, LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
+import type { LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
 import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
@@ -99,9 +99,14 @@ function getPasswordChangeToken(body: unknown) {
   return typeof token === "string" && token ? token : null;
 }
 
+// Protocole publié jusqu'à bff-user-openapi 0.5.0 (AuthTokenResponse) : le refresh token était dans le corps
+// et le JWT dans l'en-tête Authorization. Le contrat courant ne livre plus les jetons que par cookies
+// (readBffCookieSession) ; cette lecture ne sert qu'aux réponses sans cookie de session.
+type LegacyAuthTokenResponse = { refresh_token?: unknown };
+
 function getRefreshToken(body: unknown) {
   if (typeof body !== "object" || body === null) return null;
-  const { refresh_token: token } = body as Partial<AuthTokenResponse>;
+  const { refresh_token: token } = body as LegacyAuthTokenResponse;
   return typeof token === "string" && token.length > 0 && token.trim() === token ? token : null;
 }
 

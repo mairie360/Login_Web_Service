@@ -75,17 +75,29 @@ const changeRequest = (body, token = 'first-connection-token', url = 'http://loc
   body: typeof body === 'string' ? body : JSON.stringify(body),
 });
 
-const apiErrorSchema = contract.schema('ApiErrorResponse');
+const apiErrorSchema = contract.schema('ErrorResponse');
+const ERROR_CODES = { 400: 'BAD_REQUEST', 401: 'UNAUTHORIZED', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT', 429: 'TOO_MANY_REQUESTS', 500: 'INTERNAL_ERROR', 502: 'BAD_GATEWAY', 503: 'SERVICE_UNAVAILABLE', 504: 'GATEWAY_TIMEOUT' };
 
 /**
  * Erreur BFF User. La sortie orval du paquet ne rattache pas les erreurs à leurs opérations : la réponse est
- * hors contrat d'opération, mais son corps doit rester conforme au modèle publié ApiErrorResponse.
+ * hors contrat d'opération, mais son corps doit rester conforme au modèle publié ErrorResponse
+ * ({ error: { code, message, details } }, enveloppe unifiée des BFFs, MAIR-234).
  */
 function apiError(status, message) {
-  const body = { message };
+  const body = { error: { code: ERROR_CODES[status] ?? 'INTERNAL_ERROR', message, details: [] } };
   assert.deepEqual(contract.validate(apiErrorSchema, body), []);
   return { status, body, outOfContract: true };
 }
+
+/**
+ * Connexion réussie selon le contrat courant de BFF User : le corps est AuthSessionResponse et les jetons
+ * n'arrivent que par les cookies HttpOnly accessToken / refreshToken (lus par readBffCookieSession).
+ */
+const sessionReply = (accessToken, extra = {}) => ({
+  body: { message: 'Logged in successfully' },
+  headers: { 'Set-Cookie': [`accessToken=${accessToken}; Path=/; HttpOnly; SameSite=Strict`, 'refreshToken=refresh-token; Path=/auth; HttpOnly; SameSite=Strict'] },
+  ...extra,
+});
 
 describe('trusted ingress client IP headers', () => {
   const ipHeaders = { 'X-Forwarded-For': '198.51.100.20, 203.0.113.9', 'X-Real-IP': '203.0.113.9' };
@@ -103,7 +115,7 @@ describe('trusted ingress client IP headers', () => {
 
   test('an explicitly trusted ingress chain reaches login, password change, and shared business proxy', async () => {
     process.env.TRUST_INGRESS_IP_HEADERS = 'true';
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+    bff.on('POST', '/auth/login', sessionReply('access-token'));
     bff.on('POST', '/auth/force_change_password', { status: 204 });
     bff.on('GET', '/me', { body: contract.sample(contract.schema('SessionResponse')) });
 
@@ -136,7 +148,7 @@ async function withShortTimeouts(run) {
 
 describe('POST /api/auth/login → BFF POST /auth/login', () => {
   test('stores the Authorization access token in the shared cookie and sends a contract-valid LoginView', async () => {
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+    bff.on('POST', '/auth/login', sessionReply('access-token'));
 
     const response = await login.POST(loginRequest({ email: '  alice.dupont@mairie360.fr ', password: 'MotDePasse123', device_info: 'ignored' }, { cookie: 'accessToken=stale' }));
 
@@ -159,7 +171,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
 
   for (const [name, userAgent] of [['no', null], ['an empty', '']]) {
     test(`falls back to a non-empty device_info (minLength 1 in LoginView) when the browser sends ${name} user-agent`, async () => {
-      bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'bearer access-token' } });
+      bff.on('POST', '/auth/login', sessionReply('access-token'));
 
       const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, { 'User-Agent': userAgent }));
 
@@ -203,9 +215,9 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     });
   }
 
-  test('a 200 without Authorization header never becomes a session, even with a refresh token', async () => {
-    // La sortie orval ne conserve pas l'en-tête Authorization de la réponse : seul le corps est vérifiable.
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' } });
+  test('a 200 without session cookies nor Authorization header never becomes a session', async () => {
+    // La sortie orval ne conserve ni les en-têtes Set-Cookie ni Authorization : seul le corps est vérifiable.
+    bff.on('POST', '/auth/login', { body: { message: 'Logged in successfully' } });
 
     const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }));
 
@@ -230,7 +242,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     assert.equal(dropped.status, 502);
     assert.deepEqual(await dropped.json(), { message: 'Le service de connexion est indisponible.' });
 
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer late' }, delayMs: 500 });
+    bff.on('POST', '/auth/login', sessionReply('late', { delayMs: 500 }));
     const slow = await withShortTimeouts(() => login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' })));
     assert.equal(slow.status, 504);
     assert.equal(slow.cookies.get('accessToken'), undefined);
@@ -431,7 +443,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     bff.on('GET', '/me', { ...apiError(500, 'Erreur serveur'), headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
     const result = await catchAll.GET(new NextRequest('http://localhost:5000/api/bff/me', { headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/me'));
     assert.equal(result.status, 500);
-    assert.deepEqual(await result.json(), { message: 'Erreur serveur' });
+    assert.deepEqual(await result.json(), { error: { code: 'INTERNAL_ERROR', message: 'Erreur serveur', details: [] } });
     assert.equal(result.headers.get('set-cookie'), null);
   });
 

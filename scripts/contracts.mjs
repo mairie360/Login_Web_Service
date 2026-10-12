@@ -3,9 +3,11 @@ import console from 'node:console';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PACKAGE_NAME, buildOrvalOpenApi, resolveOrvalPackage } from './orval-contract.mjs';
+import { isAcceptedContractVersion } from './contract-version.mjs';
 
 // Le seul contrat utilisé par ce front est celui de BFF User publié dans @mairie360/bff-user-openapi,
-// épinglé à une version exacte X.Y.Z. contracts/openapi.json en est la reconstruction versionnée
+// épinglé à une version exacte (release X.Y.Z, ou paquet dev 0.0.0-dev.<sha> du main du BFF, voir
+// contract-version.mjs). contracts/openapi.json en est la reconstruction versionnée
 // (lue par le proxy au build et par les tests) ; il n'est jamais copié depuis un checkout du BFF.
 //   --sync   (alias --generate) : régénère contracts/openapi.json depuis le paquet installé
 //   --check  : échoue si la version n'est pas exacte, si le paquet installé diffère de package.json
@@ -13,13 +15,12 @@ import { PACKAGE_NAME, buildOrvalOpenApi, resolveOrvalPackage } from './orval-co
 
 const mode = process.argv[2] ?? '--check';
 const spec = resolve('contracts/openapi.json');
-const EXACT_VERSION = /^\d+\.\d+\.\d+$/;
 
 function checkPinnedPackage() {
   const { dependencies = {}, devDependencies = {} } = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
   const pinned = dependencies[PACKAGE_NAME] ?? devDependencies[PACKAGE_NAME];
   if (!pinned) throw new Error(`${PACKAGE_NAME} doit être une dépendance de package.json.`);
-  if (!EXACT_VERSION.test(pinned)) throw new Error(`${PACKAGE_NAME} doit être épinglé à une version publiée exacte X.Y.Z (trouvé « ${pinned} »).`);
+  if (!isAcceptedContractVersion(pinned)) throw new Error(`${PACKAGE_NAME} doit être épinglé à une version publiée exacte (X.Y.Z ou 0.0.0-dev.<sha>, trouvé « ${pinned} »).`);
   const bffPackages = Object.keys({ ...dependencies, ...devDependencies }).filter((name) => /^@mairie360\/bff-.*-openapi$/.test(name));
   if (bffPackages.length !== 1) throw new Error(`Un seul contrat de BFF est autorisé (trouvé : ${bffPackages.join(', ')}).`);
   const installed = resolveOrvalPackage().version;

@@ -31,6 +31,26 @@
         ],
         "type": "object"
       },
+      "AdminGroupCreateBody": {
+        "properties": {
+          "description": {
+            "maxLength": 2000,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
       "AdminGroupIdParams": {
         "properties": {
           "groupId": {
@@ -47,15 +67,33 @@
         "properties": {
           "description": {
             "maxLength": 2000,
+            "pattern": "^[^<>]*$",
             "type": "string"
           },
           "name": {
             "maxLength": 64,
             "minLength": 1,
+            "pattern": "^[^<>]*$",
             "type": "string"
           }
         },
         "required": [],
+        "type": "object"
+      },
+      "AdminGroupUserBody": {
+        "properties": {
+          "group_id": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "user_id": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
         "type": "object"
       },
       "AdminGroupUserParams": {
@@ -75,11 +113,6 @@
         ],
         "type": "object"
       },
-      "AdminJsonBody": {
-        "properties": {},
-        "required": [],
-        "type": "object"
-      },
       "AdminRoleIdParams": {
         "properties": {
           "roleId": {
@@ -89,6 +122,147 @@
         },
         "required": [
           "roleId"
+        ],
+        "type": "object"
+      },
+      "AdminRolePatchBody": {
+        "properties": {
+          "can_be_deleted": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "maxLength": 2000,
+            "pattern": "^[^<>]*$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AdminRoleReplaceBody": {
+        "properties": {
+          "can_be_deleted": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "maxLength": 2000,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
+      "AdminRoleWriteBody": {
+        "properties": {
+          "can_be_deleted": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "description": {
+            "maxLength": 2000,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
+      "AdminSessionRevokeBody": {
+        "properties": {
+          "refresh_token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "refresh_token"
+        ],
+        "type": "object"
+      },
+      "AdminUserCreateBody": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "type": "string"
+          },
+          "first_name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          },
+          "last_name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 255,
+            "minLength": 8,
+            "type": "string"
+          },
+          "phone_country": {
+            "pattern": "^[A-Z]{2}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone_number": {
+            "maxLength": 32,
+            "pattern": "^(?:\\+?[\\d\\s.()-]+)?$",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "first_name",
+          "last_name",
+          "password"
         ],
         "type": "object"
       },
@@ -133,6 +307,68 @@
         },
         "required": [
           "new_password"
+        ],
+        "type": "object"
+      },
+      "AdminUserPatchBody": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^<>]*$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone_country": {
+            "pattern": "^[A-Z]{2}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone_number": {
+            "maxLength": 32,
+            "pattern": "^(?:\\+?[\\d\\s.()-]+)?$",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AdminUserRoleBody": {
+        "properties": {
+          "role_id": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "user_id": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "role_id"
         ],
         "type": "object"
       },
@@ -195,6 +431,12 @@
           },
           "last_name": {
             "type": "string"
+          },
+          "phone_country": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "phone_number": {
             "type": [
@@ -293,6 +535,12 @@
           "last_name": {
             "type": "string"
           },
+          "phone_country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "phone_number": {
             "type": [
               "string",
@@ -366,9 +614,8 @@
         ],
         "type": "object"
       },
-      "ApiErrorResponse": {
+      "AuthSessionResponse": {
         "properties": {
-          "error": {},
           "message": {
             "type": "string"
           }
@@ -378,24 +625,13 @@
         ],
         "type": "object"
       },
-      "AuthTokenResponse": {
-        "properties": {
-          "refresh_token": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "refresh_token"
-        ],
-        "type": "object"
-      },
-      "CheckApiResponse": {
+      "CheckApisResponse": {
         "properties": {
           "core_api": {
-            "type": "string"
+            "$ref": "#/components/schemas/CheckApisResponseCoreApi"
           },
           "status": {
-            "type": "string"
+            "$ref": "#/components/schemas/CheckApisResponseStatus"
           }
         },
         "required": [
@@ -404,15 +640,94 @@
         ],
         "type": "object"
       },
+      "CheckApisResponseCoreApi": {
+        "enum": [
+          "Connected",
+          "Unreachable"
+        ],
+        "type": "string"
+      },
+      "CheckApisResponseStatus": {
+        "enum": [
+          "OK",
+          "Error"
+        ],
+        "type": "string"
+      },
       "CoreResponse": {
         "properties": {},
         "required": [],
         "type": "object"
       },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorResponseError"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "ErrorResponseError": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorResponseErrorCode"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/ErrorResponseErrorDetailsItem"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "type": "object"
+      },
+      "ErrorResponseErrorCode": {
+        "enum": [
+          "BAD_REQUEST",
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "CONFLICT",
+          "PAYLOAD_TOO_LARGE",
+          "UNPROCESSABLE_ENTITY",
+          "TOO_MANY_REQUESTS",
+          "INTERNAL_ERROR",
+          "BAD_GATEWAY",
+          "SERVICE_UNAVAILABLE",
+          "GATEWAY_TIMEOUT"
+        ],
+        "type": "string"
+      },
+      "ErrorResponseErrorDetailsItem": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
       "ForceChangePasswordView": {
         "properties": {
           "new_password": {
-            "minLength": 1,
+            "maxLength": 255,
+            "minLength": 8,
             "type": "string"
           },
           "token": {
@@ -465,6 +780,25 @@
         ],
         "type": "object"
       },
+      "GetBffAdminGroupsParams": {
+        "properties": {
+          "limit": {
+            "maximum": 500,
+            "minimum": 1,
+            "type": "number"
+          },
+          "offset": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
       "GetBffAdminRoles200": {
         "properties": {
           "roles": {
@@ -507,6 +841,25 @@
         ],
         "type": "object"
       },
+      "GetBffAdminSessionsHistoryParams": {
+        "properties": {
+          "limit": {
+            "maximum": 500,
+            "minimum": 1,
+            "type": "number"
+          },
+          "offset": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
       "GetBffAdminUsersParams": {
         "properties": {
           "page": {
@@ -524,6 +877,40 @@
           }
         },
         "required": [],
+        "type": "object"
+      },
+      "KeycloakLoginView": {
+        "properties": {
+          "code": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "code_verifier": {
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "device_info": {
+            "type": "string"
+          },
+          "nonce": {
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "redirect_uri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "redirect_uri",
+          "device_info"
+        ],
         "type": "object"
       },
       "LoginView": {
@@ -548,13 +935,33 @@
       },
       "LogoutResponse": {
         "properties": {
+          "logout_url": {
+            "type": "string"
+          },
           "message": {
             "type": "string"
+          },
+          "session_revoked": {
+            "type": "boolean"
           }
         },
         "required": [
-          "message"
+          "message",
+          "session_revoked"
         ],
+        "type": "object"
+      },
+      "LogoutView": {
+        "properties": {
+          "post_logout_redirect_uri": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [],
         "type": "object"
       },
       "PostAuthLogin412": {
@@ -568,7 +975,7 @@
         ],
         "type": "object"
       },
-      "PostBffAdminSessionsRefresh200": {
+      "RefreshResponse": {
         "properties": {
           "message": {
             "type": "string"
@@ -579,36 +986,14 @@
         ],
         "type": "object"
       },
-      "RegisterView": {
+      "RefreshView": {
         "properties": {
-          "email": {
-            "type": "string"
-          },
-          "first_name": {
+          "refresh_token": {
             "minLength": 1,
             "type": "string"
-          },
-          "last_name": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "password": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "phone_number": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
-        "required": [
-          "email",
-          "first_name",
-          "last_name",
-          "password"
-        ],
+        "required": [],
         "type": "object"
       },
       "SessionResponse": {
@@ -705,6 +1090,12 @@
               "null"
             ]
           },
+          "phone_country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "role": {
             "type": "string"
           },
@@ -737,7 +1128,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.5.0"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.0d80ef4e08e8db73ec2832911f42e75ae990a8d3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -757,6 +1148,34 @@
         },
         "responses": {
           "2XX": {
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/keycloak": {
+      "post": {
+        "operationId": "postAuthKeycloak",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeycloakLoginView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            },
             "description": "Succès (seul statut typé par orval)"
           }
         }
@@ -791,7 +1210,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthTokenResponse"
+                  "$ref": "#/components/schemas/AuthSessionResponse"
                 }
               }
             },
@@ -804,6 +1223,16 @@
       "post": {
         "operationId": "postAuthLogout",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutView"
+              }
+            }
+          },
+          "required": false
+        },
         "responses": {
           "2XX": {
             "content": {
@@ -818,22 +1247,29 @@
         }
       }
     },
-    "/auth/register": {
+    "/auth/refresh": {
       "post": {
-        "operationId": "postAuthRegister",
+        "operationId": "postAuthRefresh",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterView"
+                "$ref": "#/components/schemas/RefreshView"
               }
             }
           },
-          "required": true
+          "required": false
         },
         "responses": {
           "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            },
             "description": "Succès (seul statut typé par orval)"
           }
         }
@@ -842,7 +1278,31 @@
     "/bff/admin/groups": {
       "get": {
         "operationId": "getBffAdminGroups",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        ],
         "responses": {
           "2XX": {
             "content": {
@@ -870,7 +1330,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminGroupCreateBody"
               }
             }
           },
@@ -1033,7 +1493,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminGroupUserBody"
               }
             }
           },
@@ -1119,7 +1579,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminRoleWriteBody"
               }
             }
           },
@@ -1181,7 +1641,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminRolePatchBody"
               }
             }
           },
@@ -1216,7 +1676,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminRoleReplaceBody"
               }
             }
           },
@@ -1264,7 +1724,31 @@
     "/bff/admin/sessions/history": {
       "get": {
         "operationId": "getBffAdminSessionsHistory",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        ],
         "responses": {
           "2XX": {
             "content": {
@@ -1286,41 +1770,6 @@
         }
       }
     },
-    "/bff/admin/sessions/refresh": {
-      "post": {
-        "operationId": "postBffAdminSessionsRefresh",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/PostBffAdminSessionsRefresh200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
     "/bff/admin/sessions/revoke": {
       "post": {
         "operationId": "postBffAdminSessionsRevoke",
@@ -1329,7 +1778,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminSessionRevokeBody"
               }
             }
           },
@@ -1409,7 +1858,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminUserCreateBody"
               }
             }
           },
@@ -1471,7 +1920,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminUserPatchBody"
               }
             }
           },
@@ -1545,7 +1994,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AdminJsonBody"
+                "$ref": "#/components/schemas/AdminUserRoleBody"
               }
             }
           },
@@ -1609,7 +2058,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CheckApiResponse"
+                  "$ref": "#/components/schemas/CheckApisResponse"
                 }
               }
             },
