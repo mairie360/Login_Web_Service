@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: mairie360/CICD
-          ref: f5ea4257ac51aa2969f9ddb84730fbebce8f42a7 # published v4.0.1
+          ref: 16c63d21eedbf6c6e3b58ebc30c61231e49e2536 # main 2026-10-12 (MAIR-510, MAIR-516)
           path: cicd-repo
           persist-credentials: false
       - name: Run blocking Semgrep scan
@@ -44,11 +44,11 @@ jobs:
           fail_on_findings: "true"
 
   CICD:
-    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@f5ea4257ac51aa2969f9ddb84730fbebce8f42a7
+    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@16c63d21eedbf6c6e3b58ebc30c61231e49e2536
     with:
       package_name: "login-front"
       node_version: "24.21.0"
-      cicd_version: "f5ea4257ac51aa2969f9ddb84730fbebce8f42a7"
+      cicd_version: "16c63d21eedbf6c6e3b58ebc30c61231e49e2536"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}

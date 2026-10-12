@@ -199,7 +199,7 @@ For documentation-only changes, check links, accuracy in both languages and `git
 
 The `contracts.yml` job uses Node.js 24.21.0 with checkout and setup-node pinned by immutable commits. It runs on pushes, pull requests and manual dispatch; it installs with `npm ci`, checks contracts and runs the associated tests.
 
-`cicd.yml` calls `mairie360/CICD/.github/workflows/frontend-cicd.yml@f5ea4257ac51aa2969f9ddb84730fbebce8f42a7`, with that same `cicd_version` and `node_version: "24.21.0"`. Reusable steps and GitHub environments determine actual checks, publications and deployments.
+`cicd.yml` calls `mairie360/CICD/.github/workflows/frontend-cicd.yml@16c63d21eedbf6c6e3b58ebc30c61231e49e2536`, with that same `cicd_version` and `node_version: "24.21.0"`. Reusable steps and GitHub environments determine actual checks, publications and deployments.
 
 Lint and build are owned by the shared frontend CICD on Node.js 24.21.0. The redundant `nextjs.yml` workflow was removed for MAIR-403. The separate contract consistency and Dev exception workflows, required checks, scanners, environments and approval gates are retained.
 

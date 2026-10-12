@@ -48,7 +48,7 @@ test('the legacy required security name runs real immutable blocking scanners', 
   }
   assert.match(job, /fetch-depth: 0/);
   assert.equal([...job.matchAll(/persist-credentials: false/g)].length, 2);
-  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: f5ea4257ac51aa2969f9ddb84730fbebce8f42a7/);
+  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: 16c63d21eedbf6c6e3b58ebc30c61231e49e2536/);
   assert.match(job, /uses: \.\/cicd-repo\/actions\/frontend-semgrep-pypi/);
   assert.match(job, /config: p\/typescript p\/react p\/owasp-top-ten p\/secrets p\/dockerfile p\/github-actions/);
   assert.match(job, /artifact_name: semgrep-required-check-sarif/);
