@@ -41,7 +41,7 @@ x-api-env: &api-env
 
 services:
   postgres:
-    image: ${DB_IMAGE:-ghcr.io/mairie360/database:dev-99f6127}
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:dev-90c22bb}
     container_name: login-front-sec-db
     environment:
       POSTGRES_USER: postgres
@@ -60,7 +60,7 @@ services:
       retries: 10
 
   liquibase:
-    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:dev-99f6127}
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:dev-90c22bb}
     container_name: login-front-sec-liquibase
     depends_on:
       postgres:
@@ -110,7 +110,7 @@ services:
       retries: 5
 
   core-api:
-    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:dev-2529974}
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:dev-95531e2}
     container_name: login-front-sec-core-api
     depends_on:
       liquibase:
@@ -121,6 +121,11 @@ services:
       <<: *api-env
       PORT: 3000
       PUBLIC_URL: http://core-api:3000
+      # Core refuses to start without its Resend configuration (MAIR-522). No page of this front sends an
+      # e-mail through these stacks, so the key is fake and the URL never called.
+      RESEND_API_KEY: "re_fake_local"
+      RESEND_BASE_URL: "http://fake-resend.invalid"
+      EMAIL_DOMAIN: "mairie360.local"
       # Core API >= 2.0 refuses the weak shared test secret unless this flag is set (MAIR-428),
       # and rate-limits each account (MAIR-425): the scan / load test hammer it as one user.
       JWT_ALLOW_WEAK_SECRET: "true"
@@ -145,7 +150,7 @@ services:
       - backend
 
   bff-user:
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-3f35bd8}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-46a698b}
     container_name: login-front-sec-bff-user
     depends_on:
       seeder:

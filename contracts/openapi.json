@@ -741,6 +741,18 @@
         ],
         "type": "object"
       },
+      "ForgotPasswordView": {
+        "properties": {
+          "email": {
+            "maxLength": 320,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
       "GetAdminGroups200": {
         "properties": {
           "groups": {
@@ -996,6 +1008,29 @@
         "required": [],
         "type": "object"
       },
+      "ResetPasswordView": {
+        "properties": {
+          "device_info": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 255,
+            "minLength": 8,
+            "type": "string"
+          },
+          "token": {
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "new_password",
+          "device_info"
+        ],
+        "type": "object"
+      },
       "SessionResponse": {
         "properties": {
           "groups": {
@@ -1128,7 +1163,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.3f35bd858d4b4e36117964b5a3b70205f6fea2fd"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.46a698bb9adbf3c86a5517b4c958b379cb03fe70"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1927,6 +1962,27 @@
         }
       }
     },
+    "/auth/forgot_password": {
+      "post": {
+        "operationId": "postAuthForgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/auth/keycloak": {
       "post": {
         "operationId": "postAuthKeycloak",
@@ -2041,6 +2097,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RefreshResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/reset_password": {
+      "post": {
+        "operationId": "postAuthResetPassword",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
                 }
               }
             },
