@@ -210,7 +210,7 @@
         }
       }
     },
-    "/bff/admin/sessions/revoke": {
+    "/admin/sessions/revoke": {
       "post": {
         "tags": [
           "Administration"

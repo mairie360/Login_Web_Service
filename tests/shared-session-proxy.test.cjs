@@ -9,7 +9,7 @@ const { ContractMockServer } = require('./support/contract-mock-server.cjs');
 // The selected fixture contains the published Dev User session operations. The SDK stays at 0.5.0.
 const contract = OpenApiContract.load(path.join(__dirname, 'fixtures/user-session-openapi.json'));
 const bff = new ContractMockServer('PUBLISHED_USER_SESSION', contract);
-const proxy = requireTs('src/app/api/bff/[...path]/route.ts');
+const proxy = requireTs('src/app/[...path]/route.ts');
 const legacy = requireTs('src/app/[...path]/route.ts');
 const refresh = requireTs('src/app/api/auth/refresh/route.ts');
 const origin = 'https://login.mairie.test';
@@ -34,7 +34,7 @@ afterEach(()=>{
  for(const [key,value] of Object.entries(saved))value===undefined?delete process.env[key]:process.env[key]=value;
  assert.deepEqual(bff.violations,[]);
 });
-const read = (extra={}) => proxy.GET(new NextRequest(origin+'/api/bff/me?probe=1',{
+const read = (extra={}) => proxy.GET(new NextRequest(origin+'/me?probe=1',{
  headers:{Origin:origin,'Sec-Fetch-Site':'same-origin',Cookie:`accessToken=expired-access; refreshToken=${token}`,Authorization:'Bearer stale-browser',...extra}
 }),{params:Promise.resolve({path:['me']})});
 const renewed = () => bff.on('POST','/auth/refresh',{body:{message:'JWT refreshed successfully'},headers:{'Set-Cookie':[
@@ -50,7 +50,7 @@ test('API and legacy entries preserve the same published contract gate',async()=
  // /auth/refresh is declared by the published contract (POST only) since the dev package of MAIR-509:
  // a GET is refused as an undeclared method (405), the metadata paths stay unknown (404).
  for(const [name,status] of [['openapi.json',404],['swagger.json',404],['auth/refresh',405]]){
-  const response=await proxy.GET(new NextRequest(origin+'/api/bff/'+name),{params:Promise.resolve({path:name.split('/')})});
+  const response=await proxy.GET(new NextRequest(origin+'/'+name),{params:Promise.resolve({path:name.split('/')})});
   assert.equal(response.status,status,name);assert.equal(response.headers.get('set-cookie'),null);
  }
  assert.equal(bff.requests.length,0);assert.equal(ownerCalls.length,0);
@@ -84,9 +84,9 @@ test('a second 401 stops after one replay',async()=>{
 });
 test('a published mutation retries with the exact original JSON body',async()=>{
  renewed();const body=contract.sample(contract.schema('AdminSessionRevokeBody'));
- bff.on('POST','/bff/admin/sessions/revoke',req=>req.headers.authorization==='Bearer renewed-access'?{body:contract.sample(contract.schema('CoreResponse'))}:{status:401,body:{message:'Expired'},outOfContract:true});
- const response=await proxy.POST(new NextRequest(origin+'/api/bff/bff/admin/sessions/revoke',{method:'POST',headers:{Origin:origin,'Sec-Fetch-Site':'same-origin','Content-Type':'application/json',Cookie:`accessToken=expired-access; refreshToken=${token}`},body:JSON.stringify(body)}),{params:Promise.resolve({path:['bff','admin','sessions','revoke']})});
- assert.equal(response.status,200);assert.deepEqual(bff.calls('/bff/admin/sessions/revoke').map(x=>x.body),[body,body]);assert.equal(bff.calls('/auth/refresh').length,1);
+ bff.on('POST','/admin/sessions/revoke',req=>req.headers.authorization==='Bearer renewed-access'?{body:contract.sample(contract.schema('CoreResponse'))}:{status:401,body:{message:'Expired'},outOfContract:true});
+ const response=await proxy.POST(new NextRequest(origin+'/admin/sessions/revoke',{method:'POST',headers:{Origin:origin,'Sec-Fetch-Site':'same-origin','Content-Type':'application/json',Cookie:`accessToken=expired-access; refreshToken=${token}`},body:JSON.stringify(body)}),{params:Promise.resolve({path:['admin','sessions','revoke']})});
+ assert.equal(response.status,200);assert.deepEqual(bff.calls('/admin/sessions/revoke').map(x=>x.body),[body,body]);assert.equal(bff.calls('/auth/refresh').length,1);
 });
 test('foreign origins cannot reach User or the owner',async()=>{
  const response=await read({Origin:'https://foreign.test'});assert.equal(response.status,403);assert.equal(response.headers.get('set-cookie'),null);assert.equal(bff.requests.length,0);assert.equal(ownerCalls.length,0);

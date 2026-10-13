@@ -77,8 +77,13 @@ function describeCall(file, source, node) {
   const where = `${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1}`;
   if (target && ts.isStringLiteralLike(target)) return { where, file, kind: 'same-origin', url: target.text, method };
   if (target && ts.isCallExpression(target) && ts.isIdentifier(target.expression) && target.expression.text === 'bffUserUrl'
-    && target.arguments.length === 1 && ts.isStringLiteralLike(target.arguments[0])) {
-    return { where, file, kind: 'bff', url: target.arguments[0].text, method };
+    && target.arguments.length === 1 && ts.isCallExpression(target.arguments[0])
+    && calleePath(target.arguments[0].expression)?.startsWith('bffUserOperations.get')) {
+    // The path comes from a generated `get…Url()` helper of the published contract package.
+    const helper = target.arguments[0].expression.name.text;
+    const generated = fs.readFileSync(path.join(ROOT, 'node_modules/@mairie360/bff-user-openapi/endpoints/bffUser.ts'), 'utf8');
+    const url = generated.match(new RegExp(`const ${helper} = [\\s\\S]*?url: \`([^\`]+)\``))?.[1];
+    return { where, file, kind: url ? 'bff' : 'dynamic', url: url ?? helper, method };
   }
   return { where, file, kind: 'dynamic', url: target?.getText(source), method };
 }
@@ -159,7 +164,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   assert.match(properties.get('frontUrl'), /process\.env\.LOGIN_FRONT_URL/);
   assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /from '@mairie360\/lib-components\/next'/);
   const proxy = requireTs(PROXY_FILE).proxyBffRequest;
-  for (const file of ['src/app/[...path]/route.ts','src/app/api/bff/[...path]/route.ts']) {
+  for (const file of ['src/app/[...path]/route.ts','src/app/[...path]/route.ts']) {
     const exports = requireTs(file);
     for (const method of [...new Set(contract.operations().map(x => x.method)), 'HEAD']) assert.equal(exports[method], proxy);
   }

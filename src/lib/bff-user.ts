@@ -1,3 +1,8 @@
+import { getBffUser } from '@mairie360/bff-user-openapi/endpoints/bffUser';
+
+/** Operations of the published BFF User contract: their `get…Url()` helpers own every path. */
+export const bffUserOperations = getBffUser();
+
 // Unique BFF appelé par ce front : BFF User. Toute requête serveur vers un BFF passe par bffUserUrl,
 // résolu à chaque requête (tests/network-calls.test.cjs l'impose).
 export function configuredBffUrl() {
@@ -12,7 +17,7 @@ export function configuredBffUrl() {
   }
 }
 
-/** URL absolue d'une route de BFF User ; `path` doit être une opération de contracts/openapi.json. */
+/** URL absolue d'une route de BFF User ; `path` comes from a `get…Url()` helper of `bffUserOperations`. */
 export function bffUserUrl(path: string) {
   const baseUrl = configuredBffUrl();
   return baseUrl ? `${baseUrl}${path}` : '';

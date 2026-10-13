@@ -121,7 +121,7 @@ describe('trusted ingress client IP headers', () => {
 
     await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'MotDePasse123' }, ipHeaders));
     await forceChangePassword.POST(changeRequest({ newPassword: 'NouveauMotDePasse123' }, 'first-connection-token', undefined, ipHeaders));
-    await catchAll.GET(new NextRequest('http://localhost:5000/api/bff/me', {
+    await catchAll.GET(new NextRequest('http://localhost:5000/me', {
       headers: { 'Sec-Fetch-Site': 'same-origin', ...ipHeaders, cookie: 'accessToken=session-token' },
     }), { params: Promise.resolve({ path: ['me'] }) });
 
@@ -395,7 +395,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   });
 
   test('paths absent from the contract or with dot segments never reach the BFF', async () => {
-    for (const pathname of ['/unknown', '/auth', '/auth/login/extra', '/user/42', '/api/v1/user/me/', '/bff/admin/users/1/roles/2/extra']) {
+    for (const pathname of ['/unknown', '/auth', '/auth/login/extra', '/user/42', '/api/v1/user/me/', '/admin/users/1/roles/2/extra']) {
       const result = await catchAll.GET(new NextRequest(`http://localhost:5000${pathname}`), context(pathname));
       assert.equal(result.status, 404, pathname);
     }
@@ -441,7 +441,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
 
   test('ordinary business errors preserve their message but cannot clear session cookies', async () => {
     bff.on('GET', '/me', { ...apiError(500, 'Erreur serveur'), headers: { 'Set-Cookie': 'accessToken=; Max-Age=0; Path=/; HttpOnly' } });
-    const result = await catchAll.GET(new NextRequest('http://localhost:5000/api/bff/me', { headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/me'));
+    const result = await catchAll.GET(new NextRequest('http://localhost:5000/me', { headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=session-token' } }), context('/me'));
     assert.equal(result.status, 500);
     assert.deepEqual(await result.json(), { error: { code: 'INTERNAL_ERROR', message: 'Erreur serveur', details: [] } });
     assert.equal(result.headers.get('set-cookie'), null);

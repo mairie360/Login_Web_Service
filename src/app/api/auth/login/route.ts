@@ -1,6 +1,6 @@
 import type { LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
-import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
+import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const upstreamResponse = await fetch(bffUserUrl("/auth/login"), {
+    const upstreamResponse = await fetch(bffUserUrl(bffUserOperations.getPostAuthLoginUrl()), {
       method: "POST",
       headers: {
         Accept: "application/json",
