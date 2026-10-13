@@ -33,6 +33,8 @@ before(async () => {
   await bff.start();
   front.install();
   stubModule(path.join(__dirname, '..', 'src/app/globals.css'), {});
+  stubModule(path.join(__dirname, '..', 'src/app/municipal-theme.css'), {});
+  stubModule('next/font/google', { Geist: () => ({ variable: 'font-geist' }) });
   RootLayout = requireTs('src/app/layout.tsx').default;
   Home = requireTs('src/app/page.tsx').default;
   resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
