@@ -168,7 +168,7 @@ class OpenApiContract {
         if (schema.format === 'date') return '2026-09-15';
         if (schema.format === 'date-time') return '2026-09-15T08:00:00Z';
         if (schema.format === 'uri') return 'https://mairie360.test/';
-        return name.padEnd(schema.minLength ?? 1, 'x');
+        return this.sampleString(schema, name);
       case 'array': return schema.items ? [this.sample(schema.items, name)] : [];
       case 'object':
       default: {
@@ -177,6 +177,19 @@ class OpenApiContract {
         return Object.fromEntries((schema.required ?? []).map((key) => [key, properties[key] ? this.sample(properties[key], key) : key]));
       }
     }
+  }
+
+  /**
+   * A string named after its field, or a UUID when the schema asks for one: orval keeps the `pattern` of a
+   * `z.uuid()` field (the reset token of BFF User, MAIR-553) but drops its format.
+   */
+  sampleString(schema, name) {
+    const value = name.padEnd(schema.minLength ?? 1, 'x');
+    const uuid = '0f8fad5b-d9cb-469f-a165-70867728950e';
+    if (schema.format === 'uuid') return uuid;
+    if (typeof schema.pattern !== 'string') return value;
+    const pattern = new RegExp(schema.pattern, 'u');
+    return !pattern.test(value) && pattern.test(uuid) ? uuid : value;
   }
 
   resolve(ref) {

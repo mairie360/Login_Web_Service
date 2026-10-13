@@ -37,7 +37,7 @@ x-service: &service-template
 
 services:
   postgres:
-    image: ghcr.io/mairie360/database:dev-99f6127
+    image: ghcr.io/mairie360/database:dev-90c22bb
     restart: always
     container_name: mairie360-db-login-front #change front name
     environment:
@@ -57,7 +57,7 @@ services:
       retries: 5
 
   liquibase:
-    image: ghcr.io/mairie360/liquibase-migrations:dev-99f6127
+    image: ghcr.io/mairie360/liquibase-migrations:dev-90c22bb
     container_name: mairie360-liquibase-login-front #change front name
     depends_on:
       postgres:
@@ -95,7 +95,7 @@ services:
 
   core:
     container_name: core-login-front-developpement
-    image: ghcr.io/mairie360/core-api:dev-2529974
+    image: ghcr.io/mairie360/core-api:dev-95531e2
     ports:
       - "3000:3000"
     networks:
@@ -114,6 +114,11 @@ services:
       DB_PASSWORD: password
       DB_PORT: 5432
       PUBLIC_URL: http://core.development.mairie360.fr
+      # Core refuses to start without its Resend configuration (MAIR-522). No page of this front sends an
+      # e-mail through these stacks, so the key is fake and the URL never called.
+      RESEND_API_KEY: "re_fake_local"
+      RESEND_BASE_URL: "http://fake-resend.invalid"
+      EMAIL_DOMAIN: "mairie360.local"
       JWT_SECRET: b"secret"
       # Core API >= 2.0 refuses a weak JWT_SECRET unless this flag is set (MAIR-428): local stack only.
       JWT_ALLOW_WEAK_SECRET: "true"
@@ -134,7 +139,7 @@ services:
   # de package.json (release X.Y.Z, ou dev-<sha7> pour un paquet 0.0.0-dev.<sha>).
   bff-user:
     container_name: bff-user-login-front
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-3f35bd8}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-46a698b}
     ports:
       - "4000:4000"
     networks:
