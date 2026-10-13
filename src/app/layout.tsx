@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import { Geist } from "next/font/google";
 import "./globals.css";
+import "./municipal-theme.css";
+
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
 // Rendu à la demande obligatoire : une page prérendue au build ne porterait pas le
 // nonce CSP propre à chaque requête, et ses scripts seraient bloqués.
@@ -24,8 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className="font-sans antialiased">
-        <main className="flex min-h-dvh items-center justify-center bg-[#F5F3F0]">
+      <body className={`${geistSans.variable} mairie-ui antialiased`}>
+        <a href="#login-content" className="app-skip-link">Aller au contenu</a>
+        <main id="login-content" tabIndex={-1} className="login-page flex min-h-dvh items-center justify-center bg-[#F5F3F0]">
           {children}
         </main>
       </body>

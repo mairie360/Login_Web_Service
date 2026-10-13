@@ -26,6 +26,7 @@ let RootLayout;
 let resolveLoginRedirect;
 let view;
 let window;
+const fontRequests = [];
 const savedDashboardUrl = process.env.DASHBOARD_FRONT_URL;
 const savedProjectUrl = process.env.PROJECT_FRONT_URL;
 
@@ -33,6 +34,8 @@ before(async () => {
   await bff.start();
   front.install();
   stubModule(path.join(__dirname, '..', 'src/app/globals.css'), {});
+  stubModule(path.join(__dirname, '..', 'src/app/municipal-theme.css'), {});
+  stubModule('next/font/google', { Geist: (options) => { fontRequests.push(options); return { variable: 'font-geist' }; } });
   RootLayout = requireTs('src/app/layout.tsx').default;
   Home = requireTs('src/app/page.tsx').default;
   resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
@@ -84,6 +87,25 @@ const assertStandalone = (html) => {
 const renderLogin = async (searchParams = {}) => {
   view = mount(React.createElement(RootLayout, null, await Home({ searchParams: Promise.resolve(searchParams) })));
 };
+
+test('the standalone document exposes a skip target before the real login form and shares the font configuration', async () => {
+  await renderLogin();
+  const { JSDOM } = require('jsdom');
+  const document = new JSDOM(view.html).window.document;
+  const main = document.querySelector('main');
+  const skip = document.querySelector('a');
+  assert.equal(document.documentElement.lang, 'fr');
+  assert.equal(document.querySelectorAll('main').length, 1);
+  assert.equal(skip.textContent, 'Aller au contenu');
+  assert.equal(document.querySelector(skip.getAttribute('href')), main);
+  assert.equal(main.tabIndex, -1);
+  assert.equal(main.querySelector('h1').textContent, 'Connexion');
+  assert.ok(main.querySelector('label[for="email"]'));
+  assert.ok(main.querySelector('label[for="password"]'));
+  assert.equal(document.body.classList.contains('mairie-ui'), true);
+  assert.equal(document.body.classList.contains('font-geist'), true);
+  assert.deepEqual(fontRequests, [{ variable: '--font-geist-sans', subsets: ['latin'] }]);
+});
 
 const assertPending = (ids) => {
   assert.match(view.html, /<form[^>]*aria-busy="true"/);

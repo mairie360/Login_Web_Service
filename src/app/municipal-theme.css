@@ -1,0 +1,138 @@
+/* MAIR-544/547: approved municipal visual direction.
+ * Shared source: lib-components/src/styles/municipal-theme.css.
+ * Frontends keep an identical copy while consuming the published UI 0.8.0.
+ * Scope is opt-in: add mairie-ui to the document body.
+ */
+:root {
+  --mairie-background: #f1f7fc;
+  --mairie-surface: #ffffff;
+  --mairie-text: #162033;
+  --mairie-muted: #475569;
+  --mairie-accent: #1256a6;
+  --mairie-control-border: #788ba7;
+  --mairie-border: #dce6f1;
+  --mairie-radius: 16px;
+  --mairie-shadow: 0 2px 12px rgb(23 32 51 / 5%);
+}
+html[data-theme="dark"] {
+  --mairie-background: #101b2d;
+  --mairie-surface: #17263a;
+  --mairie-text: #f1f5f9;
+  --mairie-muted: #cbd5e1;
+  --mairie-accent: #9dc9ff;
+  --mairie-control-border: #8fa4c0;
+  --mairie-border: #405572;
+}
+html:has(body.mairie-ui) { font-size: 17px; }
+html body.mairie-ui {
+  --mairie-font: var(--font-geist-sans, system-ui), sans-serif;
+  margin: 0;
+  background: var(--mairie-background);
+  color: var(--mairie-text);
+  font-family: var(--mairie-font);
+  -webkit-font-smoothing: antialiased;
+}
+body.mairie-ui :where(button, input, select, textarea) { font-family: inherit; }
+body.mairie-ui :where(.font-sans) { font-family: var(--mairie-font); }
+body.mairie-ui :is(.projects-shell, .calendar-scroll-shell, .messages-app-root, .elearning-shell, .settings-shell, .dashboard-app-shell, .administration-shell),
+body.mairie-ui main,
+body.mairie-ui [class~="bg-[#f5f3f0]"],
+body.mairie-ui [class~="bg-[#F5F3F0]"] { background: var(--mairie-background); color: var(--mairie-text); }
+body.mairie-ui main :is([class~="bg-white"], [class~="bg-card"]) { background: var(--mairie-surface); }
+body.mairie-ui main :is([class~="text-[#172033]"], [class~="text-[#243041]"], [class~="text-gray-800"]) { color: var(--mairie-text); }
+body.mairie-ui main :is([class~="text-[#687385]"], [class~="text-[#64748b]"], [class~="text-muted-foreground"]) { color: var(--mairie-muted); }
+body.mairie-ui main h1 { font-size: 36px; line-height: 1.2; font-weight: 750; letter-spacing: -0.02em; }
+body.mairie-ui main h1 + p { font-size: 18px; color: var(--mairie-muted); line-height: 1.5; }
+body.mairie-ui main :is(section, article, .administration-panel, .messages-module)[class~="bg-white"],
+body.mairie-ui .administration-panel,
+body.mairie-ui .messages-module,
+body.mairie-ui .calendar-board > [class~="rounded-lg"],
+body.mairie-ui .elearning-catalog-shell article {
+  border-color: var(--mairie-border);
+  border-radius: var(--mairie-radius);
+  box-shadow: var(--mairie-shadow);
+}
+body.mairie-ui main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  border-color: var(--mairie-control-border);
+  border-radius: 8px;
+  color: var(--mairie-text);
+}
+body.mairie-ui main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select) { min-height: 44px; }
+body.mairie-ui :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--mairie-accent);
+  outline-offset: 3px;
+}
+body.mairie-ui [aria-label="Navigation principale"] {
+  width: 270px;
+  background: #262b2d;
+  box-shadow: 4px 0 16px rgb(12 28 48 / 10%);
+}
+body.mairie-ui [aria-label="Navigation principale"] > div:first-child { height: 78px; }
+body.mairie-ui [aria-label="Navigation principale"] nav button {
+  min-height: 48px;
+  border-radius: 8px;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+body.mairie-ui [aria-label="Navigation principale"] :focus-visible { outline-color: #dff9ff; }
+body.mairie-ui [aria-label="Navigation mobile"] [aria-label="Navigation principale"] { width: 260px; }
+body.mairie-ui :is(.projects-shell, .calendar-scroll-shell, .messages-app-root, .elearning-shell, .settings-shell, .dashboard-app-shell, .administration-shell) > .flex > .flex > header {
+  min-height: 78px;
+  background: var(--mairie-surface);
+  border-color: var(--mairie-border);
+}
+body.mairie-ui .app-accessible-footer { width: 270px; background: #262b2d; }
+body.mairie-ui .projects-shell > .flex > .flex > main,
+body.mairie-ui .elearning-shell > .flex > .flex > main,
+body.mairie-ui .messages-app-root > .flex > .flex > main { background: var(--mairie-background); }
+body.mairie-ui .projects-shell main > div > div { padding: 32px; }
+body.mairie-ui .elearning-catalog-shell { background: var(--mairie-background); }
+body.mairie-ui .elearning-catalog-shell article > button:first-child { background: #edf5ff; }
+body.mairie-ui .messages-module-frame > .messages-module { box-shadow: var(--mairie-shadow); }
+body.mairie-ui .calendar-title-bar h1 { color: var(--mairie-text); }
+body.mairie-ui .calendar-title-bar p { color: var(--mairie-muted); }
+body.mairie-ui .administration-console h2 { font-size: 23px; line-height: 1.3; font-weight: 700; }
+body.mairie-ui main [class~="bg-[#00a844]"] { background: #13733f; }
+body.mairie-ui main [class~="text-[#dc2626]"] { color: #991b1b; }
+body.mairie-ui .login-page > section,
+body.mairie-ui .login-page > div > section { border-radius: var(--mairie-radius); border: 1px solid var(--mairie-border); box-shadow: var(--mairie-shadow); }
+@media (max-width: 1023px) {
+  body.mairie-ui .app-accessible-footer { width: 100%; background: var(--mairie-surface); }
+}
+@media (max-width: 767px) {
+  body.mairie-ui main h1 { font-size: 30px; }
+  body.mairie-ui main h1 + p { font-size: 16px; }
+  body.mairie-ui .projects-shell main > div > div { padding: 20px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.mairie-ui *, body.mairie-ui *::before, body.mairie-ui *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Semantic shell compatibility while UI 0.8.0 is the published baseline. */
+.app-skip-link { position: fixed; top: 8px; left: 8px; z-index: 100; transform: translateY(-180%); padding: 12px 18px; border-radius: 8px; background: var(--mairie-surface); color: var(--mairie-accent); font-weight: 650; }
+.app-skip-link:focus { transform: none; }
+.app-main-content { min-width: 0; }
+.app-accessible-footer { position: fixed; left: 0; bottom: 0; z-index: 20; width: 270px; min-height: 76px; justify-content: center; border-color: #405154; background: #262b2d; color: #dff9ff; padding: 16px; box-shadow: none; }
+.app-accessible-footer > div { font-size: 12px; justify-content: center; }
+.messages-app-root main > .app-main-content { display: flex; flex: 1; min-height: 0; height: 100%; }
+@media (max-width: 1023px) { .app-accessible-footer { position: static; width: 100%; min-height: 48px; padding: 12px; background: var(--mairie-surface); color: var(--mairie-muted); border-color: var(--mairie-border); } }
+
+/* Brand and account rhythm of the approved direction. */
+body.mairie-ui [aria-label="Navigation principale"] > div:first-child img { width: 40px; height: 40px; }
+body.mairie-ui [aria-label="Navigation principale"] > div:first-child > div:last-child { font-size: 24px; }
+body.mairie-ui [aria-label="Navigation principale"] nav button { font-size: 18px; }
+body.mairie-ui header [data-slot="avatar"] { width: 32px; height: 32px; }
+body.mairie-ui header [data-slot="dropdown-menu"] > button { font-size: 17px; }
+body.mairie-ui header > div > button svg { width: 20px; height: 20px; }
+body.mairie-ui .app-accessible-footer > div { font-size: 14px; }
+
+@media (min-width: 1024px) {
+  body.mairie-ui [aria-label="Navigation principale"] > nav {
+    max-height: calc(100dvh - 78px - var(--app-footer-height, 76px));
+  }
+}
