@@ -145,7 +145,7 @@ services:
       - backend
 
   bff-user:
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-0d80ef4}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-3f35bd8}
     container_name: login-front-sec-bff-user
     depends_on:
       seeder:
@@ -222,7 +222,7 @@ services:
     # zap-baseline.py: spider + passive scan (fit for a web UI, where the BFFs replay
     #   their OpenAPI with zap-api-scan.py).
     # -j: the AJAX spider renders the page in a headless browser and follows the fetch()
-    #   calls of the client bundle, so the /api/bff/* and /api/auth/* routes the UI really
+    #   calls of the client bundle, so the BFF contract routes and the /api/auth/* routes the UI really
     #   uses are scanned too; the classic spider only sees server-rendered links (MAIR-516).
     # -c rules.tsv : les alertes informatives sont passées à IGNORE, toute autre
     #   alerte (WARN/FAIL) fait sortir zap-baseline.py en code != 0.

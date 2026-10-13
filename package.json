@@ -16,7 +16,7 @@
     "test": "npm run test:node && npm run test:components"
   },
   "dependencies": {
-    "@mairie360/bff-user-openapi": "0.0.0-dev.0d80ef4e08e8db73ec2832911f42e75ae990a8d3",
+    "@mairie360/bff-user-openapi": "0.0.0-dev.3f35bd858d4b4e36117964b5a3b70205f6fea2fd",
     "@mairie360/lib-components": "0.8.0",
     "next": "16.3.8",
     "react": "^19.0.0",

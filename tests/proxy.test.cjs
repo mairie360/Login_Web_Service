@@ -25,7 +25,7 @@ test('proxy preserves query, data and status with the shared cookie authoritativ
 test('a published write preserves body bytes and empty responses', async () => {
   const bytes=Uint8Array.from([0,255,128,13]); let init;
   global.fetch=async(_url,options)=>{init=options;return new Response(null,{status:204});};
-  const response=await call(new NextRequest('http://localhost/bff/admin/users',{method:'POST',headers:{'Content-Type':'multipart/form-data; boundary=test',cookie:'accessToken=test-session'},body:bytes}),'/bff/admin/users');
+  const response=await call(new NextRequest('http://localhost/admin/users',{method:'POST',headers:{'Content-Type':'multipart/form-data; boundary=test',cookie:'accessToken=test-session'},body:bytes}),'/admin/users');
   assert.equal(response.status,204);assert.equal(await response.text(),'');assert.deepEqual(new Uint8Array(init.body),bytes);
   assert.equal(init.headers.get('Authorization'),'Bearer test-session');assert.equal(init.headers.get('Content-Type'),'multipart/form-data; boundary=test');
 });

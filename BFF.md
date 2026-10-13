@@ -13,29 +13,29 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 | POST | `/auth/login` | 2XX AuthSessionResponse ; 412 PostAuthLogin412 |
 | POST | `/auth/logout` | 2XX LogoutResponse |
 | POST | `/auth/refresh` | 2XX RefreshResponse |
-| GET | `/bff/admin/groups` | 2XX GetBffAdminGroups200 ou CoreResponse |
-| POST | `/bff/admin/groups` | 2XX CoreResponse |
-| GET | `/bff/admin/groups/{groupId}` | 2XX GetBffAdminGroupsGroupId200 ou CoreResponse |
-| PATCH | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
-| DELETE | `/bff/admin/groups/{groupId}` | 2XX CoreResponse |
-| GET | `/bff/admin/groups/{groupId}/users` | 2XX GetBffAdminGroupsGroupIdUsers200 ou CoreResponse |
-| POST | `/bff/admin/groups/{groupId}/users` | 2XX CoreResponse |
-| DELETE | `/bff/admin/groups/{groupId}/users/{userId}` | 2XX CoreResponse |
-| GET | `/bff/admin/roles` | 2XX GetBffAdminRoles200 ou CoreResponse |
-| POST | `/bff/admin/roles` | 2XX CoreResponse |
-| PUT | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
-| PATCH | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
-| DELETE | `/bff/admin/roles/{roleId}` | 2XX CoreResponse |
-| GET | `/bff/admin/sessions` | 2XX GetBffAdminSessions200 ou CoreResponse |
-| GET | `/bff/admin/sessions/history` | 2XX GetBffAdminSessionsHistory200 ou CoreResponse |
-| POST | `/bff/admin/sessions/revoke` | 2XX CoreResponse |
-| GET | `/bff/admin/users` | 2XX AdministrationUsersPage ou CoreResponse |
-| POST | `/bff/admin/users` | 2XX CoreResponse |
-| PATCH | `/bff/admin/users/{userId}` | 2XX CoreResponse |
-| DELETE | `/bff/admin/users/{userId}` | 2XX CoreResponse |
-| PATCH | `/bff/admin/users/{userId}/password` | 2XX CoreResponse |
-| POST | `/bff/admin/users/{userId}/roles` | 2XX CoreResponse |
-| DELETE | `/bff/admin/users/{userId}/roles/{roleId}` | 2XX CoreResponse |
+| GET | `/admin/groups` | 2XX GetBffAdminGroups200 ou CoreResponse |
+| POST | `/admin/groups` | 2XX CoreResponse |
+| GET | `/admin/groups/{groupId}` | 2XX GetBffAdminGroupsGroupId200 ou CoreResponse |
+| PATCH | `/admin/groups/{groupId}` | 2XX CoreResponse |
+| DELETE | `/admin/groups/{groupId}` | 2XX CoreResponse |
+| GET | `/admin/groups/{groupId}/users` | 2XX GetBffAdminGroupsGroupIdUsers200 ou CoreResponse |
+| POST | `/admin/groups/{groupId}/users` | 2XX CoreResponse |
+| DELETE | `/admin/groups/{groupId}/users/{userId}` | 2XX CoreResponse |
+| GET | `/admin/roles` | 2XX GetBffAdminRoles200 ou CoreResponse |
+| POST | `/admin/roles` | 2XX CoreResponse |
+| PUT | `/admin/roles/{roleId}` | 2XX CoreResponse |
+| PATCH | `/admin/roles/{roleId}` | 2XX CoreResponse |
+| DELETE | `/admin/roles/{roleId}` | 2XX CoreResponse |
+| GET | `/admin/sessions` | 2XX GetBffAdminSessions200 ou CoreResponse |
+| GET | `/admin/sessions/history` | 2XX GetBffAdminSessionsHistory200 ou CoreResponse |
+| POST | `/admin/sessions/revoke` | 2XX CoreResponse |
+| GET | `/admin/users` | 2XX AdministrationUsersPage ou CoreResponse |
+| POST | `/admin/users` | 2XX CoreResponse |
+| PATCH | `/admin/users/{userId}` | 2XX CoreResponse |
+| DELETE | `/admin/users/{userId}` | 2XX CoreResponse |
+| PATCH | `/admin/users/{userId}/password` | 2XX CoreResponse |
+| POST | `/admin/users/{userId}/roles` | 2XX CoreResponse |
+| DELETE | `/admin/users/{userId}/roles/{roleId}` | 2XX CoreResponse |
 | GET | `/check_apis` | 2XX CheckApisResponse |
 | GET | `/health` | 2XX sans corps |
 | GET | `/me` | 2XX SessionResponse |

@@ -741,7 +741,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminGroups200": {
+      "GetAdminGroups200": {
         "properties": {
           "groups": {
             "items": {
@@ -755,7 +755,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminGroupsGroupId200": {
+      "GetAdminGroupsGroupId200": {
         "properties": {
           "group": {
             "$ref": "#/components/schemas/AdministrationGroup"
@@ -766,7 +766,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminGroupsGroupIdUsers200": {
+      "GetAdminGroupsGroupIdUsers200": {
         "properties": {
           "users": {
             "items": {
@@ -780,7 +780,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminGroupsParams": {
+      "GetAdminGroupsParams": {
         "properties": {
           "limit": {
             "maximum": 500,
@@ -799,7 +799,7 @@
         "required": [],
         "type": "object"
       },
-      "GetBffAdminRoles200": {
+      "GetAdminRoles200": {
         "properties": {
           "roles": {
             "items": {
@@ -813,7 +813,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminSessions200": {
+      "GetAdminSessions200": {
         "properties": {
           "sessions": {
             "items": {
@@ -827,7 +827,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminSessionsHistory200": {
+      "GetAdminSessionsHistory200": {
         "properties": {
           "sessions": {
             "items": {
@@ -841,7 +841,7 @@
         ],
         "type": "object"
       },
-      "GetBffAdminSessionsHistoryParams": {
+      "GetAdminSessionsHistoryParams": {
         "properties": {
           "limit": {
             "maximum": 500,
@@ -860,7 +860,7 @@
         "required": [],
         "type": "object"
       },
-      "GetBffAdminUsersParams": {
+      "GetAdminUsersParams": {
         "properties": {
           "page": {
             "exclusiveMinimum": 0,
@@ -1128,10 +1128,784 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.0d80ef4e08e8db73ec2832911f42e75ae990a8d3"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.3f35bd858d4b4e36117964b5a3b70205f6fea2fd"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/admin/groups": {
+      "get": {
+        "operationId": "getAdminGroups",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAdminGroups200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminGroups",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminGroupCreateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/groups/{groupId}": {
+      "delete": {
+        "operationId": "deleteAdminGroupsGroupId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "get": {
+        "operationId": "getAdminGroupsGroupId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAdminGroupsGroupId200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchAdminGroupsGroupId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminGroupPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/groups/{groupId}/users": {
+      "get": {
+        "operationId": "getAdminGroupsGroupIdUsers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAdminGroupsGroupIdUsers200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminGroupsGroupIdUsers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminGroupUserBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/groups/{groupId}/users/{userId}": {
+      "delete": {
+        "operationId": "deleteAdminGroupsGroupIdUsersUserId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/roles": {
+      "get": {
+        "operationId": "getAdminRoles",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAdminRoles200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminRoles",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleWriteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/roles/{roleId}": {
+      "delete": {
+        "operationId": "deleteAdminRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchAdminRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRolePatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "put": {
+        "operationId": "putAdminRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleReplaceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/sessions": {
+      "get": {
+        "operationId": "getAdminSessions",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAdminSessions200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/sessions/history": {
+      "get": {
+        "operationId": "getAdminSessionsHistory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 500,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GetAdminSessionsHistory200"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/sessions/revoke": {
+      "post": {
+        "operationId": "postAdminSessionsRevoke",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminSessionRevokeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "getAdminUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AdministrationUsersPage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminUsers",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserCreateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}": {
+      "delete": {
+        "operationId": "deleteAdminUsersUserId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchAdminUsersUserId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/password": {
+      "patch": {
+        "operationId": "patchAdminUsersUserIdPassword",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserPasswordResetBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/roles": {
+      "post": {
+        "operationId": "postAdminUsersUserIdRoles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserRoleBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/roles/{roleId}": {
+      "delete": {
+        "operationId": "deleteAdminUsersUserIdRolesRoleId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/auth/force_change_password": {
       "post": {
         "operationId": "postAuthForceChangePassword",
@@ -1267,780 +2041,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RefreshResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/groups": {
-      "get": {
-        "operationId": "getBffAdminGroups",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "maximum": 500,
-              "minimum": 1,
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "maximum": 1000000,
-              "minimum": 0,
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetBffAdminGroups200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "post": {
-        "operationId": "postBffAdminGroups",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminGroupCreateBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/groups/{groupId}": {
-      "delete": {
-        "operationId": "deleteBffAdminGroupsGroupId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "groupId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "get": {
-        "operationId": "getBffAdminGroupsGroupId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "groupId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetBffAdminGroupsGroupId200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "patch": {
-        "operationId": "patchBffAdminGroupsGroupId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "groupId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminGroupPatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/groups/{groupId}/users": {
-      "get": {
-        "operationId": "getBffAdminGroupsGroupIdUsers",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "groupId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetBffAdminGroupsGroupIdUsers200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "post": {
-        "operationId": "postBffAdminGroupsGroupIdUsers",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "groupId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminGroupUserBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/groups/{groupId}/users/{userId}": {
-      "delete": {
-        "operationId": "deleteBffAdminGroupsGroupIdUsersUserId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "groupId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "in": "path",
-            "name": "userId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/roles": {
-      "get": {
-        "operationId": "getBffAdminRoles",
-        "parameters": [],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetBffAdminRoles200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "post": {
-        "operationId": "postBffAdminRoles",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminRoleWriteBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/roles/{roleId}": {
-      "delete": {
-        "operationId": "deleteBffAdminRolesRoleId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "roleId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "patch": {
-        "operationId": "patchBffAdminRolesRoleId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "roleId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminRolePatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "put": {
-        "operationId": "putBffAdminRolesRoleId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "roleId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminRoleReplaceBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/sessions": {
-      "get": {
-        "operationId": "getBffAdminSessions",
-        "parameters": [],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetBffAdminSessions200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/sessions/history": {
-      "get": {
-        "operationId": "getBffAdminSessionsHistory",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "maximum": 500,
-              "minimum": 1,
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "maximum": 1000000,
-              "minimum": 0,
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetBffAdminSessionsHistory200"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/sessions/revoke": {
-      "post": {
-        "operationId": "postBffAdminSessionsRevoke",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminSessionRevokeBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/users": {
-      "get": {
-        "operationId": "getBffAdminUsers",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "exclusiveMinimum": 0,
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "maximum": 20,
-              "minimum": 1,
-              "type": "number"
-            }
-          },
-          {
-            "in": "query",
-            "name": "search",
-            "required": false,
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/AdministrationUsersPage"
-                    },
-                    {
-                      "$ref": "#/components/schemas/CoreResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "post": {
-        "operationId": "postBffAdminUsers",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminUserCreateBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}": {
-      "delete": {
-        "operationId": "deleteBffAdminUsersUserId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "userId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      },
-      "patch": {
-        "operationId": "patchBffAdminUsersUserId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "userId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminUserPatchBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}/password": {
-      "patch": {
-        "operationId": "patchBffAdminUsersUserIdPassword",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "userId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminUserPasswordResetBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}/roles": {
-      "post": {
-        "operationId": "postBffAdminUsersUserIdRoles",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "userId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminUserRoleBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/bff/admin/users/{userId}/roles/{roleId}": {
-      "delete": {
-        "operationId": "deleteBffAdminUsersUserIdRolesRoleId",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "userId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "in": "path",
-            "name": "roleId",
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoreResponse"
                 }
               }
             },
