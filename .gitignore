@@ -6,3 +6,6 @@ dist
 
 # testing
 /coverage
+
+# Agent dev loop state (watcher pid and log), see agent_dev.sh
+.agent/
