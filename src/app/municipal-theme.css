@@ -136,3 +136,42 @@ body.mairie-ui .app-accessible-footer > div { font-size: 14px; }
     max-height: calc(100dvh - 78px - var(--app-footer-height, 76px));
   }
 }
+
+/* MAIR-548: the published mobile drawer and a shared collapsible desktop menu. */
+.app-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.app-desktop-navigation { display: none; }
+@media (min-width: 1024px) {
+  .app-shell-frame { padding-left: 270px; }
+  .app-shell-frame[data-sidebar-collapsed="true"] { padding-left: 82px; }
+  body.mairie-ui .app-published-sidebar { display: none; }
+  body.mairie-ui .app-desktop-navigation { position: fixed; inset: 0 auto 0 0; z-index: 25; display: flex; width: 270px; min-height: 0; flex-direction: column; background: #262b2d; color: #dff9ff; }
+  body.mairie-ui .app-desktop-navigation[data-collapsed="true"] { width: 82px; }
+  .app-navigation-brand { display: flex; align-items: center; gap: 10px; height: 78px; flex-shrink: 0; padding: 18px; border-bottom: 1px solid #405154; }
+  .app-navigation-brand img, .app-navigation-initial { width: 40px; height: 40px; flex-shrink: 0; object-fit: contain; border-radius: 8px; }
+  .app-navigation-brand > span { font-size: 20px; font-weight: 650; }
+  .app-navigation-initial { display: grid; place-items: center; background: #1256a6; }
+  .app-navigation-toggle { position: absolute; top: 22px; right: 8px; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #6c8585; border-radius: 7px; color: #dff9ff; background: #334345; }
+  [data-collapsed="true"] .app-navigation-toggle { position: static; align-self: center; flex-shrink: 0; margin-top: 12px; }
+  body.mairie-ui .app-desktop-navigation > nav { display: flex; min-height: 0; flex-direction: column; gap: 8px; padding: 22px 14px; max-height: calc(100dvh - 78px - var(--app-footer-height, 76px)); overflow-y: auto; }
+  body.mairie-ui .app-desktop-navigation[data-collapsed="true"] > nav { padding-top: 12px; max-height: calc(100dvh - 124px - var(--app-footer-height, 76px)); }
+  .app-desktop-navigation nav button { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid transparent; color: #dff9ff; text-align: left; }
+  .app-desktop-navigation nav button svg { flex-shrink: 0; }
+  .app-navigation-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .app-desktop-navigation nav button:hover { background: #334d4a; }
+  .app-desktop-navigation nav button[aria-current="page"] { background: #1c63b7; border-color: #2677cf; color: white; }
+  .app-desktop-navigation nav button[data-admin="true"] { background: #b4232f; border-color: #db5260; color: white; }
+  .app-desktop-navigation nav button[data-admin="true"][aria-current="page"] { background: #891827; border-color: #ffb0b7; }
+  [data-collapsed="true"] nav button { justify-content: center; }
+  .app-navigation-badge { padding: 1px 5px; border-radius: 5px; font-size: 12px; color: white; background: #b4232f; }
+  [data-collapsed="true"] .app-navigation-badge { position: absolute; top: 0; right: 0; }
+  .app-navigation-tooltip { position: fixed; left: 68px; z-index: 100; max-width: min(260px, calc(100vw - 110px)); padding: 10px 14px; border: 1px solid #6c8585; border-radius: 8px; color: white; background: #262b2d; box-shadow: 0 4px 16px #0003; font-size: 16px; }
+  .app-shell-frame[data-sidebar-collapsed="true"] .app-accessible-footer { width: 82px; padding: 10px 5px; }
+  .app-shell-frame[data-sidebar-collapsed="true"] .app-accessible-footer > div { display: flex; flex-direction: column; gap: 4px; font-size: 11px; text-align: center; overflow-wrap: anywhere; }
+}
+
+@media (min-width: 1024px) { .app-shell-frame .app-accessible-footer { z-index: 30; } }
+
+@media (min-width: 1024px) {
+  body.mairie-ui .app-shell-frame[data-sidebar-collapsed="true"] .app-accessible-footer { padding: 12px 8px; overflow-wrap: anywhere; }
+  body.mairie-ui .app-shell-frame[data-sidebar-collapsed="true"] .app-accessible-footer > div { font-size: 12px; line-height: 1.5; }
+}

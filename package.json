@@ -13,7 +13,8 @@
     "test:contracts": "node --test tests/*.test.cjs",
     "test:node": "mkdir -p coverage && c8 --include='src/**' --reporter=text --reporter=lcov --check-coverage --lines=60 --functions=60 --branches=60 node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/node-lcov.info tests/*.test.cjs",
     "test:components": "vitest run",
-    "test": "npm run test:node && npm run test:components"
+    "test": "npm run test:node && npm run test:components",
+    "performance:report": "node scripts/frontend-performance.mjs"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.0.0-dev.46a698bb9adbf3c86a5517b4c958b379cb03fe70",
@@ -43,6 +44,7 @@
     "jsdom": "30.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "5.0.2"
+    "vitest": "5.0.2",
+    "playwright-core": "1.64.0"
   }
 }

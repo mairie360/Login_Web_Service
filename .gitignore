@@ -6,3 +6,8 @@ dist
 
 # testing
 /coverage
+
+# Reproducible local performance artefacts and temporary baseline checkout.
+/performance/
+/.performance-base/
+/performance-server.log
