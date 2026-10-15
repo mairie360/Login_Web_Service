@@ -35,6 +35,16 @@ test('the actual cookie pair is authoritative over conflicting legacy response c
   const response = await login.POST(request()); assert.equal(response.status, 200);
   assert.equal(response.cookies.get('accessToken').value, 'cookie-access'); assert.equal(response.cookies.get('refreshToken').value, 'cookie-refresh');
 });
+test('an empty BFF success body cannot confirm login even when both session cookies are present', async () => {
+  for (const status of [200, 204]) {
+    global.fetch = async () => new Response(null, { status, headers: cookieResponse([access, refresh]).headers });
+    const response = await login.POST(request());
+    assert.equal(response.status, 502);
+    assert.deepEqual(await response.json(), { message: 'Le service de connexion a renvoyé une réponse invalide.' });
+    assert.equal(response.headers.get('set-cookie'), null);
+    assert.equal(response.headers.get('authorization'), null);
+  }
+});
 test('cookie JWT expiry remains stricter than the upstream cookie lifetime', async () => {
   const token = `head.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 120 })).toString('base64url')}.signature`;
   global.fetch = async () => cookieResponse([`accessToken=${token}; Path=/; HttpOnly; Max-Age=600`, refresh]);

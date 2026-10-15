@@ -148,3 +148,63 @@ it('keeps a new token usable in StrictMode and ignores acceptance of the superse
   submitPassword();
   await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith('https://dashboard.example.test/new'));
 });
+
+it('keeps the destination in the return link and allows retry after a generic recovery refusal', async () => {
+  fetchMock.mockResolvedValueOnce(reply({ message: 'sensitive service detail' }, 503)).mockResolvedValueOnce(reply({}));
+  const destination = 'https://dashboard.example.test/projects?filter=active';
+  render(<ForgotPassword redirectUrl={destination} />);
+  expect(screen.getByRole('link', { name: 'Retour à la connexion' }).getAttribute('href')).toBe('/?redirect=' + encodeURIComponent(destination));
+  fireEvent.change(screen.getByLabelText('Email professionnel'), { target: { value: 'agent@example.test' } });
+  fireEvent.submit(document.querySelector('form'));
+  expect((await screen.findByRole('alert')).textContent).toContain('n’a pas pu être envoyée');
+  expect(document.body.textContent).not.toContain('sensitive service detail');
+  expect(screen.getByLabelText('Email professionnel').disabled).toBe(false);
+  fireEvent.submit(document.querySelector('form'));
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+  expect((await screen.findByRole('alert')).textContent).toContain('n’a pas pu être envoyée');
+});
+
+it.each([['too short', 'short'], ['too long', 'x'.repeat(256)]])('validates a %s password before sending a reset token', (_, password) => {
+  render(<ResetPassword token={token} />);
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: password } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: password } });
+  fireEvent.submit(document.querySelector('form'));
+  expect(screen.getByRole('alert').textContent).toContain('entre 8 et 255 caractères');
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it('recovers from reset throttling and confirms an accepted reset without a destination', async () => {
+  fetchMock.mockResolvedValueOnce(reply({ message: 'sensitive upstream detail' }, 429)).mockResolvedValueOnce(reply({ success: true }));
+  const navigate = vi.fn();
+  render(<ResetPassword token={token} navigate={navigate} />);
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.submit(document.querySelector('form'));
+  expect((await screen.findByRole('alert')).textContent).toContain('Trop de demandes');
+  expect(document.body.textContent).not.toContain('sensitive upstream detail');
+  expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(false);
+  fireEvent.submit(document.querySelector('form'));
+  expect((await screen.findByRole('status')).textContent).toBe('Mot de passe modifié. Vous êtes connecté.');
+  expect(navigate).not.toHaveBeenCalled();
+  expect(screen.getByLabelText('Nouveau mot de passe').value).toBe('');
+  expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(true);
+});
+
+it('aborts the in-flight reset and ignores its rejected fetch after leaving the screen', async () => {
+  let reject;
+  fetchMock.mockReturnValue(new Promise((_, fail) => { reject = fail; }));
+  const navigate = vi.fn();
+  const view = render(<ResetPassword token={token} navigate={navigate} />);
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.submit(document.querySelector('form'));
+  const signal = fetchMock.mock.calls[0][1].signal;
+  expect(signal.aborted).toBe(false);
+  view.unmount();
+  expect(signal.aborted).toBe(true);
+  render(<main>Nouvel écran</main>);
+  await act(async () => reject(new DOMException('Aborted', 'AbortError')));
+  expect(screen.getByText('Nouvel écran')).toBeTruthy();
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(navigate).not.toHaveBeenCalled();
+});

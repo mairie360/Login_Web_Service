@@ -1,12 +1,8 @@
 const assert = require('node:assert/strict');
 const { test, beforeEach, afterEach } = require('node:test');
-const fs = require('node:fs');
-const ts = require('typescript');
 const { NextRequest } = require('next/server');
-const originalLoader = require.extensions['.ts'];
-require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText, filename);
-const { POST } = require('../src/app/api/auth/login/route.ts');
-require.extensions['.ts'] = originalLoader;
+const { requireTs } = require('./support/load-ts.cjs');
+const { POST } = requireTs('src/app/api/auth/login/route.ts');
 const originalFetch = global.fetch;
 const originalBffUrl = process.env.BFF_USER_API_URL;
 const originalCookieDomain = process.env.COOKIE_DOMAIN;

@@ -1,14 +1,10 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const fs = require('node:fs');
-const ts = require('typescript');
 const { NextRequest } = require('next/server');
-const originalLoader = require.extensions['.ts'];
-require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText, filename);
-const { middleware } = require('../src/middleware.ts');
+const { requireTs } = require('./support/load-ts.cjs');
+const { middleware } = requireTs('src/middleware.ts');
 const { buildContentSecurityPolicy } = require('@mairie360/front-kit/shared');
-const nextConfig = require('../next.config.ts').default;
-require.extensions['.ts'] = originalLoader;
+const nextConfig = requireTs('next.config.ts').default;
 
 const pageRequest = () => new NextRequest('http://localhost:5000/');
 
