@@ -1,6 +1,8 @@
 name: BFF contract consistency
 on:
+  # MAIR-436: PR branches are checked by pull_request; push only on main.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
