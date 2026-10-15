@@ -222,7 +222,7 @@ html[data-theme="dark"] body.mairie-ui :is(
   [class~="bg-white"], [class~="bg-card"], [class~="bg-[#ffffff]"], [class~="bg-[#fbfaf8]"], [class~="bg-[#FBFAF8]"]
 ) { background-color: var(--mairie-surface); }
 html[data-theme="dark"] body.mairie-ui :is(
-  [class~="bg-[#f6f8fa]"], [class~="bg-[#f6f4f1]"], [class~="bg-[#f1eee9]"], [class~="bg-[#f8fafc]"], [class~="bg-[#f1f5f9]"], [class~="bg-[#e8e6e3]"],
+  [class~="bg-[#fbfaf9]"], [class~="bg-[#FBFAF9]"], [class~="bg-[#f6f8fa]"], [class~="bg-[#f6f4f1]"], [class~="bg-[#f1eee9]"], [class~="bg-[#f8fafc]"], [class~="bg-[#f1f5f9]"], [class~="bg-[#e8e6e3]"],
   [class~="bg-[#f9fafb]"], [class~="bg-[#f8f6f2]"], [class~="bg-gray-50"], [class~="bg-gray-100"], [class~="bg-slate-50"], [class~="bg-slate-100"]
 ) { background-color: var(--mairie-surface-raised); }
 html[data-theme="dark"] body.mairie-ui :is(
@@ -241,7 +241,7 @@ html[data-theme="dark"] body.mairie-ui :is(
   [class~="bg-[#d4e8e7]"], [class~="bg-[#d4eeee]"], [class~="bg-[#ddf4ff]"], [class~="bg-[#edf5ff]"]
 ) { background-color: var(--mairie-accent-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1256a6]"], [class~="text-[#1256A6]"], [class~="text-[#0969da]"], [class~="text-blue-700"], [class~="text-blue-600"]) { color: var(--mairie-accent); }
-html[data-theme="dark"] body.mairie-ui :is([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-[#ffebe9]"]) { background-color: var(--mairie-error-surface); }
+html[data-theme="dark"] body.mairie-ui :is([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-[#fee2e2]"], [class~="bg-[#ffebe9]"]) { background-color: var(--mairie-error-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-[#cf222e]"], [class~="text-[#a40e26]"], [class~="text-[#c53030]"], [class~="text-[#dc2626]"], [class~="text-red-700"], [class~="text-red-600"]) { color: var(--mairie-error-text); }
 html[data-theme="dark"] body.mairie-ui :is([class~="bg-green-50"], [class~="bg-green-100"]) { background-color: var(--mairie-success-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1a7f37]"], [class~="text-green-800"], [class~="text-green-700"], [class~="text-green-600"]) { color: var(--mairie-success-text); }
@@ -271,3 +271,14 @@ html[data-theme="dark"] body.mairie-ui :is(img[src*="mairie360-logo"], img[alt="
   padding: 2px;
   border-radius: 8px;
 }
+
+/* Neutral Dashboard surfaces are also styled by its base stylesheet, without
+ * background utility classes. Pair those surfaces with the existing dark text. */
+html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, .dashboard-recent-projects > div:last-child > button) {
+  background-color: var(--mairie-surface-raised);
+  border-color: var(--mairie-control-border);
+}
+html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, .dashboard-recent-projects > div:last-child > button):hover {
+  background-color: var(--mairie-surface);
+}
+html[data-theme="dark"] body.mairie-ui main .page-current-date { color: var(--mairie-muted); }
