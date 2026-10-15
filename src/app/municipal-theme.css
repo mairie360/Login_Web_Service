@@ -262,3 +262,12 @@ body.mairie-ui .mairie-appearance-preview[data-preview-theme="dark"] { backgroun
 @media (prefers-color-scheme: dark) {
   body.mairie-ui .mairie-appearance-preview[data-preview-theme="system"] { background: #172033; color: #fff; }
 }
+
+/* Preserve the original brand colours on dark surfaces without enlarging headers. */
+html[data-theme="dark"] body.mairie-ui :is(img[src*="mairie360-logo"], img[alt="Logo Mairie360"][src*="logo.png"]) {
+  box-sizing: border-box;
+  max-width: 100%;
+  background-color: #fff;
+  padding: 2px;
+  border-radius: 8px;
+}
