@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
@@ -99,4 +100,51 @@ it('has labeled recovery controls, keyboard focus and no serious accessibility v
   expect((await axe(document.body)).violations.filter(({ impact }) => ['serious', 'critical'].includes(impact))).toEqual([]);
   unmount(); render(<ResetPassword token={token} />);
   expect((await axe(document.body)).violations.filter(({ impact }) => ['serious', 'critical'].includes(impact))).toEqual([]);
+});
+
+it('ignores a late accepted reset response after leaving the recovery screen', async () => {
+  let resolve;
+  fetchMock.mockReturnValue(new Promise(done => { resolve = done; }));
+  const navigate = vi.fn();
+  const view = render(<ResetPassword token={token} redirectUrl="https://dashboard.example.test/old-destination" navigate={navigate} />);
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.submit(document.querySelector('form'));
+  view.unmount();
+  await act(async () => resolve(reply({ success: true })));
+  expect(navigate).not.toHaveBeenCalled();
+});
+
+it('starts a fresh reset form when a new token replaces an expired link', async () => {
+  fetchMock.mockResolvedValue(reply({}, 401));
+  const view = render(<ResetPassword token={token} />);
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.submit(document.querySelector('form'));
+  await screen.findByRole('alert');
+  view.rerender(<ResetPassword token="22222222-e39c-4a8e-96e8-1c8caad20cab" />);
+  expect(screen.queryByLabelText('Nouveau mot de passe')).not.toBeNull();
+  expect(screen.getByLabelText('Nouveau mot de passe').value).toBe('');
+  expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(false);
+});
+
+
+it('keeps a new token usable in StrictMode and ignores acceptance of the superseded token', async () => {
+  let resolveOld;
+  fetchMock.mockReturnValueOnce(new Promise(done => { resolveOld = done; })).mockResolvedValueOnce(reply({ success: true }));
+  const navigate = vi.fn();
+  const view = render(<StrictMode><ResetPassword token={token} redirectUrl="https://dashboard.example.test/old" navigate={navigate} /></StrictMode>);
+  const submitPassword = () => {
+    fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
+    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+    fireEvent.submit(document.querySelector('form'));
+  };
+  submitPassword();
+  view.rerender(<StrictMode><ResetPassword token="22222222-e39c-4a8e-96e8-1c8caad20cab" redirectUrl="https://dashboard.example.test/new" navigate={navigate} /></StrictMode>);
+  expect(screen.getByLabelText('Nouveau mot de passe').value).toBe('');
+  expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(false);
+  await act(async () => resolveOld(reply({ success: true })));
+  expect(navigate).not.toHaveBeenCalled();
+  submitPassword();
+  await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith('https://dashboard.example.test/new'));
 });
