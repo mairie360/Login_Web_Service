@@ -36,6 +36,7 @@ before(async () => {
   stubModule(path.join(__dirname, '..', 'src/app/globals.css'), {});
   stubModule(path.join(__dirname, '..', 'src/app/municipal-theme.css'), {});
   stubModule('next/font/google', { Geist: (options) => { fontRequests.push(options); return { variable: 'font-geist' }; } });
+  stubModule('next/headers', { cookies: async () => ({ get: () => undefined }) });
   RootLayout = requireTs('src/app/layout.tsx').default;
   Home = requireTs('src/app/page.tsx').default;
   resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
@@ -85,7 +86,7 @@ const assertStandalone = (html) => {
   assert.doesNotMatch(html, /© 2026 Mairie360/);
 };
 const renderLogin = async (searchParams = {}) => {
-  view = mount(React.createElement(RootLayout, null, await Home({ searchParams: Promise.resolve(searchParams) })));
+  view = mount(await RootLayout({ children: await Home({ searchParams: Promise.resolve(searchParams) }) }));
 };
 
 test('the standalone document exposes a skip target before the real login form and shares the font configuration', async () => {

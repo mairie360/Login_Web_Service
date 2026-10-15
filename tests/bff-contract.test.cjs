@@ -159,7 +159,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     assert.deepEqual({ httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path, maxAge: cookie.maxAge, domain: cookie.domain }, { httpOnly: true, sameSite: 'strict', path: '/', maxAge: 3600, domain: COOKIE_DOMAIN });
     const refreshCookie = response.cookies.get('refreshToken');
     assert.deepEqual({ value: refreshCookie.value, httpOnly: refreshCookie.httpOnly, sameSite: refreshCookie.sameSite, path: refreshCookie.path, maxAge: refreshCookie.maxAge, domain: refreshCookie.domain }, {
-      value: 'refresh-token', httpOnly: true, sameSite: 'strict', path: '/api', maxAge: undefined, domain: COOKIE_DOMAIN,
+      value: 'refresh-token', httpOnly: true, sameSite: 'strict', path: '/api', maxAge: 2592000, domain: COOKIE_DOMAIN,
     });
     const [call] = bff.calls('/auth/login', 'POST');
     assert.equal(bff.requests.length, 1);
@@ -428,14 +428,15 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     }
   }
 
-  test('without session cookie no Authorization is invented and 401 explicitly requires Login', async () => {
+  test('without a session cookie no Authorization is invented and a 401 remains eligible for browser renewal', async () => {
     bff.on('GET', '/session/me', (request) => ({ status: request.headers.authorization ? 200 : 401, outOfContract: true }));
 
     const result = await catchAll.GET(new NextRequest('http://localhost:5000/session/me'), context('/session/me'));
 
     assert.equal(result.status, 401);
-    assert.equal(result.headers.get('X-Mairie360-Login-Required'), 'true');
-    assert.match((await result.json()).error.message, /session a expiré/);
+    assert.equal(result.headers.get('X-Mairie360-Refresh-Refused'), null);
+    assert.equal(result.headers.get('X-Mairie360-Login-Required'), null);
+    assert.match((await result.json()).error.message, /session doit être renouvelée/);
     assert.equal(bff.calls('/session/me')[0].headers.authorization, undefined);
   });
 

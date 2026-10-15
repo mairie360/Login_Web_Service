@@ -166,7 +166,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   assert.equal(properties.get('trustedHeaders'), 'trustedClientIpHeaders');
   assert.match(properties.get('loginUrl'), /process\.env\.LOGIN_FRONT_URL/);
   assert.match(properties.get('frontUrl'), /process\.env\.LOGIN_FRONT_URL/);
-  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /from '@mairie360\/lib-components\/next'/);
+  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /from '@mairie360\/front-kit\/next'/);
   const proxy = requireTs(PROXY_FILE).proxyBffRequest;
   for (const file of ['src/app/[...path]/route.ts','src/app/[...path]/route.ts']) {
     const exports = requireTs(file);

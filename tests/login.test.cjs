@@ -31,7 +31,7 @@ test('the access cookie uses the Authorization token returned by the BFF', async
   assert.equal(result.cookies.get('accessToken').maxAge, 3600, 'opaque tokens must not keep a 24-hour cookie');
   assert.equal(result.cookies.get('refreshToken').value, 'refresh-fixture');
   assert.deepEqual({ httpOnly: result.cookies.get('refreshToken').httpOnly, sameSite: result.cookies.get('refreshToken').sameSite, path: result.cookies.get('refreshToken').path, maxAge: result.cookies.get('refreshToken').maxAge }, {
-    httpOnly: true, sameSite: 'strict', path: '/api', maxAge: undefined,
+    httpOnly: true, sameSite: 'strict', path: '/api', maxAge: 2592000,
   });
   assert.deepEqual(await result.json(), { success: true });
   assert.equal(result.headers.get('cache-control'), 'no-store');
@@ -47,9 +47,10 @@ test('production scopes both cookies to the configured domain and keeps the refr
   assert.deepEqual({ domain: accessCookie.domain, secure: accessCookie.secure, httpOnly: accessCookie.httpOnly }, {
     domain: '.dev.mairie360-eip.fr', secure: true, httpOnly: true,
   });
-  assert.deepEqual({ domain: refreshCookie.domain, secure: refreshCookie.secure, httpOnly: refreshCookie.httpOnly, sameSite: refreshCookie.sameSite, path: refreshCookie.path, maxAge: refreshCookie.maxAge, expires: refreshCookie.expires }, {
-    domain: '.dev.mairie360-eip.fr', secure: true, httpOnly: true, sameSite: 'strict', path: '/api', maxAge: undefined, expires: undefined,
+  assert.deepEqual({ domain: refreshCookie.domain, secure: refreshCookie.secure, httpOnly: refreshCookie.httpOnly, sameSite: refreshCookie.sameSite, path: refreshCookie.path, maxAge: refreshCookie.maxAge }, {
+    domain: '.dev.mairie360-eip.fr', secure: true, httpOnly: true, sameSite: 'strict', path: '/api', maxAge: 2592000,
   });
+  assert.ok(refreshCookie.expires.valueOf() > Date.now() + 2591940 * 1000);
   assert.deepEqual(await result.json(), { success: true });
 });
 test('production rejects a missing shared cookie domain before contacting the BFF', async () => {

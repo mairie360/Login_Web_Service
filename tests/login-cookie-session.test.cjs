@@ -27,7 +27,7 @@ test('cookie-only BFF login creates the existing shared frontend session without
   assert.equal(a.value, 'cookie-access'); assert.equal(r.value, 'cookie-refresh');
   assert.deepEqual({ domain: a.domain, path: a.path, httpOnly: a.httpOnly, secure: a.secure, sameSite: a.sameSite }, { domain: '.mairie.example', path: '/', httpOnly: true, secure: true, sameSite: 'strict' });
   assert.ok(a.maxAge > 0 && a.maxAge <= 90);
-  assert.deepEqual({ domain: r.domain, path: r.path, httpOnly: r.httpOnly, secure: r.secure, sameSite: r.sameSite, maxAge: r.maxAge, expires: r.expires }, { domain: '.mairie.example', path: '/api', httpOnly: true, secure: true, sameSite: 'strict', maxAge: undefined, expires: undefined });
+  assert.deepEqual({ domain: r.domain, path: r.path, httpOnly: r.httpOnly, secure: r.secure, sameSite: r.sameSite, maxAge: r.maxAge }, { domain: '.mairie.example', path: '/api', httpOnly: true, secure: true, sameSite: 'strict', maxAge: 2592000 });
   assert.equal(response.cookies.get('unrelated'), undefined); assert.equal(response.headers.get('authorization'), null); assert.equal(response.headers.get('cache-control'), 'no-store');
 });
 test('the actual cookie pair is authoritative over conflicting legacy response credentials', async () => {
