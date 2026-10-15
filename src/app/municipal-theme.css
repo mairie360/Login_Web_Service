@@ -222,7 +222,8 @@ html[data-theme="dark"] body.mairie-ui :is(
   [class~="bg-white"], [class~="bg-card"], [class~="bg-[#ffffff]"], [class~="bg-[#fbfaf8]"], [class~="bg-[#FBFAF8]"]
 ) { background-color: var(--mairie-surface); }
 html[data-theme="dark"] body.mairie-ui :is(
-  [class~="bg-[#fbfaf9]"], [class~="bg-[#FBFAF9]"], [class~="bg-[#f6f8fa]"], [class~="bg-[#f6f4f1]"], [class~="bg-[#f1eee9]"], [class~="bg-[#f8fafc]"], [class~="bg-[#f1f5f9]"], [class~="bg-[#e8e6e3]"],
+  [class~="bg-[#f2f1ee]"], [class~="bg-[#f8f7f5]"], [class~="bg-[#faf9f7]"], [class~="bg-[#f2f4f7]"], [class~="bg-[#fbfcfd]"],
+  [class~="bg-[#e4e0dc]"], [class~="bg-[#fbfaf9]"], [class~="bg-[#FBFAF9]"], [class~="bg-[#f6f8fa]"], [class~="bg-[#f6f4f1]"], [class~="bg-[#f1eee9]"], [class~="bg-[#f8fafc]"], [class~="bg-[#f1f5f9]"], [class~="bg-[#e8e6e3]"],
   [class~="bg-[#f9fafb]"], [class~="bg-[#f8f6f2]"], [class~="bg-gray-50"], [class~="bg-gray-100"], [class~="bg-slate-50"], [class~="bg-slate-100"]
 ) { background-color: var(--mairie-surface-raised); }
 html[data-theme="dark"] body.mairie-ui :is(
@@ -230,7 +231,7 @@ html[data-theme="dark"] body.mairie-ui :is(
   [class~="text-gray-900"], [class~="text-gray-800"], [class~="text-gray-700"], [class~="text-slate-900"], [class~="text-slate-800"]
 ) { color: var(--mairie-text); }
 html[data-theme="dark"] body.mairie-ui :is(
-  [class~="text-[#596274]"], [class~="text-[#536171]"], [class~="text-[#57606a]"], [class~="text-[#6e7781]"], [class~="text-[#6b6b6b]"], [class~="text-[#687385]"], [class~="text-[#64748b]"],
+  [class~="text-[#5f6770]"], [class~="text-[#6c7278]"], [class~="text-[#475569]"], [class~="text-[#596274]"], [class~="text-[#536171]"], [class~="text-[#57606a]"], [class~="text-[#6e7781]"], [class~="text-[#6b6b6b]"], [class~="text-[#687385]"], [class~="text-[#64748b]"],
   [class~="text-gray-600"], [class~="text-gray-500"], [class~="text-slate-600"], [class~="text-slate-500"], [class~="text-muted-foreground"]
 ) { color: var(--mairie-muted); }
 html[data-theme="dark"] body.mairie-ui :is(
@@ -238,15 +239,18 @@ html[data-theme="dark"] body.mairie-ui :is(
   [class~="border-gray-200"], [class~="border-gray-300"], [class~="border-slate-200"], [class~="border-slate-300"]
 ) { border-color: var(--mairie-border); }
 html[data-theme="dark"] body.mairie-ui :is(
-  [class~="bg-[#d4e8e7]"], [class~="bg-[#d4eeee]"], [class~="bg-[#ddf4ff]"], [class~="bg-[#edf5ff]"]
+  [class~="bg-[#e9f1fb]"], [class~="bg-[#e9f2ff]"], [class~="bg-[#e8f2ff]"], [class~="bg-[#d4e8e7]"], [class~="bg-[#d4eeee]"], [class~="bg-[#ddf4ff]"], [class~="bg-[#edf5ff]"]
 ) { background-color: var(--mairie-accent-surface); }
-html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1256a6]"], [class~="text-[#1256A6]"], [class~="text-[#0969da]"], [class~="text-blue-700"], [class~="text-blue-600"]) { color: var(--mairie-accent); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#4b908d]"], [class~="text-[#0b4f99]"], [class~="text-[#2563eb]"], [class~="text-[#1256a6]"], [class~="text-[#1256A6]"], [class~="text-[#0969da]"], [class~="text-blue-700"], [class~="text-blue-600"]) { color: var(--mairie-accent); }
 html[data-theme="dark"] body.mairie-ui :is([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-[#fee2e2]"], [class~="bg-[#ffebe9]"]) { background-color: var(--mairie-error-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-[#cf222e]"], [class~="text-[#a40e26]"], [class~="text-[#c53030]"], [class~="text-[#dc2626]"], [class~="text-red-700"], [class~="text-red-600"]) { color: var(--mairie-error-text); }
 html[data-theme="dark"] body.mairie-ui :is([class~="bg-green-50"], [class~="bg-green-100"]) { background-color: var(--mairie-success-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1a7f37]"], [class~="text-green-800"], [class~="text-green-700"], [class~="text-green-600"]) { color: var(--mairie-success-text); }
-html[data-theme="dark"] body.mairie-ui :is([class~="bg-amber-50"], [class~="bg-yellow-50"]) { background-color: var(--mairie-warning-surface); }
+html[data-theme="dark"] body.mairie-ui :is([class~="bg-[#fff8e8]"], [class~="bg-amber-50"], [class~="bg-yellow-50"]) { background-color: var(--mairie-warning-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-amber-800"], [class~="text-yellow-800"]) { color: var(--mairie-warning-text); }
+html[data-theme="dark"] body.mairie-ui [class~="text-[#5a3b00]"] { color: var(--mairie-warning-text); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#2f3747]"], [class~="text-[#0b1220]"], [class~="text-[#344054]"]):not([class~="text-white"]) { color: var(--mairie-text); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#667085]"], [class~="text-[#475467]"], [class~="text-[#5f6470]"], [class~="text-[#4c5258]"], [class~="text-[#6f6f6f]"]):not([class~="text-white"]) { color: var(--mairie-muted); }
 html[data-theme="dark"] body.mairie-ui [class~="bg-[#2da44e]"] { background-color: #17643c; }
 html[data-theme="dark"] body.mairie-ui :is([class~="hover:bg-[#f6f8fa]"], [class~="hover:bg-[#f1eee9]"], [class~="hover:bg-gray-50"]):hover { background-color: var(--mairie-surface-raised); }
 /* Put control surfaces last: a light utility class must never produce light text on white. */
@@ -282,3 +286,11 @@ html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, label.s
   background-color: var(--mairie-surface);
 }
 html[data-theme="dark"] body.mairie-ui main .page-current-date { color: var(--mairie-muted); }
+
+/* Reader and poster backgrounds also come from Elearning's base stylesheet. */
+html[data-theme="dark"] body.mairie-ui .elearning-catalog-shell [role="dialog"]:has(> div > aside) > header {
+  background: var(--mairie-surface-raised);
+  border-color: var(--mairie-border);
+}
+html[data-theme="dark"] body.mairie-ui .elearning-catalog-shell article > button:first-child { background: var(--mairie-accent-surface); }
+html[data-theme="dark"] body.mairie-ui span[class~="bg-[#f4f2ef]"] { background-color: var(--mairie-surface-raised); }
