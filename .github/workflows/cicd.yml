@@ -44,7 +44,7 @@ jobs:
           fail_on_findings: "true"
 
   CICD:
-    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@16c63d21eedbf6c6e3b58ebc30c61231e49e2536
+    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@5b7d127d46f95d8951935b6209ca7c2ca857a21d
     with:
       package_name: "login-front"
       node_version: "24.21.0"
