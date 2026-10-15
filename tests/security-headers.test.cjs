@@ -39,3 +39,13 @@ test('static security headers apply to every route and X-Powered-By is disabled'
   assert.equal(rule.source, '/:path*');
   assert.deepEqual(rule.headers.map(({ key }) => key).sort(), ['Cross-Origin-Embedder-Policy', 'Cross-Origin-Opener-Policy', 'Cross-Origin-Resource-Policy', 'Permissions-Policy', 'Referrer-Policy', 'X-Content-Type-Options', 'X-Frame-Options']);
 });
+
+
+test('recovery pages prevent query-token referrer leakage and caching', () => {
+  for (const pathname of ['/reset-password?token=disposable-token', '/forgot-password']) {
+    const response = middleware(new NextRequest('https://login.example.test' + pathname));
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.doesNotMatch([...response.headers].map(String).join(' '), /disposable-token/);
+  }
+});

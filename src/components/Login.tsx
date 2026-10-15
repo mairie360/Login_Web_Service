@@ -303,6 +303,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
             </div>
           </>
         )}
+        {!isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[#1256A6] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
         {isResuming && <p role="status" className="text-sm leading-5 text-gray-600">Reprise de votre session…</p>}
         {errorMessage && (
           <p

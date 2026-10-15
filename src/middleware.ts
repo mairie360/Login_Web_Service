@@ -21,6 +21,10 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+  if (request.nextUrl.pathname === "/reset-password" || request.nextUrl.pathname === "/forgot-password") {
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("Cache-Control", "no-store");
+  }
 
   return response;
 }

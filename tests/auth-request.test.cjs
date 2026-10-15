@@ -18,11 +18,13 @@ const request = (headers, path = '/api/auth/login') => new NextRequest('https://
   body: JSON.stringify({ email: 'agent@example.test', password: 'fixture-password', newPassword: 'fixture-new-password' }),
 });
 const routes = [
+  ['forgot password', req => requireTs('src/app/api/auth/forgot-password/route.ts').POST(req), true],
+  ['reset password', req => requireTs('src/app/api/auth/reset-password/route.ts').POST(req), true],
   ['login', req => login.POST(req), true],
   ['password change', req => change.POST(req), true],
   ['password change alias', req => changeAlias.POST(req), true],
   ['session logout', req => logout.POST(req), true],
-  ...['login', 'force_change_password', 'logout'].map(path => ['contract proxy ' + path, req => proxyBffRequest(req, { params: Promise.resolve({ path: ['auth', path] }) }), true]),
+  ...['login', 'force_change_password', 'forgot_password', 'reset_password', 'logout'].map(path => ['contract proxy ' + path, req => proxyBffRequest(req, { params: Promise.resolve({ path: ['auth', path] }) }), true]),
 ];
 
 for (const [name, handle, json] of routes) {
