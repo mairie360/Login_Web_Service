@@ -50,7 +50,7 @@ React state manages display and pending operations. This repository defines no b
 
 ## Installation and local startup
 
-Use Node.js 22 to reproduce the contract job and npm with the committed lockfile. Other job and Docker versions are detailed below.
+Use Node.js 24.21.0 (the version pinned in CI and Docker) to reproduce the contract job and npm with the committed lockfile. Other job and Docker versions are detailed below.
 
 Private `@mairie360/*` dependencies require GitHub Packages access. Set `NODE_AUTH_TOKEN` in the environment to a token allowed to read these packages, as configured in `.npmrc`. Do not commit its value.
 
@@ -197,9 +197,9 @@ For documentation-only changes, check links, accuracy in both languages and `git
 
 ## CI/CD and Docker execution
 
-The `contracts.yml` job uses Node.js 24.21.0 with checkout and setup-node pinned by immutable commits. It runs on pushes, pull requests and manual dispatch; it installs with `npm ci`, checks contracts and runs the associated tests.
+The `contracts.yml` job uses Node.js 24.21.0 with checkout and setup-node pinned by immutable commits. It runs on pull requests, manual dispatch and pushes to `main` only (MAIR-436); it installs with `npm ci`, checks contracts and runs the associated tests.
 
-`cicd.yml` calls `mairie360/CICD/.github/workflows/frontend-cicd.yml@16c63d21eedbf6c6e3b58ebc30c61231e49e2536`, with that same `cicd_version` and `node_version: "24.21.0"`. Reusable steps and GitHub environments determine actual checks, publications and deployments.
+`cicd.yml` calls `mairie360/CICD/.github/workflows/frontend-cicd.yml` pinned to a CICD commit, with the same `cicd_version` and `node_version: "24.21.0"`. It runs on pull requests, on manual dispatch and on pushes to `main` only; its token is read-only by default and only the job calling the release pipeline gets `contents`, `packages` and `id-token` write scopes (MAIR-436, `tests/workflow-permissions.test.cjs`). Reusable steps and GitHub environments determine actual checks, publications and deployments.
 
 Lint and build are owned by the shared frontend CICD on Node.js 24.21.0. The redundant `nextjs.yml` workflow was removed for MAIR-403. The separate contract consistency and Dev exception workflows, required checks, scanners, environments and approval gates are retained.
 
