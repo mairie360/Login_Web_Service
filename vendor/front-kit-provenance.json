@@ -2,8 +2,8 @@
   "package": "@mairie360/front-kit",
   "version": "0.1.0",
   "sourceRepository": "https://github.com/mairie360/Front_End_Template",
-  "sourceCommit": "86d5500a0c3f887d6f0c56c60c3942b130c90b44",
-  "integrity": "sha512-WdW9HiiFlg/kcmWks2u0wndTu2Q0AJ2IFc5Ax8PdbN2Wq6AW0zpuuy3C+GHzPGK3/FsC2HGvW3HSV4GjJt806Q==",
-  "sha256": "52de6a5e4c47eb539c9711006ad3e40b4ede5d64a098efebec04e6de4b081bc2",
+  "sourceCommit": "194b45e29b3cbe223c24e9d2cba41941c8388273",
+  "integrity": "sha512-4h0G41tGWOgkv9FoQyB1/Etw8BcgZoX6cbee3UyycHslHbSDA2kKPmGAsWTvne9DDTeNWFoo1YNOKU5f4JOCIg==",
+  "sha256": "a2ab0510eeb186b13b3a0f1d36fdadfa07a48c651fc7511ef35c92b942dda6f9",
   "distribution": "reviewed local package artifact; registry publication not claimed"
 }
