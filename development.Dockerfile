@@ -1,25 +1,25 @@
-ARG NODE_VERSION=23.10.0
-FROM node:${NODE_VERSION}-bookworm-slim AS builder
+# syntax=docker/dockerfile:1
+ARG NODE_VERSION=24.21.0
+FROM node:${NODE_VERSION}-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 AS builder
 
 WORKDIR /app
 
-# 1. On installe les outils système nécessaires une seule fois (CACHÉ)
+# System tools, installed once (cached layer).
 RUN apt update && apt install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-# 2. ON COPIE UNIQUEMENT les fichiers de dépendances (CACHÉ tant que tu n'ajoutes pas de lib)
+# Dependency manifests only, so the install layer stays cached until they change.
 COPY package.json package-lock.json ./
 
-# 3. On utilise un "mount" de type secret pour l'installation
-# Cela permet d'utiliser ton NODE_AUTH_TOKEN sans qu'il reste dans l'image finale
-RUN --mount=type=secret,id=NODE_AUTH_TOKEN \
-    export TOKEN=$(cat /run/secrets/NODE_AUTH_TOKEN) && \
-    npm config set //npm.pkg.github.com/:_authToken=$TOKEN && \
-    npm install
+# MAIR-436: the GitHub Packages token is a required BuildKit secret used only by the install.
+# A readonly bind keeps the tracked npm policy without writing the token into a layer.
+RUN --mount=type=secret,id=node_auth_token,env=NODE_AUTH_TOKEN,required=true \
+    --mount=type=bind,source=.npmrc,target=/app/.npmrc \
+    npm ci
 
-# 4. On copie le reste du code (C'est ici que tu travailles)
+# Application sources (synced by `docker compose watch`).
 COPY . .
 
-# 5. On gère les permissions à la fin
+# Non-root user, set last.
 RUN useradd --system --home /app --shell /usr/sbin/nologin projects && \
     chown -R projects:projects /app
 
