@@ -230,7 +230,7 @@ html[data-theme="dark"] body.mairie-ui :is(
   [class~="text-gray-900"], [class~="text-gray-800"], [class~="text-gray-700"], [class~="text-slate-900"], [class~="text-slate-800"]
 ) { color: var(--mairie-text); }
 html[data-theme="dark"] body.mairie-ui :is(
-  [class~="text-[#536171]"], [class~="text-[#57606a]"], [class~="text-[#6e7781]"], [class~="text-[#6b6b6b]"], [class~="text-[#687385]"], [class~="text-[#64748b]"],
+  [class~="text-[#596274]"], [class~="text-[#536171]"], [class~="text-[#57606a]"], [class~="text-[#6e7781]"], [class~="text-[#6b6b6b]"], [class~="text-[#687385]"], [class~="text-[#64748b]"],
   [class~="text-gray-600"], [class~="text-gray-500"], [class~="text-slate-600"], [class~="text-slate-500"], [class~="text-muted-foreground"]
 ) { color: var(--mairie-muted); }
 html[data-theme="dark"] body.mairie-ui :is(
@@ -272,13 +272,13 @@ html[data-theme="dark"] body.mairie-ui :is(img[src*="mairie360-logo"], img[alt="
   border-radius: 8px;
 }
 
-/* Neutral Dashboard surfaces are also styled by its base stylesheet, without
+/* Neutral module controls are also styled by their base stylesheets, without
  * background utility classes. Pair those surfaces with the existing dark text. */
-html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, .dashboard-recent-projects > div:last-child > button) {
+html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, label.settings-file-picker, .dashboard-recent-projects > div:last-child > button) {
   background-color: var(--mairie-surface-raised);
   border-color: var(--mairie-control-border);
 }
-html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, .dashboard-recent-projects > div:last-child > button):hover {
+html[data-theme="dark"] body.mairie-ui main :is(.dashboard-panel-action, label.settings-file-picker, .dashboard-recent-projects > div:last-child > button):hover {
   background-color: var(--mairie-surface);
 }
 html[data-theme="dark"] body.mairie-ui main .page-current-date { color: var(--mairie-muted); }
