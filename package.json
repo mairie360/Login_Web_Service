@@ -12,7 +12,7 @@
     "contracts:sync": "node scripts/contracts.mjs --sync",
     "test:contracts": "node --test tests/*.test.cjs",
     "test:node": "mkdir -p coverage && c8 --include='src/**' --reporter=text --reporter=lcov --check-coverage --lines=60 --functions=60 --branches=60 node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/node-lcov.info tests/*.test.cjs",
-    "test:components": "vitest run",
+    "test:components": "vitest run --coverage",
     "test": "npm run test:node && npm run test:components",
     "performance:report": "node scripts/frontend-performance.mjs"
   },
@@ -37,6 +37,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "5.0.2",
     "c8": "12.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
