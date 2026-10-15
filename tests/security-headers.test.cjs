@@ -1,14 +1,10 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const fs = require('node:fs');
-const ts = require('typescript');
 const { NextRequest } = require('next/server');
-const originalLoader = require.extensions['.ts'];
-require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText, filename);
-const { middleware } = require('../src/middleware.ts');
-const { buildContentSecurityPolicy } = require('../src/lib/content-security-policy.ts');
-const nextConfig = require('../next.config.ts').default;
-require.extensions['.ts'] = originalLoader;
+const { requireTs } = require('./support/load-ts.cjs');
+const { middleware } = requireTs('src/middleware.ts');
+const { buildContentSecurityPolicy } = require('@mairie360/front-kit/shared');
+const nextConfig = requireTs('next.config.ts').default;
 
 const pageRequest = () => new NextRequest('http://localhost:5000/');
 
@@ -38,4 +34,14 @@ test('static security headers apply to every route and X-Powered-By is disabled'
   const [rule] = await nextConfig.headers();
   assert.equal(rule.source, '/:path*');
   assert.deepEqual(rule.headers.map(({ key }) => key).sort(), ['Cross-Origin-Embedder-Policy', 'Cross-Origin-Opener-Policy', 'Cross-Origin-Resource-Policy', 'Permissions-Policy', 'Referrer-Policy', 'X-Content-Type-Options', 'X-Frame-Options']);
+});
+
+
+test('recovery pages prevent query-token referrer leakage and caching', () => {
+  for (const pathname of ['/reset-password?token=disposable-token', '/forgot-password']) {
+    const response = middleware(new NextRequest('https://login.example.test' + pathname));
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.doesNotMatch([...response.headers].map(String).join(' '), /disposable-token/);
+  }
 });

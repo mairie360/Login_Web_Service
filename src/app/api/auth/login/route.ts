@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
+import { createAuthSessionResponse } from "../../../../lib/auth-session";
 import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
 
 type LoginBody = {
@@ -12,8 +13,6 @@ type LoginBody = {
 
 type FirstConnectionResponse = Partial<PostAuthLogin412>;
 
-const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60;
-const UNKNOWN_ACCESS_TOKEN_MAX_AGE = 60 * 60;
 const PASSWORD_CHANGE_TOKEN_MAX_AGE = 10 * 60;
 
 // Même règle que `z.email()` du LoginViewSchema de BFF User (le format email n'est pas conservé par la
@@ -69,25 +68,6 @@ function getAuthorizationToken(response: Response) {
   return match?.[1] ?? null;
 }
 
-function getAccessTokenMaxAge(token: string) {
-  const payload = token.split(".")[1];
-  if (!payload) return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-
-  try {
-    const claims: unknown = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (typeof claims !== "object" || claims === null || !("exp" in claims)) {
-      return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-    }
-    const exp = claims.exp;
-    if (typeof exp !== "number" || !Number.isSafeInteger(exp)) {
-      return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-    }
-    return Math.min(ACCESS_TOKEN_MAX_AGE, Math.floor(exp - Date.now() / 1000));
-  } catch {
-    // Keep opaque or malformed tokens short-lived without exposing their content.
-    return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-  }
-}
 
 function getPasswordChangeToken(body: unknown) {
   if (typeof body !== "object" || body === null) {
@@ -232,34 +212,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessTokenMaxAge = Math.min(getAccessTokenMaxAge(accessToken), cookieSession?.maxAge ?? Infinity);
-    if (accessTokenMaxAge <= 0) {
-      return NextResponse.json(
-        { message: "Le service de connexion a renvoyé une session expirée." },
-        { status: 502 },
-      );
-    }
-
-    const response = NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } });
-
-    response.cookies.set("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: accessTokenMaxAge,
-      ...(cookieDomain ? { domain: cookieDomain } : {}),
-    });
-
-    response.cookies.set("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/api",
-      ...(cookieDomain ? { domain: cookieDomain } : {}),
-    });
-
-    return response;
+    return createAuthSessionResponse(accessToken, refreshToken, cookieSession?.maxAge);
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "TimeoutError";
 

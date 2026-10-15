@@ -159,7 +159,7 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     assert.deepEqual({ httpOnly: cookie.httpOnly, sameSite: cookie.sameSite, path: cookie.path, maxAge: cookie.maxAge, domain: cookie.domain }, { httpOnly: true, sameSite: 'strict', path: '/', maxAge: 3600, domain: COOKIE_DOMAIN });
     const refreshCookie = response.cookies.get('refreshToken');
     assert.deepEqual({ value: refreshCookie.value, httpOnly: refreshCookie.httpOnly, sameSite: refreshCookie.sameSite, path: refreshCookie.path, maxAge: refreshCookie.maxAge, domain: refreshCookie.domain }, {
-      value: 'refresh-token', httpOnly: true, sameSite: 'strict', path: '/api', maxAge: undefined, domain: COOKIE_DOMAIN,
+      value: 'refresh-token', httpOnly: true, sameSite: 'strict', path: '/api', maxAge: 2592000, domain: COOKIE_DOMAIN,
     });
     const [call] = bff.calls('/auth/login', 'POST');
     assert.equal(bff.requests.length, 1);
@@ -347,7 +347,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   });
 
   // Authentication aliases are verified separately against their guarded UI handlers.
-  for (const operation of contract.operations().filter(x => !['/auth/login','/auth/force_change_password','/auth/logout'].includes(x.template))) {
+  for (const operation of contract.operations().filter(x => !['/auth/login','/auth/force_change_password','/auth/forgot_password','/auth/reset_password','/auth/logout'].includes(x.template))) {
     test(`${operation.method} ${operation.template} reaches the BFF unchanged and its response comes back`, async () => {
       const [code, response] = Object.entries(operation.operation.responses).find(([candidate]) => candidate.startsWith('2'));
       const status = code === '2XX' ? 200 : Number(code);
@@ -428,14 +428,15 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     }
   }
 
-  test('without session cookie no Authorization is invented and 401 explicitly requires Login', async () => {
+  test('without a session cookie no Authorization is invented and a 401 remains eligible for browser renewal', async () => {
     bff.on('GET', '/session/me', (request) => ({ status: request.headers.authorization ? 200 : 401, outOfContract: true }));
 
     const result = await catchAll.GET(new NextRequest('http://localhost:5000/session/me'), context('/session/me'));
 
     assert.equal(result.status, 401);
-    assert.equal(result.headers.get('X-Mairie360-Login-Required'), 'true');
-    assert.match((await result.json()).error.message, /session a expiré/);
+    assert.equal(result.headers.get('X-Mairie360-Refresh-Refused'), null);
+    assert.equal(result.headers.get('X-Mairie360-Login-Required'), null);
+    assert.match((await result.json()).error.message, /session doit être renouvelée/);
     assert.equal(bff.calls('/session/me')[0].headers.authorization, undefined);
   });
 
@@ -459,4 +460,34 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     const refused = await catchAll.GET(new NextRequest('http://localhost:5000/health'), context('/health'));
     assert.equal(refused.status, 502);
   });
+});
+
+
+describe('recovery handlers → published BFF User contract', () => {
+  const resetToken = '94a0c99b-e39c-4a8e-96e8-1c8caad20cab';
+  for (const viaAlias of [false, true]) {
+    test(`forgot password consumes the real empty response (${viaAlias ? 'contract alias' : 'UI handler'})`, async () => {
+      bff.on('POST', '/auth/forgot_password', { status: 200 });
+      const request = loginRequest({ email: 'agent@example.test' });
+      const result = viaAlias
+        ? await catchAll.POST(request, { params: Promise.resolve({ path: ['auth', 'forgot_password'] }) })
+        : await requireTs('src/app/api/auth/forgot-password/route.ts').POST(request);
+      assert.equal(result.status, 200);
+      assert.deepEqual(await result.json(), { success: true, message: 'Si un compte existe, un e-mail a été envoyé.' });
+      assert.deepEqual(bff.calls('/auth/forgot_password')[0].body, { email: 'agent@example.test' });
+      assert.equal(result.headers.get('set-cookie'), null);
+    });
+    test(`reset opens a shared cookie session from the real response (${viaAlias ? 'contract alias' : 'UI handler'})`, async () => {
+      bff.on('POST', '/auth/reset_password', sessionReply('reset-access-token'));
+      const request = loginRequest({ token: resetToken, newPassword: 'Updated-password' });
+      const result = viaAlias
+        ? await catchAll.POST(request, { params: Promise.resolve({ path: ['auth', 'reset_password'] }) })
+        : await requireTs('src/app/api/auth/reset-password/route.ts').POST(request);
+      assert.equal(result.status, 200); assert.deepEqual(await result.json(), { success: true });
+      assert.deepEqual(bff.calls('/auth/reset_password')[0].body, { token: resetToken, new_password: 'Updated-password', device_info: USER_AGENT });
+      assert.equal(result.cookies.get('accessToken').value, 'reset-access-token');
+      assert.equal(result.cookies.get('refreshToken').value, 'refresh-token');
+      assert.equal(result.cookies.get('refreshToken').path, '/api');
+    });
+  }
 });

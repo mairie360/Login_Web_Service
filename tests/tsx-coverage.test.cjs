@@ -7,8 +7,8 @@ const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 const { requireTs } = require('./support/load-ts.cjs');
 
-test('the actual TSX loader emits source mappings to the unchanged original component', () => {
-  const filename = path.resolve(__dirname, '../src/components/Login.tsx');
+for (const relative of ['src/components/Login.tsx', 'src/app/api/auth/reset-password/route.ts']) test(`the actual loader maps emitted code to unchanged ${relative}`, () => {
+  const filename = path.resolve(__dirname, '..', relative);
   const originalCompile = Module.prototype._compile;
   let compiled;
   Module.prototype._compile = function (source, file) {
@@ -16,15 +16,15 @@ test('the actual TSX loader emits source mappings to the unchanged original comp
     return originalCompile.call(this, source, file);
   };
   try {
-    assert.equal(typeof requireTs('src/components/Login.tsx').default, 'function');
+    assert.equal(typeof requireTs(relative)[relative.endsWith('.tsx') ? 'default' : 'POST'], 'function');
     const match = compiled.match(/sourceMappingURL=data:application\/json;base64,([^\s]+)/);
-    assert.ok(match, 'coverage must map the emitted JavaScript back to TSX');
+    assert.ok(match, 'coverage must map emitted JavaScript back to its original TypeScript source');
     const map = JSON.parse(Buffer.from(match[1], 'base64').toString('utf8'));
     assert.equal(map.version, 3);
-    assert.deepEqual(map.sources, ['Login.tsx']);
+    assert.deepEqual(map.sources, [path.basename(relative)]);
     assert.deepEqual(map.sourcesContent, [fs.readFileSync(filename, 'utf8')]);
     assert.ok(map.mappings.length > 0);
-    assert.match(compiled, /react\/jsx-runtime/);
+    if (relative.endsWith('.tsx')) assert.match(compiled, /react\/jsx-runtime/);
   } finally {
     Module.prototype._compile = originalCompile;
   }
@@ -32,18 +32,17 @@ test('the actual TSX loader emits source mappings to the unchanged original comp
 
 test('the Node coverage command uses source maps and one worker without relaxing the gates', () => {
   const { scripts } = require('../package.json');
-  assert.match(scripts['test:node'], /node --enable-source-maps --test --test-concurrency=1 /);
+  const native = scripts['test:node:native'];
+  assert.match(native, /node --enable-source-maps --test --test-concurrency=1 /);
   for (const metric of ['branches', 'functions', 'lines']) {
-    assert.ok(scripts['test:node'].includes(`--test-coverage-${metric}=60`));
+    assert.ok(native.includes(`--test-coverage-${metric}=60`));
   }
-  assert.ok(scripts['test:node'].includes("--test-coverage-include='src/**'"));
-  assert.ok(scripts['test:node'].includes('--test-reporter-destination=coverage/node-lcov.info'));
-  assert.ok(scripts['test:node'].includes('c8 --include=\'src/**\' --reporter=text --reporter=lcov --check-coverage'));
-  for (const metric of ['branches', 'functions', 'lines']) {
-    assert.ok(scripts['test:node'].includes(`--${metric}=60`));
-  }
-  assert.ok(scripts['test:node'].endsWith('tests/*.test.cjs'));
-  assert.doesNotMatch(scripts['test:node'], /test-coverage-exclude|test-name-pattern|test-skip-pattern|test-only/);
+  assert.ok(native.includes("--test-coverage-include='src/**'"));
+  assert.ok(native.includes('--test-reporter-destination=coverage/lcov.info'));
+  assert.ok(native.endsWith('tests/*.test.cjs'));
+  assert.doesNotMatch(native, /test-coverage-exclude|test-name-pattern|test-skip-pattern|test-only/);
+  assert.equal(scripts['test:node'], 'node scripts/test-node-coverage.cjs');
+  assert.equal(scripts.test, 'npm run test:node && node scripts/test-components-coverage.cjs');
 });
 
 test('JSX coverage maps executed module setup to source and still reports an uncalled function', () => {

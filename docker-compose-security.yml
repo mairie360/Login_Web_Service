@@ -224,6 +224,7 @@ services:
         condition: service_healthy
     volumes:
       - ./.zap/rules.tsv:/zap/wrk/rules.tsv:ro
+      - ./.zap/recovery-hooks.py:/zap/wrk/recovery-hooks.py:ro
     # zap-baseline.py: spider + passive scan (fit for a web UI, where the BFFs replay
     #   their OpenAPI with zap-api-scan.py).
     # -j: the AJAX spider renders the page in a headless browser and follows the fetch()
@@ -236,6 +237,7 @@ services:
     #   le proxy same-origin le convertit en Authorization: Bearer vers le BFF.
     command:
       - zap-baseline.py
+      - --hook=/zap/wrk/recovery-hooks.py
       - -t
       - http://login-front:5000/
       - -m

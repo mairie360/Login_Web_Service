@@ -1,0 +1,6 @@
+# Reviewed false positives from deterministic, non-production test fixtures.
+# Exact commit/file/rule/line fingerprints only; no path, rule or future-token exemption.
+# The UUID is a fixed reset-form fixture; it was never issued by an authentication server.
+450e84361798269de9860914e5e9bd9b55847d0c:tests/component/password-recovery.test.jsx:generic-api-key:8
+450e84361798269de9860914e5e9bd9b55847d0c:tests/bff-contract.test.cjs:generic-api-key:466
+450e84361798269de9860914e5e9bd9b55847d0c:tests/password-recovery.test.cjs:generic-api-key:8

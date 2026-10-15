@@ -187,3 +187,9 @@ describe("Login form", () => {
     expect(results.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
   });
 });
+
+it("links to the recovery form while preserving the validated return destination", () => {
+  render(<Login redirectUrl={requestedFront} />);
+  const link = screen.getByRole("link", { name: "Mot de passe oublié ?" });
+  expect(link.getAttribute("href")).toBe("/forgot-password?redirect=" + encodeURIComponent(requestedFront));
+});

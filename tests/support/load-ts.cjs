@@ -16,9 +16,9 @@ function requireTs(file) {
       jsx: ts.JsxEmit.ReactJSX,
       // JSX compilation changes offsets. Node coverage needs the actual TSX source map,
       // otherwise generated interop/JSX branches are incorrectly assigned to source imports.
-      // Keep legacy .ts loaders unchanged; not every server suite uses this helper yet.
-      inlineSourceMap: filename.endsWith('.tsx'),
-      inlineSources: filename.endsWith('.tsx'),
+      // Server routes also require mappings: emitted import helpers shift their offsets.
+      inlineSourceMap: true,
+      inlineSources: true,
     },
     fileName: filename,
   }).outputText, filename);

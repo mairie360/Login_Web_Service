@@ -17,7 +17,7 @@ const renewed=()=>{ const body={message:'JWT refreshed successfully'};assert.dee
 test('all eight configured frontend origins share one concurrent User rotation and rewritten browser cookies',async()=>{
  let calls=0;global.fetch=async(url,init)=>{calls++;assert.equal(url,'https://bff.example.test/auth/refresh');assert.equal(init.headers.Authorization,undefined);assert.equal(init.headers.Cookie,undefined);assert.deepEqual(JSON.parse(init.body),{refresh_token:`disposable-old-${token}`});assert.deepEqual(contract.validate(contract.schema('RefreshView'),JSON.parse(init.body)),[]);return renewed();};
  const responses=await Promise.all(Object.values(fronts).map(front=>POST(request(`https://${front}.dev.mairie360-eip.fr`))));assert.equal(calls,1);
- for(const r of responses){assert.equal(r.status,200);assert.deepEqual(await r.json(),{message:'Session renouvelée.'});assert.equal(r.cookies.get('accessToken').path,'/');assert.equal(r.cookies.get('refreshToken').path,'/api');assert.equal(r.cookies.get('refreshToken').maxAge,undefined);assert.equal(r.cookies.get('refreshToken').secure,true);assert.equal(r.cookies.get('refreshToken').domain,'.dev.mairie360-eip.fr');}
+ for(const r of responses){assert.equal(r.status,200);assert.deepEqual(await r.json(),{message:'Session renouvelée.'});assert.equal(r.cookies.get('accessToken').path,'/');assert.equal(r.cookies.get('refreshToken').path,'/api');assert.equal(r.cookies.get('refreshToken').maxAge,2592000);assert.equal(r.cookies.get('refreshToken').secure,true);assert.equal(r.cookies.get('refreshToken').domain,'.dev.mairie360-eip.fr');}
 });
 
 test('foreign, absent and cross-site origins cannot invoke the shared owner',async()=>{

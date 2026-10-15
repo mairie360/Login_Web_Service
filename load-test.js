@@ -81,6 +81,11 @@ export function reads(data) {
   group('pages', () => {
     const home = http.get(`${BASE_URL}/`, pageParams);
     check(home, { 'page / 200': (r) => r.status === 200 });
+    const forgot = http.get(`${BASE_URL}/forgot-password`, pageParams);
+    check(forgot, { 'page /forgot-password 200': (r) => r.status === 200 && r.body.includes('Email professionnel') });
+    // A disposable, invalid token exercises the landing/error state without sending email or changing passwords.
+    const reset = http.get(`${BASE_URL}/reset-password?token=invalid-load-test-token`, pageParams);
+    check(reset, { 'page /reset-password 200': (r) => r.status === 200 && r.body.includes('Demander un nouveau lien') });
   });
 
   group('health', () => {
