@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.0.0-dev.46a698bb9adbf3c86a5517b4c958b379cb03fe70",
+    "@mairie360/front-kit": "file:vendor/mairie360-front-kit-0.1.0.tgz",
     "@mairie360/lib-components": "0.8.0",
     "next": "16.3.8",
     "react": "^19.0.0",

@@ -10,6 +10,7 @@ function loadRootLayout(load) {
   const font = options => ({ variable: options.variable, className: 'test-font' });
   require.extensions['.css'] = () => {};
   Module._load = function (request, ...rest) {
+    if (request === 'next/headers') return { cookies: async () => ({ get: () => undefined }) };
     if (request === 'next/font/google') return { Geist: font, Geist_Mono: font };
     return previousLoad.call(this, request, ...rest);
   };

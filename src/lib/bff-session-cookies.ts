@@ -1,1 +1,1 @@
-export { readSessionCookies as readBffCookieSession } from '@mairie360/lib-components/next';
+export { readSessionCookies as readBffCookieSession } from '@mairie360/front-kit/next';

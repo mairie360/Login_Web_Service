@@ -1,3 +1,7 @@
+import { parseAppearanceCookie, APPEARANCE_COOKIE } from '@mairie360/front-kit/theme';
+import { cookies } from 'next/headers';
+import { instanceTimeZone } from '@mairie360/front-kit/shared';
+import { InstanceProvider } from '@mairie360/front-kit/react';
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
@@ -21,17 +25,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const appearance = parseAppearanceCookie(cookieStore.get(APPEARANCE_COOKIE)?.value);
+  const timeZone = instanceTimeZone(process.env.INSTANCE_TIMEZONE);
   return (
-    <html lang="fr">
+    <html lang="fr" data-theme={appearance?.theme ?? "system"} data-density={appearance?.density ?? "normal"}>
       <body className={`${geistSans.variable} mairie-ui antialiased`}>
         <a href="#login-content" className="app-skip-link">Aller au contenu</a>
         <main id="login-content" tabIndex={-1} className="login-page flex min-h-dvh items-center justify-center bg-[#F5F3F0]">
-          {children}
+          <InstanceProvider role="Guest" timeZone={timeZone} appearance={appearance} appearanceCookieDomain={process.env.COOKIE_DOMAIN}>{children}</InstanceProvider>
         </main>
       </body>
     </html>
