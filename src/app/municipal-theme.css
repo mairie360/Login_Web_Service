@@ -6,6 +6,16 @@
 :root {
   --mairie-background: #f1f7fc;
   --mairie-surface: #ffffff;
+  --mairie-surface-raised: #f3f7fc;
+  --mairie-control-background: #ffffff;
+  --mairie-error-surface: #fff0f1;
+  --mairie-error-text: #a40e26;
+  --mairie-success-surface: #edf9f1;
+  --mairie-success-text: #17643c;
+  --mairie-warning-surface: #fff8e6;
+  --mairie-warning-text: #75520b;
+  --mairie-accent-surface: #edf5ff;
+  --mairie-density-space: 16px;
   --mairie-text: #162033;
   --mairie-muted: #475569;
   --mairie-accent: #1256a6;
@@ -17,6 +27,15 @@
 html[data-theme="dark"] {
   --mairie-background: #101b2d;
   --mairie-surface: #17263a;
+  --mairie-surface-raised: #203149;
+  --mairie-control-background: #101e31;
+  --mairie-error-surface: #48232b;
+  --mairie-error-text: #ffc1c8;
+  --mairie-success-surface: #173b31;
+  --mairie-success-text: #b5eed1;
+  --mairie-warning-surface: #42351a;
+  --mairie-warning-text: #ffe0a0;
+  --mairie-accent-surface: #203c5e;
   --mairie-text: #f1f5f9;
   --mairie-muted: #cbd5e1;
   --mairie-accent: #9dc9ff;
@@ -25,7 +44,7 @@ html[data-theme="dark"] {
 }
 html:has(body.mairie-ui) { font-size: 17px; }
 html body.mairie-ui {
-  --mairie-font: var(--font-geist-sans, system-ui), sans-serif;
+  --mairie-font: var(--mairie-user-font, var(--font-geist-sans, system-ui)), sans-serif;
   margin: 0;
   background: var(--mairie-background);
   color: var(--mairie-text);
@@ -174,4 +193,72 @@ body.mairie-ui .app-accessible-footer > div { font-size: 14px; }
 @media (min-width: 1024px) {
   body.mairie-ui .app-shell-frame[data-sidebar-collapsed="true"] .app-accessible-footer { padding: 12px 8px; overflow-wrap: anywhere; }
   body.mairie-ui .app-shell-frame[data-sidebar-collapsed="true"] .app-accessible-footer > div { font-size: 12px; line-height: 1.5; }
+}
+
+
+/* MAIR-526: confirmed public appearance; dark surfaces keep native controls readable. */
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+html[data-density="compact"] { --mairie-density-space: 12px; }
+html[data-density="comfortable"] { --mairie-density-space: 20px; }
+body.mairie-ui :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  background-color: var(--mairie-control-background);
+  border-color: var(--mairie-control-border);
+  color: var(--mairie-text);
+  caret-color: var(--mairie-text);
+}
+body.mairie-ui :is(input, select, textarea)::placeholder { color: var(--mairie-muted); opacity: 1; }
+body.mairie-ui :is(select option, select optgroup) { background: var(--mairie-control-background); color: var(--mairie-text); }
+body.mairie-ui :is(.settings-feature-card, .mairie-workflow-panel) { padding: var(--mairie-density-space); }
+body.mairie-ui .mairie-task-board { gap: var(--mairie-density-space); }
+body.mairie-ui :is(.mairie-task-card, .mairie-status-column) {
+  background: var(--mairie-surface);
+  border-color: var(--mairie-border);
+  color: var(--mairie-text);
+}
+body.mairie-ui .mairie-task-card { padding: var(--mairie-density-space); }
+body.mairie-ui .mairie-status-column { background: var(--mairie-surface-raised); }
+html[data-theme="dark"] body.mairie-ui :is(
+  [class~="bg-white"], [class~="bg-card"], [class~="bg-[#ffffff]"], [class~="bg-[#fbfaf8]"], [class~="bg-[#FBFAF8]"]
+) { background-color: var(--mairie-surface); }
+html[data-theme="dark"] body.mairie-ui :is(
+  [class~="bg-[#f6f8fa]"], [class~="bg-[#f6f4f1]"], [class~="bg-[#f1eee9]"], [class~="bg-[#f8fafc]"], [class~="bg-[#f1f5f9]"], [class~="bg-[#e8e6e3]"],
+  [class~="bg-[#f9fafb]"], [class~="bg-[#f8f6f2]"], [class~="bg-gray-50"], [class~="bg-gray-100"], [class~="bg-slate-50"], [class~="bg-slate-100"]
+) { background-color: var(--mairie-surface-raised); }
+html[data-theme="dark"] body.mairie-ui :is(
+  [class~="text-[#172033]"], [class~="text-[#162033]"], [class~="text-[#24292f]"], [class~="text-[#243041]"], [class~="text-[#2f3438]"], [class~="text-[#3c3c3c]"],
+  [class~="text-gray-900"], [class~="text-gray-800"], [class~="text-gray-700"], [class~="text-slate-900"], [class~="text-slate-800"]
+) { color: var(--mairie-text); }
+html[data-theme="dark"] body.mairie-ui :is(
+  [class~="text-[#536171]"], [class~="text-[#57606a]"], [class~="text-[#6e7781]"], [class~="text-[#6b6b6b]"], [class~="text-[#687385]"], [class~="text-[#64748b]"],
+  [class~="text-gray-600"], [class~="text-gray-500"], [class~="text-slate-600"], [class~="text-slate-500"], [class~="text-muted-foreground"]
+) { color: var(--mairie-muted); }
+html[data-theme="dark"] body.mairie-ui :is(
+  [class~="border-[#d0d7de]"], [class~="border-[#d9d5d0]"], [class~="border-[#dedbd6]"], [class~="border-[#d8dee4]"], [class~="border-[#d0ccc7]"], [class~="border-[#cbd5e1]"],
+  [class~="border-gray-200"], [class~="border-gray-300"], [class~="border-slate-200"], [class~="border-slate-300"]
+) { border-color: var(--mairie-border); }
+html[data-theme="dark"] body.mairie-ui :is(
+  [class~="bg-[#d4e8e7]"], [class~="bg-[#d4eeee]"], [class~="bg-[#ddf4ff]"], [class~="bg-[#edf5ff]"]
+) { background-color: var(--mairie-accent-surface); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1256a6]"], [class~="text-[#1256A6]"], [class~="text-[#0969da]"], [class~="text-blue-700"], [class~="text-blue-600"]) { color: var(--mairie-accent); }
+html[data-theme="dark"] body.mairie-ui :is([class~="bg-red-50"], [class~="bg-red-100"], [class~="bg-[#ffebe9]"]) { background-color: var(--mairie-error-surface); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#cf222e]"], [class~="text-[#a40e26]"], [class~="text-[#c53030]"], [class~="text-[#dc2626]"], [class~="text-red-700"], [class~="text-red-600"]) { color: var(--mairie-error-text); }
+html[data-theme="dark"] body.mairie-ui :is([class~="bg-green-50"], [class~="bg-green-100"]) { background-color: var(--mairie-success-surface); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1a7f37]"], [class~="text-green-800"], [class~="text-green-700"], [class~="text-green-600"]) { color: var(--mairie-success-text); }
+html[data-theme="dark"] body.mairie-ui :is([class~="bg-amber-50"], [class~="bg-yellow-50"]) { background-color: var(--mairie-warning-surface); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-amber-800"], [class~="text-yellow-800"]) { color: var(--mairie-warning-text); }
+html[data-theme="dark"] body.mairie-ui [class~="bg-[#2da44e]"] { background-color: #17643c; }
+html[data-theme="dark"] body.mairie-ui :is([class~="hover:bg-[#f6f8fa]"], [class~="hover:bg-[#f1eee9]"], [class~="hover:bg-gray-50"]):hover { background-color: var(--mairie-surface-raised); }
+/* Put control surfaces last: a light utility class must never produce light text on white. */
+html[data-theme="dark"] body.mairie-ui :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  background-color: var(--mairie-control-background);
+  border-color: var(--mairie-control-border);
+  color: var(--mairie-text);
+}
+
+/* Preview drafts remain local and show system mode independently of the saved theme. */
+body.mairie-ui .mairie-appearance-preview { background: #fff; color: #162033; }
+body.mairie-ui .mairie-appearance-preview[data-preview-theme="dark"] { background: #172033; color: #fff; }
+@media (prefers-color-scheme: dark) {
+  body.mairie-ui .mairie-appearance-preview[data-preview-theme="system"] { background: #172033; color: #fff; }
 }
