@@ -16,6 +16,7 @@
   --mairie-success-action-hover-background: #145735;
   --mairie-purple-surface: #f1e5ff;
   --mairie-purple-text: #6434b5;
+  --mairie-teal-text: #2b706c;
   --mairie-warning-surface: #fff8e6;
   --mairie-warning-text: #75520b;
   --mairie-accent-surface: #edf5ff;
@@ -255,19 +256,30 @@ html[data-theme="dark"] body.mairie-ui :is([class~="text-[#1a7f37]"], [class~="t
 html[data-theme="dark"] body.mairie-ui :is([class~="bg-[#fff8e8]"], [class~="bg-amber-50"], [class~="bg-yellow-50"]) { background-color: var(--mairie-warning-surface); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-amber-800"], [class~="text-yellow-800"]) { color: var(--mairie-warning-text); }
 html[data-theme="dark"] body.mairie-ui [class~="text-[#5a3b00]"] { color: var(--mairie-warning-text); }
-html[data-theme="dark"] body.mairie-ui :is([class~="text-[#2f3747]"], [class~="text-[#0b1220]"], [class~="text-[#344054]"]):not([class~="text-white"]) { color: var(--mairie-text); }
+html[data-theme="dark"] body.mairie-ui :is([class~="text-[#334155]"], [class~="text-[#2f3747]"], [class~="text-[#0b1220]"], [class~="text-[#344054]"]):not([class~="text-white"]) { color: var(--mairie-text); }
 html[data-theme="dark"] body.mairie-ui :is([class~="text-[#667085]"], [class~="text-[#475467]"], [class~="text-[#5f6470]"], [class~="text-[#4c5258]"], [class~="text-[#6f6f6f]"]):not([class~="text-white"]) { color: var(--mairie-muted); }
 html[data-theme="dark"] body.mairie-ui [class~="bg-[#2da44e]"] { background-color: var(--mairie-success-action-background); }
 /* Project priority pills retain their category, with a paired dark surface. */
 body.mairie-ui [class~="bg-[#f1e5ff]"] { background-color: var(--mairie-purple-surface); }
 body.mairie-ui [class~="text-[#8250df]"] { color: var(--mairie-purple-text); }
-/* These green actions use white text, including legacy important utilities.
- * Keep disabled palettes and other primary colours independent. */
-body.mairie-ui :is(button, a, [role="button"]):is([class~="bg-[#2da44e]"], [class~="!bg-[#2da44e]"]) {
-  background-color: var(--mairie-success-action-background) !important;
-}
-body.mairie-ui :is(button, a, [role="button"]):is([class~="hover:bg-[#2c974b]"], [class~="hover:!bg-[#2c974b]"]):hover:not(:disabled):not([aria-disabled="true"]) {
-  background-color: var(--mairie-success-action-hover-background) !important;
+/* Legacy muted text remains readable on pale metadata and category surfaces. */
+html:not([data-theme="dark"]) body.mairie-ui :is([class~="text-[#6e7781]"], [class~="text-[#98a2b3]"], [class~="text-[#667085]"], [class~="text-[#6f6f6f]"]):not([class~="text-white"]):not([class~="!text-white"]) { color: var(--mairie-muted); }
+html:not([data-theme="dark"]) body.mairie-ui [class~="text-[#4b908d]"]:not([class~="text-white"]):not([class~="!text-white"]) { color: var(--mairie-teal-text); }
+/* Footer controls inherit the current desktop/mobile surface pair. */
+body.mairie-ui .app-accessible-footer :is(a, button) { color: inherit !important; }
+body.mairie-ui .app-accessible-footer :is(a, button):is(:hover, :focus-visible) { text-decoration: underline; text-underline-offset: 3px; }
+body.mairie-ui .app-accessible-footer :is(a, button):focus-visible { outline-style: solid; outline-width: 2px; outline-color: currentColor; outline-offset: 3px; }
+/* Important layer order is reversed: base wins over utilities, including
+ * legacy !bg classes. Unlayered !important would lose in native browsers. */
+@layer base {
+  /* These green actions use white text, including legacy important utilities.
+   * Keep disabled palettes and other primary colours independent. */
+  body.mairie-ui :is(button, a, [role="button"]):is([class~="bg-[#2da44e]"], [class~="!bg-[#2da44e]"], [class~="bg-[#2faa55]"]) {
+    background-color: var(--mairie-success-action-background) !important;
+  }
+  body.mairie-ui :is(button, a, [role="button"]):is([class~="hover:bg-[#2c974b]"], [class~="hover:!bg-[#2c974b]"], [class~="hover:bg-[#27984b]"]):hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--mairie-success-action-hover-background) !important;
+  }
 }
 html[data-theme="dark"] body.mairie-ui :is([class~="hover:bg-[#f6f8fa]"], [class~="hover:bg-[#f1eee9]"], [class~="hover:bg-gray-50"]):hover { background-color: var(--mairie-surface-raised); }
 /* Put control surfaces last: a light utility class must never produce light text on white. */
