@@ -96,6 +96,273 @@
         "dist/index.d.ts": "4879630f1dfc30cb0400cff277f4d0d09e621ff8f56885e31da903aba7ed397d",
         "dist/next.d.ts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d"
       }
+    },
+    "0.9.0": {
+      "publishedAt": "2026-10-16T06:37:10Z",
+      "registry": "https://npm.pkg.github.com",
+      "gitHead": "0b952cb9353da7bc39a9a0ac79f446bcfd504567",
+      "tarball": "https://npm.pkg.github.com/download/@mairie360/lib-components/0.9.0/f044b0651ce2cadc0b07f7eed2fad0311b65fb53",
+      "integrity": "sha512-IH9J6zhtYmgYETe3uGXooRv5jsdTKTbpEZIP3DUH2fzzN/M977u0opiqFXgpiBWpBS7NN0KtaNXj21GzGeIi4Q==",
+      "packageGitHead": null,
+      "packageJsonSha256": "f9a0ccd9730fb9c2085be055cfb5ef2ce708ec3a9ee092d4acf832ce9e27a258",
+      "entryPoints": {
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts"
+      },
+      "exports": {
+        ".": {
+          "import": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+          },
+          "require": {
+            "types": "./dist/index.d.cts",
+            "default": "./dist/index.cjs"
+          }
+        },
+        "./next": {
+          "import": {
+            "types": "./dist/next.d.ts",
+            "default": "./dist/next.js"
+          },
+          "require": {
+            "types": "./dist/next.d.cts",
+            "default": "./dist/next.cjs"
+          }
+        },
+        "./primitives": {
+          "import": {
+            "types": "./dist/primitives.d.ts",
+            "default": "./dist/primitives.js"
+          },
+          "require": {
+            "types": "./dist/primitives.d.cts",
+            "default": "./dist/primitives.cjs"
+          }
+        },
+        "./settings": {
+          "import": {
+            "types": "./dist/settings.d.ts",
+            "default": "./dist/settings.js"
+          },
+          "require": {
+            "types": "./dist/settings.d.cts",
+            "default": "./dist/settings.cjs"
+          }
+        },
+        "./dashboard": {
+          "import": {
+            "types": "./dist/dashboard.d.ts",
+            "default": "./dist/dashboard.js"
+          },
+          "require": {
+            "types": "./dist/dashboard.d.cts",
+            "default": "./dist/dashboard.cjs"
+          }
+        },
+        "./projects": {
+          "import": {
+            "types": "./dist/projects.d.ts",
+            "default": "./dist/projects.js"
+          },
+          "require": {
+            "types": "./dist/projects.d.cts",
+            "default": "./dist/projects.cjs"
+          }
+        },
+        "./messages": {
+          "import": {
+            "types": "./dist/messages.d.ts",
+            "default": "./dist/messages.js"
+          },
+          "require": {
+            "types": "./dist/messages.d.cts",
+            "default": "./dist/messages.cjs"
+          }
+        },
+        "./calendar": {
+          "import": {
+            "types": "./dist/calendar.d.ts",
+            "default": "./dist/calendar.js"
+          },
+          "require": {
+            "types": "./dist/calendar.d.cts",
+            "default": "./dist/calendar.cjs"
+          }
+        },
+        "./admin": {
+          "import": {
+            "types": "./dist/admin.d.ts",
+            "default": "./dist/admin.js"
+          },
+          "require": {
+            "types": "./dist/admin.d.cts",
+            "default": "./dist/admin.cjs"
+          }
+        },
+        "./elearning": {
+          "import": {
+            "types": "./dist/elearning.d.ts",
+            "default": "./dist/elearning.js"
+          },
+          "require": {
+            "types": "./dist/elearning.d.cts",
+            "default": "./dist/elearning.cjs"
+          }
+        },
+        "./shell": {
+          "import": {
+            "types": "./dist/shell.d.ts",
+            "default": "./dist/shell.js"
+          },
+          "require": {
+            "types": "./dist/shell.d.cts",
+            "default": "./dist/shell.cjs"
+          }
+        },
+        "./styles.css": "./dist/styles.css",
+        "./*": "./*"
+      },
+      "sha256": {
+        "dist/Sidebar-t7OjNlj6.d.cts": "04833c8c6a49ff7a1e8e1c2e492cab6d46a8ce375c9b479a3f38081e5e372978",
+        "dist/Sidebar-t7OjNlj6.d.ts": "04833c8c6a49ff7a1e8e1c2e492cab6d46a8ce375c9b479a3f38081e5e372978",
+        "dist/admin.cjs": "90f3adcd9207cf7ff6a56a7d6c1c7b0e6db75ef9144290f50720417f75c39916",
+        "dist/admin.cjs.map": "71ed9816d3806db7fee81175e7271545a55241126938f34cbde0f615cb6803fc",
+        "dist/admin.d.cts": "f06a13303df898aa5bf7291dc46227b7f33c3de78e56b2d3b557c0829c059bbc",
+        "dist/admin.d.ts": "f06a13303df898aa5bf7291dc46227b7f33c3de78e56b2d3b557c0829c059bbc",
+        "dist/admin.js": "863b2745c7cd053bf3754e9f71e3a36e9d3ceb5caa6cb787ad749a3b79e32d21",
+        "dist/admin.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/calendar.cjs": "34387c058ba4f289808a8758ac0fb45c43bcdf2a72403f8fd2185d2b7203c4a6",
+        "dist/calendar.cjs.map": "e329a166ed49dcd46959289d69c8614124c17244668f224f31c521266f709cef",
+        "dist/calendar.d.cts": "3d72242abe414a5b9b52cebca5fcd3f66e39f0e162719bbb07062d6b26d714f7",
+        "dist/calendar.d.ts": "0c48c4e3610f3356aff026fc99d180eea420bdc29cb3d0702de781142abe770a",
+        "dist/calendar.js": "33e86fe1933868bef3e4f70844e3cb498ac99905805c86e9100e1d0b6661d38d",
+        "dist/calendar.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/chunk-36YTCB7V.cjs": "5bfdd68d3d78b9d780ab26e862e9e0b4b0519ccc0f1e97806eb5995133bfd770",
+        "dist/chunk-36YTCB7V.cjs.map": "6b0fc36790c7e5031f576fc07022d1030c79cf36af38532043fd8f2a07c2d765",
+        "dist/chunk-37JSLNK2.js": "d8ba631872038e72b31d60ab83422359339660e47ffa70d8fdf363a9cfc4c887",
+        "dist/chunk-37JSLNK2.js.map": "d080aac61c9c56317b74ad1520800dcafb773882faf613ca46c46d6533681760",
+        "dist/chunk-42BGQZKF.cjs": "15b3ea82bd9d6a4f3c968cde3e77cbe500c6650f8d1f69e3116fe31ebc221580",
+        "dist/chunk-42BGQZKF.cjs.map": "ca30848216d59f64e7e16cf77f78ca1a6b2ec3e65ec0b1217a37600693bc6422",
+        "dist/chunk-5DMK3PM2.cjs": "252bb2415ff4ca4c9c1a226652382390d3acc9be7e9aa674deb914367514caad",
+        "dist/chunk-5DMK3PM2.cjs.map": "d367d161ad35759f9a2e8847857a7307f346c5e78a1576a8d54d2b05638860b9",
+        "dist/chunk-5EGF53EX.js": "7c8f33e1fe1423b1a6dbbfb05ccbcf049f30a9983eae2bd78c922e0d5324484e",
+        "dist/chunk-5EGF53EX.js.map": "5a7d2a26c0a272ec4645e5c17d13fc590b2bfad025b97eb2e3bc218d0e98da35",
+        "dist/chunk-6QKNLK5R.cjs": "5b695ab2ec96c83ca0702dea3f64c4dceb909525bf08f0196ebb6ea17a74707d",
+        "dist/chunk-6QKNLK5R.cjs.map": "6601ff5464ac03daf1dbf106ce0018b0c4e5ef63b3a4f7b83ea4b79b66a4ba50",
+        "dist/chunk-7TJGFJCE.cjs": "9ef4656aa82d027015c2fdbcfcc67037645eec72cdf36a4a1f02dfda38722e5a",
+        "dist/chunk-7TJGFJCE.cjs.map": "666bbe46c2ba1a448f2ea03337522243252aceb408b05dc648c97eaaaa627327",
+        "dist/chunk-CUOJENOS.js": "ea9607fe14336f6e5762f320e58781d92b7af5f6295461fbf7a3539e2fbb770e",
+        "dist/chunk-CUOJENOS.js.map": "1492c57f824026f1c0072b0805f9534d0cb0a299a49aaeb14e0d09e0504c9971",
+        "dist/chunk-DYQIJHGR.js": "19b747729d9e5b819aa67aa8c044c41b234fe566560ce1d79f41262f80afd616",
+        "dist/chunk-DYQIJHGR.js.map": "17a9255f0d2079462c13a61a12cca9a9fb00c57cb4c66b773594a867cdee8904",
+        "dist/chunk-EE54EBFU.cjs": "2298709912111c0ae92f3b2b7b6796721c6f6b263c66435d636c78a76b22f1c0",
+        "dist/chunk-EE54EBFU.cjs.map": "04d4edb3ba4f3808879bd62c278f984246f224e351e0c042da7c8b4983eb6933",
+        "dist/chunk-ENDWDTSV.js": "e1d1060e3626a3a8fceaeebeb2e1d9807696149493ee74ffeeee55f0a1f9f4ea",
+        "dist/chunk-ENDWDTSV.js.map": "c2282ffd8ee833a472e8d55f224c1dbab3d2c5ce9415d3c63dd36b572e175a65",
+        "dist/chunk-FD2FZTKU.cjs": "eca54b4c28e7568f6cf618ad73bcc38dfa93369130be69d61abfdb23b3e6d0d9",
+        "dist/chunk-FD2FZTKU.cjs.map": "4bd3371247d34b55ff6aaba22200123e8309d32f1070225068cb9c8c3f1a23a1",
+        "dist/chunk-G6KIBYN5.cjs": "87fe79527486fa1a5ff60a56aed6fbbc3cf267132b21f715fcde13aa4be872a4",
+        "dist/chunk-G6KIBYN5.cjs.map": "7fc4dda610767d7c1478f7ef303ebe3b214dcf6e2d2db542ea82425abe138231",
+        "dist/chunk-HIUMTWU3.cjs": "750ee7b0c0ccc8622158f7024baef81f8572be11f399d2f901e6a49830ca6d73",
+        "dist/chunk-HIUMTWU3.cjs.map": "5133878b588356858cc4949ac7f9f4eeab2cb5c6f294dba9ebaa4933aa9febd8",
+        "dist/chunk-HSTCZWCZ.js": "b1001207d3c56af642db0eada719272ae4a575fa7909f2fa524216b9e67eebfb",
+        "dist/chunk-HSTCZWCZ.js.map": "cf9d535a0872067aa8a17fc7d84adeeac714f83650778a48202907edaa426b12",
+        "dist/chunk-JH6T5VQZ.js": "c032541ff1d22f992d32c2ac988e732ca3c4657002a55d15f48e1b19b971017b",
+        "dist/chunk-JH6T5VQZ.js.map": "95f6190a1397a0390e93817a8583f1e387dd54f65319e6618e9a8c1a30dd699c",
+        "dist/chunk-KXUNIRXK.js": "5fa64dd3e0c5dd3e51179be03df78c3ee05302b7a55edbaac4c98b51dd35b3a1",
+        "dist/chunk-KXUNIRXK.js.map": "b911e08d781e3d90eac7f638b573a6f106ea7acdfc7235dfacc3119972cca525",
+        "dist/chunk-LWTU2HSW.cjs": "8e637f15f05101d4a348b1e77f119a5c69698e4400056f4ee18805eb2fc62c1f",
+        "dist/chunk-LWTU2HSW.cjs.map": "fde3a73b1a9a264be690eea03b7cb42ab05dbb0120f31c6ec1c11e1803f0f19a",
+        "dist/chunk-M7RWWFZ7.cjs": "79c99cb138b05bd9c25b6220d802d7b6282406dcc4ec27ef5be57b767f543da2",
+        "dist/chunk-M7RWWFZ7.cjs.map": "3205c8a66c2a937796e20a8a2711cf39cc123ab80c0564fc98e961ba529afa06",
+        "dist/chunk-OQLNQ7R7.js": "55bf62a99dc0619af8c01bd38744e2fb32c4921e177260cfe9ccfe75f8598dbf",
+        "dist/chunk-OQLNQ7R7.js.map": "6d4fdd227efab48fa8e5329a3de58975b4114b91ecfea799accc72df92da7264",
+        "dist/chunk-OZUJDNQR.js": "fa1628fc2ba7b77212789aa685689895189d67cefe969b4c89b430f5a4b24a67",
+        "dist/chunk-OZUJDNQR.js.map": "d2b415f9fb37f9bbaf49e7af5037dcfa0b14d049201d63c7e490fa9d647a7d1f",
+        "dist/chunk-PZU5C64P.js": "fc57320fed51bc80c5d15ed231f59c43c07b262d47f6af9b1910d95c42b6283e",
+        "dist/chunk-PZU5C64P.js.map": "e48b01320d87d166704d7a8438f308e8dc1fb0a037e9d2f8954dc5beba2a395f",
+        "dist/chunk-Q7MYQXFU.js": "da2068e0293c4aacf8cc7702b7b105d2fd68710e37d6a34cf5cd0bbebb370353",
+        "dist/chunk-Q7MYQXFU.js.map": "0d124b03e6cbfbe74299fd06f56c56fe93e40572112c2e3afac0b1cdb0379d1b",
+        "dist/chunk-QA266YHF.js": "432036f4228d82e70edc3a759213d948eec289f02595e9bbab94c727c4071ede",
+        "dist/chunk-QA266YHF.js.map": "571da81fada9c3dde9254b0e242d3a46819a890c77edd8058ecc17be177da6d6",
+        "dist/chunk-RZDXSUP5.cjs": "86baef6ef4d6900ef549afd747249e2b3cfc6473b8344d1d195db059288eb0fb",
+        "dist/chunk-RZDXSUP5.cjs.map": "14c5e77f3ad576831fc38e6e8d5f6aa376b9210a7b76dd3734f9a510881c0d5e",
+        "dist/chunk-S4WEMX46.js": "4c6d829b638198c0658dcd0ccac7cabef1405d957dcb581d772ac505df64daef",
+        "dist/chunk-S4WEMX46.js.map": "47479738025f167ae300dcb0331a96e9a159529227f9ff6bef008abada35903d",
+        "dist/chunk-T6YQ4GL6.cjs": "37bf4d53eff1cadbee7efd0d8ec6b5cb022cb8284829b417f4aff1cc6dc2ae96",
+        "dist/chunk-T6YQ4GL6.cjs.map": "e71a0d644f7a0f1eaecb6cd2da14a2c0323ba441c131eb68105b4ca40e4b4406",
+        "dist/chunk-TVAJDOLJ.cjs": "9be4838ff30feb2e8765a95a61c233aed072cf39158a2967f0775e68eb88b60b",
+        "dist/chunk-TVAJDOLJ.cjs.map": "e84536d20838b8751f70a6ae8ce778bb27fc48d60ae93e41fa89912bb2f268da",
+        "dist/chunk-UVUIB7VE.cjs": "c18319b9224e5b63da47200af24d0b8e34fd521edaaa43bfe7018dc56175caed",
+        "dist/chunk-UVUIB7VE.cjs.map": "a3c22350f5af1935a3df3f468e1113063a745214c815047f25f3d6e0d8d7f047",
+        "dist/chunk-VLQSKSTX.js": "360f91b424964475b3e60427617e0666677628e80d30198ba98d69f0cc605751",
+        "dist/chunk-VLQSKSTX.js.map": "091fc3de8a89b4731f3fccabb30334c98abd9fe7cd6d8f8359826ada6bb22ed0",
+        "dist/chunk-Y4QJQNGN.js": "5c4021e5700766f91677345886b24afa95a857cdcf9eeffc3d08e172f044bf1f",
+        "dist/chunk-Y4QJQNGN.js.map": "6d6e3808f77b55232e114c72abec26db48c533abb6371f8c52309c5ee6330f75",
+        "dist/chunk-ZYE6K2IE.cjs": "b4ce974dbf4c0891f4b677ba3259496f53239e0ddd8e0bbfada2204c8c2c3605",
+        "dist/chunk-ZYE6K2IE.cjs.map": "1d1443e094f5aea102f82445b61f7dde41d1564fed17cb9dc50da8e034c935cf",
+        "dist/dashboard.cjs": "d8b5aaeebaa42dbc3c22ae25ff5d325fed6e71dbecf5f0fcf50f29153990b2dd",
+        "dist/dashboard.cjs.map": "1807cb193706708eedc2e6836d72cee7e3ef6040b7d55f7e17306771a8c0b62e",
+        "dist/dashboard.d.cts": "b10ff9e7c48ccc8790e768c15cc57158672b40fbd44acad7baaab7ea2ddcbdbd",
+        "dist/dashboard.d.ts": "b10ff9e7c48ccc8790e768c15cc57158672b40fbd44acad7baaab7ea2ddcbdbd",
+        "dist/dashboard.js": "52deb90fb73d46d611bf3dd49fa5d1b80d53309846c1f4c3c5210dc88d7ee892",
+        "dist/dashboard.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/elearning.cjs": "ffab5917c888b547ca23fd982463bafccc8d2607bddb86c61c63cdf32a44c481",
+        "dist/elearning.cjs.map": "1dd7f129d7643470c7ac4dab40dbacdeb7412199b377c20cc6cdeb3143f3a98e",
+        "dist/elearning.d.cts": "ec4c4ad7424bc2e9057f15893158ad083ffe372b3930ca68969f21ea936024dc",
+        "dist/elearning.d.ts": "ec4c4ad7424bc2e9057f15893158ad083ffe372b3930ca68969f21ea936024dc",
+        "dist/elearning.js": "f36436cfbefa762ac05ac1de7182e137d93b409098aa74df0e906b9efb4ec245",
+        "dist/elearning.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/index.cjs": "be987eac9b881bb5091713f940b8fa3cd9651084ce9d9ce4bea786673a547f70",
+        "dist/index.cjs.map": "bedc5feb18ca90e8389c1ca885cf809d24f8e53e889618c735fa99e53cab0a21",
+        "dist/index.d.cts": "1dbd10ee78a81a3529127728a8cdfe674b5f9691e0974c533c5763c0adba84eb",
+        "dist/index.d.ts": "f8fceee0b16984da27fc7d06b7e14bd14284d4d94b4428b52f2890ba4aab6a3d",
+        "dist/index.js": "f1b4bdc0d168cd5f4701957ea72a5caf6e927d2c468f22c9bddc9329518e17f4",
+        "dist/index.js.map": "ea92e300fdf982312fc154f71bdcb5caaa59fce332c941f7a86843cbcfb796fe",
+        "dist/messages.cjs": "37cb483b6a335b1ccd12fae4073bae6d8c2fc9b1c4d9b96ee132cdc9be5230d9",
+        "dist/messages.cjs.map": "34d4fb4f80d4021b11456bd219cf6b4ee25c657b232fbe90001530a9e7fad206",
+        "dist/messages.d.cts": "3a017fdb84f0f34a56c8a874ad8d1b4733f81a6016eb1501a2280bc2114af449",
+        "dist/messages.d.ts": "3a017fdb84f0f34a56c8a874ad8d1b4733f81a6016eb1501a2280bc2114af449",
+        "dist/messages.js": "3323112f2f3851dfaaf5275ace2c24c552a641fd8cb24977da8ea92f69c71d81",
+        "dist/messages.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/next.cjs": "3f8fc05aa000fa4673501782dfafde36a3840190485e5114b6217c14da0b6bee",
+        "dist/next.cjs.map": "ecd4f1687e2856f227f61fb77ffc8c09f722c5e1417b26a035cc04e3f6fb40b4",
+        "dist/next.d.cts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d",
+        "dist/next.d.ts": "3122b0bab40774b95d66bc8dd10e946d0bc1400bcb7e084d6b6f228adab61a6d",
+        "dist/next.js": "7d44c475b46b12b36811a367208bc423508fa0e9801db0913ca937af91534788",
+        "dist/next.js.map": "a3efa3405baa8b56d8f49df6d032b8442df7aa9b75f9fec3451538e84ade5f5b",
+        "dist/primitives-CrFlD9X0.d.ts": "5252fe27ea6dcd4c011a2b1fd6b44f1b49445637f2136a046b5f32aca2bd6629",
+        "dist/primitives-irl6LL2o.d.cts": "d0e7d043b51617a64921cdafb97bf76ff087b9c433eed3ee3179c4417d849125",
+        "dist/primitives.cjs": "87fcd964611f6d3b811399516a27e9c7cb70cda23faf20e81cae8e3b6fe4bd13",
+        "dist/primitives.cjs.map": "4821afacc8e51cedf6e1cdca93020423c31aad70b3aad67efc25215ccf4ebf8f",
+        "dist/primitives.d.cts": "c9a8d90ee4d04c1623536e7e3172d4bf83850be0d25b17ab0001a572ec9ea88e",
+        "dist/primitives.d.ts": "ad7f3ed123609e95ebbf9c0813aa55f48fbf5166704d1d22b517daf92472506e",
+        "dist/primitives.js": "f775e8d9c64a9fe838453d3b9a5d9165c4a5748c03c204a0b605683b99636422",
+        "dist/primitives.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/projects.cjs": "b6a9792ba2704395e9990b8d511f80fadfc39fcbc057c2b62bc5f0312c754a8f",
+        "dist/projects.cjs.map": "b7ae78d4a1f19fd2741c99ef5abab4a41602b40b8c21b6aa8a8b57f4af2dde0f",
+        "dist/projects.d.cts": "4a63571dd232d4ef52f95d6cfcc0b6290687a2aeb0d2fc026dfac61ababac3f8",
+        "dist/projects.d.ts": "4a63571dd232d4ef52f95d6cfcc0b6290687a2aeb0d2fc026dfac61ababac3f8",
+        "dist/projects.js": "311f740f87b2c73e6a0dba24760f3db67f8f0bdbdf135201d3b138179e1ead69",
+        "dist/projects.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/settings.cjs": "7d13b032ca19756dd2e3353e717de5c4b19ea972b66508d8bfa28e8e8c5dc44f",
+        "dist/settings.cjs.map": "b4a7f4c3065dd54b1e3235bba22eee51ede1867aa9daa36433a83ba69854d6b1",
+        "dist/settings.d.cts": "5d040dce86b6293351c18e429f3ae8d993d74a17d11938478fcdeafc31185e89",
+        "dist/settings.d.ts": "67dfb2f6170c191127c30c72cbeedf7ff869d0c62c1d5173f8a5c68b97b57028",
+        "dist/settings.js": "6ec35d5f7c5dc31d0eb26022b64df022ca9e3cfaf0f164a276327763fff215bd",
+        "dist/settings.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/shell.cjs": "3c6ddd03b6441ee8edc6a4d41cad02df2cbbdc0716e2aff59702f7c0356172b4",
+        "dist/shell.cjs.map": "fdc54d850b9984a0828dc0c3b3be15bb26e5a1740fbf93a436d1c23548c35a48",
+        "dist/shell.d.cts": "04bfda9f5a795407187a8ad294b2de731ffc0c3494f906f35fb03259e321b729",
+        "dist/shell.d.ts": "c90caaf0b60ffa54b97ab5c910168947a92e3b009b74cb13376df81f9a25104e",
+        "dist/shell.js": "c1e6e3ab3051c044a870a32b32008916bd416d130e8e7bb8cee36baee8c679a7",
+        "dist/shell.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/styles.css": "54be73cac80855ea766a8627fd688c09581ca7e24ed9dc0bb3d10723e755a8f3",
+        "dist/types-Cpuu5zep.d.cts": "a2adebf5f5391d8bc1c9cc908c228c66d01a8358c6d0a68f2f783a1b8a34a284",
+        "dist/types-Cpuu5zep.d.ts": "a2adebf5f5391d8bc1c9cc908c228c66d01a8358c6d0a68f2f783a1b8a34a284"
+      }
     }
   }
 }
