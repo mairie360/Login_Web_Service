@@ -125,6 +125,23 @@ describe("Login form", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it("dismisses a refused login receipt without replaying the request or losing credentials", async () => {
+    fetchMock.mockResolvedValue(authResponse({ message: "Identifiants refusés." }, 401));
+    const navigate = vi.fn();
+    const user = userEvent.setup();
+    render(<Login redirectUrl={requestedFront} navigate={navigate} />);
+    await enterCredentials(user);
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    await screen.findByRole("alert");
+
+    await user.click(screen.getByRole("button", { name: "Fermer la notification" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Email professionnel" }).value).toBe("agent@example.invalid");
+    expect(screen.getByLabelText("Mot de passe", { exact: true }).value).toBe("initial-test-password");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it("redirects to the requested front only after a successful login", async () => {
     fetchMock.mockResolvedValue(authResponse({ success: true }));
     const navigate = vi.fn();
