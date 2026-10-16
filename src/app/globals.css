@@ -1,3 +1,4 @@
+@import "@mairie360/lib-components/styles.css";
 @import "tailwindcss";
 
 @source "../../node_modules/@mairie360/lib-components/dist/";

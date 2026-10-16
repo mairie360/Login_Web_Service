@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@mairie360/lib-components";
+import { Button } from "@mairie360/lib-components/primitives";
 import { useCallback, useRef, useState } from "react";
 
 type LogoutProps = { navigate?: (url: string) => void };
@@ -54,25 +54,25 @@ export default function Logout({ navigate = goToLogin }: LogoutProps) {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-full w-full items-center justify-center bg-[#F5F3F0] p-6">
-      <section aria-labelledby="logout-heading" className="w-full max-w-md rounded-2xl border border-[#E5E7EB] bg-white p-8 text-gray-900 shadow-lg">
+    <div className="flex min-h-full w-full items-center justify-center bg-[var(--mairie-background)] p-6">
+      <section aria-labelledby="logout-heading" className="w-full max-w-md rounded-2xl border border-[var(--mairie-border)] bg-[var(--mairie-surface)] p-8 text-[var(--mairie-text)] shadow-lg">
         <h1 id="logout-heading" className="text-2xl font-bold">Déconnexion</h1>
         {!pending && !error && !unconfirmedDestination ? (
           <>
-            <p className="mt-4 text-gray-600">Choisissez « Se déconnecter » pour fermer votre session.</p>
+            <p className="mt-4 text-[var(--mairie-muted)]">Choisissez « Se déconnecter » pour fermer votre session.</p>
             <Button type="button" label="Se déconnecter" onClick={() => void logout()} className="mt-5" />
           </>
         ) : null}
-        {pending ? <p role="status" className="mt-4 text-gray-600">Déconnexion en cours…</p> : null}
+        {pending ? <p role="status" className="mt-4 text-[var(--mairie-muted)]">Déconnexion en cours…</p> : null}
         {unconfirmedDestination ? (
           <>
-            <p role="alert" className="mt-4 text-gray-700">La session locale est fermée. La fermeture de la session serveur n’a pas pu être confirmée.</p>
+            <p role="alert" className="mt-4 text-[var(--mairie-text)]">La session locale est fermée. La fermeture de la session serveur n’a pas pu être confirmée.</p>
             <Button type="button" label="Retour à la connexion" onClick={() => navigate(unconfirmedDestination)} className="mt-5" />
           </>
         ) : null}
         {error ? (
           <>
-            <p role="alert" className="mt-4 text-red-700">La déconnexion n’a pas abouti. Veuillez réessayer.</p>
+            <p role="alert" className="mt-4 text-[var(--mairie-error-text)]">La déconnexion n’a pas abouti. Veuillez réessayer.</p>
             <Button type="button" label="Réessayer" onClick={() => void logout()} className="mt-5" />
           </>
         ) : null}

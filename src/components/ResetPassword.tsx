@@ -58,9 +58,9 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
     finally { if (current()) { submitting.current = false; setPending(false); } }
   }
   return <RecoveryLayout>
-    <h1 className="mb-4 text-2xl font-bold text-gray-900">Réinitialiser le mot de passe</h1>
+    <h1 className="mb-4 text-2xl font-bold text-[var(--mairie-text)]">Réinitialiser le mot de passe</h1>
     {!validToken || expired ? <>
-      <p role="alert" className="mb-4 text-sm text-red-700">{RESET_EXPIRED_MESSAGE}</p>
+      <p role="alert" className="mb-4 text-sm text-[var(--mairie-error-text)]">{RESET_EXPIRED_MESSAGE}</p>
       <a href={recoveryUrl} className={recoveryLinkClass}>Demander un nouveau lien</a>
     </> : <form method="post" aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
       <p id="password-requirements" className="text-sm">Choisissez un mot de passe de 8 à 255 caractères.</p>
@@ -68,8 +68,8 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
       <input id="reset-password" name="new-password" type="password" autoComplete="new-password" required minLength={8} maxLength={255} aria-describedby="password-requirements" value={password} onChange={event => setPassword(event.target.value)} disabled={pending || complete} className={recoveryInputClass} />
       <label htmlFor="reset-confirmation">Confirmer le mot de passe</label>
       <input id="reset-confirmation" name="password-confirmation" type="password" autoComplete="new-password" required minLength={8} maxLength={255} value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={pending || complete} className={recoveryInputClass} />
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      {complete && <p role="status" className="text-sm text-green-700">Mot de passe modifié. Vous êtes connecté.</p>}
+      {error && <p role="alert" className="text-sm text-[var(--mairie-error-text)]">{error}</p>}
+      {complete && <p role="status" className="text-sm text-[var(--mairie-success-text)]">Mot de passe modifié. Vous êtes connecté.</p>}
       <button type="submit" disabled={pending || complete} className={recoveryButtonClass}>{pending ? "Modification…" : "Modifier le mot de passe"}</button>
       <a href={recoveryUrl} className={recoveryLinkClass}>Demander un nouveau lien</a>
     </form>}

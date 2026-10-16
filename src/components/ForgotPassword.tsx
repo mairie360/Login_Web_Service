@@ -29,13 +29,13 @@ export default function ForgotPassword({ redirectUrl }: { redirectUrl?: string }
     finally { submitting.current = false; setPending(false); }
   }
   return <RecoveryLayout>
-    <h1 className="mb-4 text-2xl font-bold text-gray-900">Mot de passe oublié</h1>
+    <h1 className="mb-4 text-2xl font-bold text-[var(--mairie-text)]">Mot de passe oublié</h1>
     <p className="mb-4 text-sm">Indiquez votre email professionnel pour recevoir un lien de réinitialisation.</p>
     <form method="post" aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
       <label htmlFor="recovery-email">Email professionnel</label>
       <input id="recovery-email" name="email" type="email" autoComplete="email" required maxLength={320} value={email} onChange={event => setEmail(event.target.value)} disabled={pending || sent} className={recoveryInputClass} />
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      {sent && <p role="status" className="text-sm text-green-700">{RECOVERY_SENT_MESSAGE}</p>}
+      {error && <p role="alert" className="text-sm text-[var(--mairie-error-text)]">{error}</p>}
+      {sent && <p role="status" className="text-sm text-[var(--mairie-success-text)]">{RECOVERY_SENT_MESSAGE}</p>}
       <button type="submit" disabled={pending || sent} className={recoveryButtonClass}>{pending ? "Envoi…" : "Envoyer le lien"}</button>
       <a href={redirectUrl ? `/?redirect=${encodeURIComponent(redirectUrl)}` : "/"} className={recoveryLinkClass}>Retour à la connexion</a>
     </form>
