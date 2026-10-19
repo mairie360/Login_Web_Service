@@ -1,4 +1,4 @@
-import type { SessionServerConfig } from '@mairie360/front-kit/next';
+import type { SessionServerConfig } from '@mairie360/lib-components/next';
 import { configuredBffUrl } from './bff-user';
 import { trustedClientIpHeaders } from './trusted-client-ip';
 

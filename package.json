@@ -15,12 +15,12 @@
     "test:components": "vitest run --coverage",
     "test": "npm run test:node && node scripts/test-components-coverage.cjs",
     "performance:report": "node scripts/frontend-performance.mjs",
-    "test:node:native": "mkdir -p coverage && node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs"
+    "test:node:native": "mkdir -p coverage && node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
+    "test:bundle": "node --test tests/bundle/*.test.cjs"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "1.0.0",
-    "@mairie360/front-kit": "file:vendor/mairie360-front-kit-0.1.0.tgz",
-    "@mairie360/lib-components": "0.9.0",
+    "@mairie360/lib-components": "0.10.1",
     "next": "16.3.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
