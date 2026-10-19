@@ -42,7 +42,8 @@ test('Login applies the reference 17px root scale to its document', (t) => {
   assert.equal(window.getComputedStyle(window.document.documentElement).fontSize, '17px');
 });
 
-test('the rendered document retains the existing body font family', (t) => {
+test('MAIR-526: the document uses the shared Geist font stack, not a forced Arial', (t) => {
   const window = loginDocument(t);
-  assert.equal(window.getComputedStyle(window.document.body).fontFamily, 'Arial, Helvetica, sans-serif');
+  assert.equal(window.getComputedStyle(window.document.body).fontFamily, 'var(--font-geist-sans), system-ui, sans-serif');
+  assert.doesNotMatch(css, /Arial|Helvetica/, 'Only the shared theme and the user preference choose the font');
 });

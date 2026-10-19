@@ -18,4 +18,6 @@ The existing sign-in, first-password, unavailable-configuration and logout tests
 continue to execute the real page code. No production stylesheet, authentication
 flow, dependency, API/BFF contract, workflow or RGAA configuration is changed.
 
+Since MAIR-526 the body font is the shared Geist stack (`var(--font-geist-sans), system-ui, sans-serif`), the same as the other fronts and the shared theme; the stylesheet no longer forces Arial, so only the theme and the user's appearance preference choose the font.
+
 Tracking: MAIR-437. The broader source-reading test audit remains open.
