@@ -16,7 +16,6 @@ const clientDir = path.join(root, '.next/static');
 const SERVER_ENTRIES = ['next', 'guard'];
 const MIN_MARKER_LENGTH = 16;
 const SOURCE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
-const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)(["'`])([^"'`$]+)\1/g;
 
 function filesBelow(directory, filter) {
   if (!fs.existsSync(directory)) return [];
@@ -27,9 +26,45 @@ function filesBelow(directory, filter) {
 }
 
 const read = file => fs.readFileSync(file, 'utf8');
-const isClientModule = source => /^\s*(?:\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*["']use client["']/.test(source);
 const entryFile = entry => path.join(dist, `${entry}.js`);
-const isClientEntry = entry => fs.existsSync(entryFile(entry)) && isClientModule(read(entryFile(entry)));
+const scriptKind = file => file.endsWith('.tsx') ? ts.ScriptKind.TSX : file.endsWith('.ts') ? ts.ScriptKind.TS : file.endsWith('.jsx') ? ts.ScriptKind.JSX : ts.ScriptKind.JS;
+
+// Runtime dependencies and directive of a module, from its TypeScript AST: type-only imports and
+// re-exports are erased by the compiler and do not count; comments and string contents are never read
+// as imports. Static, side-effect and dynamic imports, value re-exports and require() calls count.
+const moduleCache = new Map();
+function moduleInfo(file) {
+  if (moduleCache.has(file)) return moduleCache.get(file);
+  const sourceFile = ts.createSourceFile(file, read(file), ts.ScriptTarget.Latest, true, scriptKind(file));
+  const specifiers = [];
+  const literal = node => node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
+  const visit = node => {
+    if (ts.isImportDeclaration(node)) {
+      const clause = node.importClause;
+      const typeOnly = clause && (clause.isTypeOnly || (!clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings)
+        && clause.namedBindings.elements.length > 0 && clause.namedBindings.elements.every(element => element.isTypeOnly)));
+      if (!typeOnly) specifiers.push(literal(node.moduleSpecifier));
+    } else if (ts.isExportDeclaration(node) && node.moduleSpecifier) {
+      const typeOnly = node.isTypeOnly || (node.exportClause && ts.isNamedExports(node.exportClause)
+        && node.exportClause.elements.length > 0 && node.exportClause.elements.every(element => element.isTypeOnly));
+      if (!typeOnly) specifiers.push(literal(node.moduleSpecifier));
+    } else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword
+      || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) {
+      specifiers.push(literal(node.arguments[0]));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  const directives = [];
+  for (const statement of sourceFile.statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) break;
+    directives.push(statement.expression.text);
+  }
+  const info = { specifiers: specifiers.filter(Boolean), client: directives.includes('use client') };
+  moduleCache.set(file, info);
+  return info;
+}
+const isClientEntry = entry => fs.existsSync(entryFile(entry)) && moduleInfo(entryFile(entry)).client;
 
 function libEntries() {
   const exportsMap = JSON.parse(read(path.join(lib, 'package.json'))).exports;
@@ -44,7 +79,7 @@ function reachableFiles(entry) {
   const visit = file => {
     if (seen.has(file) || !fs.existsSync(file)) return;
     seen.add(file);
-    for (const [, , specifier] of read(file).matchAll(SPECIFIER)) {
+    for (const specifier of moduleInfo(file).specifiers) {
       if (specifier.startsWith('./') && specifier.endsWith('.js')) visit(path.join(path.dirname(file), specifier));
       const own = specifier.match(/^@mairie360\/lib-components\/([a-z-]+)$/);
       if (own && !SERVER_ENTRIES.includes(own[1])) visit(entryFile(own[1]));
@@ -102,9 +137,8 @@ function frontImports() {
       .find(file => SOURCE.test(file) && fs.existsSync(file) && fs.statSync(file).isFile());
   };
   const modules = new Map(filesBelow(src, file => SOURCE.test(file)).map(file => {
-    const source = read(file);
-    const specifiers = [...source.matchAll(SPECIFIER)].map(match => match[2]);
-    return [file, { source, client: isClientModule(source), specifiers, local: specifiers.map(specifier => resolve(file, specifier)).filter(Boolean) }];
+    const { specifiers, client } = moduleInfo(file);
+    return [file, { source: read(file), client, specifiers, local: specifiers.map(specifier => resolve(file, specifier)).filter(Boolean) }];
   }));
   const clientModules = new Set();
   const markClient = file => {
@@ -134,7 +168,8 @@ test('MAIR-126: the front imports lib subpaths only, never the root entry', () =
 test('MAIR-126: the client build ships no lib entry its client code does not use, and no lib server code', t => {
   const clientFiles = filesBelow(clientDir, file => file.endsWith('.js'));
   assert.ok(clientFiles.length > 0, 'Run `npm run build` first: no client JavaScript in .next/static');
-  const client = new Set(clientFiles.flatMap(file => [...stringLiterals(file)]));
+  // Markers are searched inside the parsed client literals: a minifier may fold a sentence into a longer one.
+  const client = clientFiles.flatMap(file => [...stringLiterals(file)]).join('\u0000');
   const { clientUsed, clientSourceText } = frontImports();
   const usedFiles = new Set([...clientUsed].filter(entry => !SERVER_ENTRIES.includes(entry)).flatMap(entry => [...reachableFiles(entry)]));
   const usedLiterals = textLiterals(usedFiles);
@@ -145,7 +180,7 @@ test('MAIR-126: the client build ships no lib entry its client code does not use
     const markers = [...textLiterals(reachableFiles(entry))].filter(text => !usedLiterals.has(text) && !clientSourceText.includes(text));
     t.diagnostic(`${entry}: ${markers.length} distinctive sentences`);
     if (markers.length === 0) { unprovable.push(entry); continue; }
-    const found = markers.filter(text => client.has(text));
+    const found = markers.filter(text => client.includes(text));
     if (found.length) leaks.push(`${entry}: ${found.slice(0, 3).map(text => JSON.stringify(text)).join(', ')}`);
   }
   assert.deepEqual(unprovable, [], 'no distinctive sentence left to prove these lib entries are absent from the browser bundle');
