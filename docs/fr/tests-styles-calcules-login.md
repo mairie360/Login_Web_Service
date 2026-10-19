@@ -22,4 +22,6 @@ continuent d'exécuter le vrai code des pages. Aucun style de production,
 parcours d'authentification, dépendance, contrat API/BFF, workflow ou contrôle
 RGAA n'est modifié.
 
+Depuis MAIR-526, la police du corps est la pile Geist commune (`var(--font-geist-sans), system-ui, sans-serif`), comme les autres fronts et le thème commun ; la feuille de styles n'impose plus Arial, seuls le thème et la préférence d'apparence de l'utilisateur choisissent la police.
+
 Suivi : MAIR-437. L'audit plus large des tests lisant les sources reste ouvert.
