@@ -16,6 +16,7 @@ test('MAIR-126: the shared runtime comes from the pinned lib-components release,
   const version = manifest.dependencies['@mairie360/lib-components'];
   assert.match(version, /^\d+\.\d+\.\d+$/);
   assert.equal(lock.packages['node_modules/@mairie360/lib-components'].version, version);
-  const exportsMap = JSON.parse(fs.readFileSync(path.join(root, 'node_modules/@mairie360/lib-components/package.json'), 'utf8')).exports;
-  for (const entry of RUNTIME_ENTRIES) assert.ok(exportsMap[`./${entry}`], `lib-components ${version} has no ./${entry} entry`);
+  const installed = JSON.parse(fs.readFileSync(path.join(root, 'node_modules/@mairie360/lib-components/package.json'), 'utf8'));
+  assert.equal(installed.version, version, 'run npm ci: the installed lib-components is not the pinned release');
+  for (const entry of RUNTIME_ENTRIES) assert.ok(installed.exports[`./${entry}`], `lib-components ${version} has no ./${entry} entry`);
 });
