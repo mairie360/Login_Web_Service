@@ -1,14 +1,16 @@
 name: Login Web Service CICD
 
 on:
+  # MAIR-436: branch pushes are covered by their pull_request run; only main
+  # (which releases) runs on push, so a PR branch no longer runs the pipeline twice.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
+# MAIR-436: read-only token by default; write scopes are granted to the release job only.
 permissions:
-  contents: write
-  packages: write
-  id-token: write
+  contents: read
 
 jobs:
   # #139: preserve the required legacy name with BOTH real blocking scanners.
@@ -44,6 +46,12 @@ jobs:
           fail_on_findings: "true"
 
   CICD:
+    # A reusable workflow cannot exceed its caller job's scopes: release-dev
+    # (packages, id-token for cosign) and release-prod (contents for the tag) need them.
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
     uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@5b7d127d46f95d8951935b6209ca7c2ca857a21d
     with:
       package_name: "login-front"
