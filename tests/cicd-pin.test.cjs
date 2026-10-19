@@ -6,7 +6,8 @@ const { test } = require('node:test');
 const root = join(__dirname, '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
 const files = ['.github/workflows/cicd.yml', '.github/workflows/dev-dependency-exception.yml'];
-const pin = /([a-f0-9]{40})"?\s+#\s+(v\d+\.\d+\.\d+)\s*$/;
+// The SHA has to be the ref itself (right after `@` or the input's colon), not one quoted in the comment.
+const pin = /^\s*(?:uses:\s+mairie360\/CICD\/\S+@|cicd_(?:version|ref):\s*"?)([a-f0-9]{40})"?\s+#\s+(v\d+\.\d+\.\d+)\s*$/;
 
 // Renovate only bumps a SHA pin that carries its tag as a comment, and the regex manager has to
 // see cicd_version / cicd_ref: otherwise a bump leaves the four CICD references out of step.
