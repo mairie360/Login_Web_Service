@@ -3,13 +3,14 @@ export const dynamic = 'force-dynamic';
 import Login from "../components/Login";
 import { resolveLoginRedirect } from "../lib/login-redirect";
 import { parseFrontUrl } from "../lib/front-url";
+import { isKeycloakLoginError, KEYCLOAK_ERRORS, keycloakSettings } from "../lib/keycloak-login";
 
 type HomeProps = {
-  searchParams: Promise<{ redirect?: string | string[]; returnUrl?: string | string[]; resumeSession?: string | string[] }>;
+  searchParams: Promise<{ redirect?: string | string[]; returnUrl?: string | string[]; resumeSession?: string | string[]; keycloakError?: string | string[] }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { redirect, returnUrl, resumeSession } = await searchParams;
+  const { redirect, returnUrl, resumeSession, keycloakError } = await searchParams;
   const returnDestination = redirect ?? returnUrl;
   const redirectUrl = resolveLoginRedirect(returnDestination);
   const requested = typeof returnDestination === "string" ? parseFrontUrl(returnDestination) : undefined;
@@ -27,5 +28,9 @@ export default async function Home({ searchParams }: HomeProps) {
       </div>
     );
   }
-  return <Login key={`${canResume ? "resume" : "signin"}:${redirectUrl}`} redirectUrl={redirectUrl} resumeSession={canResume} />;
+  // MAIR-153: Keycloak sign-in is offered only once the instance configures it; the password sign-in stays.
+  const keycloakLoginUrl = keycloakSettings() ? `/api/auth/keycloak?redirect=${encodeURIComponent(redirectUrl)}` : undefined;
+  const keycloakMessage = isKeycloakLoginError(keycloakError) ? KEYCLOAK_ERRORS[keycloakError] : undefined;
+  return <Login key={`${canResume ? "resume" : "signin"}:${redirectUrl}`} redirectUrl={redirectUrl} resumeSession={canResume && !keycloakMessage}
+    keycloakLoginUrl={keycloakLoginUrl} initialError={keycloakMessage} />;
 }
