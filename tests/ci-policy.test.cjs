@@ -28,6 +28,9 @@ test('the reusable frontend workflow receives only its declared named secrets', 
   assert.deepEqual(mappings.map(([, name, source]) => [name, source]), [
     ['CODECOV_TOKEN', 'CODECOV_TOKEN'],
     ['N8N_WEBHOOK_SECRET', 'N8N_WEBHOOK_SECRET'],
+    ['ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY'],
+    ['RELEASE_APP_ID', 'RELEASE_APP_ID'],
+    ['RELEASE_APP_PK', 'RELEASE_APP_PK'],
   ]);
   assert.doesNotMatch(workflow, /semgrep_fail_on_findings:\s*false|semgrep_config:|continue-on-error:/);
 });
