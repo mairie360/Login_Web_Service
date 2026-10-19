@@ -17,6 +17,7 @@ Domaine fonctionnel: Identité et administration.
 - Ouvrir `/logout` ne lance aucune requête. Choisir **Se déconnecter**, ou **Réessayer** après un refus ; le retour à Login n'arrive qu'après le succès de l'expiration locale existante. Une reprise après HTTP401 nettoie la session locale sans prouver la révocation amont.
 - Écrans de connexion, de premier changement de mot de passe, de configuration indisponible et de déconnexion autonomes : aucun AppShell, header, sidebar ou footer applicatif avant le retour vers un module authentifié.
 - Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
+- Authentification unique (MAIR-153) : quand l’instance configure Keycloak, **Se connecter avec le compte unique** envoie l’agent vers le realm Keycloak puis le ramène connecté sur le module demandé. La connexion par mot de passe reste disponible. Une connexion annulée, un retour expiré ou interrompu, une identité sans compte Mairie360 actif, trop de tentatives ou un service indisponible affichent chacun leur message sur la page de connexion.
 - Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le tableau de bord configuré.
 
 ## Parcours type

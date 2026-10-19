@@ -18,11 +18,15 @@ type LoginProps = {
   redirectUrl?: string;
   navigate?: (url: string) => void;
   resumeSession?: boolean;
+  /** Start of the Keycloak sign-in (MAIR-153), absent when the instance does not configure it. */
+  keycloakLoginUrl?: string;
+  /** Message of a Keycloak sign-in that came back without a session. */
+  initialError?: string;
 };
 
 const navigateToFront = (url: string) => window.location.assign(url);
 
-export default function Login({ redirectUrl, navigate = navigateToFront, resumeSession = false }: LoginProps) {
+export default function Login({ redirectUrl, navigate = navigateToFront, resumeSession = false, keycloakLoginUrl, initialError = "" }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordChange, setIsPasswordChange] = useState(false);
@@ -30,7 +34,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
   const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
   const [isLoading, setIsLoading] = useState(Boolean(resumeSession && redirectUrl));
   const [isResuming, setIsResuming] = useState(Boolean(resumeSession && redirectUrl));
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(initialError);
   const [successMessage, setSuccessMessage] = useState("");
   const submissionPending = useRef(Boolean(resumeSession && redirectUrl));
   const resumeRequest = useRef<{ target: string; result: Promise<{ status: number; valid: boolean }> } | null>(null);
@@ -333,6 +337,19 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
             primary
           />
         </div>
+        {keycloakLoginUrl && !isPasswordChange && (
+          <>
+            <p aria-hidden="true" className="flex w-full items-center gap-3 text-sm text-[var(--mairie-muted)] before:h-px before:flex-1 before:bg-[var(--mairie-border)] after:h-px after:flex-1 after:bg-[var(--mairie-border)]">ou</p>
+            <a
+              href={keycloakLoginUrl}
+              aria-disabled={isLoading || undefined}
+              onClick={(event) => { if (isLoading) event.preventDefault(); }}
+              className="flex w-full justify-center rounded-md border border-[var(--mairie-control-border)] bg-[var(--mairie-surface)] px-3 py-2 text-sm font-semibold text-[var(--mairie-accent)] shadow-sm transition hover:bg-[var(--mairie-background)] focus-visible:outline-2 focus-visible:outline-offset-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
+            >
+              Se connecter avec le compte unique
+            </a>
+          </>
+        )}
       </form>
     </div>
   );

@@ -17,6 +17,7 @@ Business domain: Identity and administration.
 - Opening `/logout` is read-only. Choose **Se déconnecter** to start logout, or **Réessayer** after a refusal; the page returns to Login only after the existing local cookie-expiry request succeeds. HTTP401 recovery means local session cleanup, not proof of upstream revocation.
 - Standalone sign-in, first-password-change, unavailable-configuration and logout screens: no application AppShell, header, sidebar or footer before returning to an authenticated module.
 - First-sign-in flow with a temporary token and a new password.
+- Single sign-on (MAIR-153): when the instance configures Keycloak, **Se connecter avec le compte unique** sends the agent to the Keycloak realm and back to the requested module, signed in. Password sign-in stays available. A cancelled sign-in, an expired or interrupted return, an identity without an active Mairie360 account, too many attempts or an unavailable service each show their own message on the sign-in page.
 - Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Dashboard module.
 
 ## Typical workflow
