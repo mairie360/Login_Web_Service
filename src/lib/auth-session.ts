@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { accessCookieMaxAge, setSessionCookies } from '@mairie360/front-kit/next';
+import { accessCookieMaxAge, setSessionCookies } from '@mairie360/lib-components/next';
 export const getAccessTokenMaxAge = accessCookieMaxAge;
 
 /** The Login frontend owns the shared cookie attributes for login and recovery. */
