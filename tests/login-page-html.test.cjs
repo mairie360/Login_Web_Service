@@ -36,6 +36,7 @@ before(async () => {
   stubModule(path.join(__dirname, '..', 'src/app/globals.css'), {});
   stubModule(path.join(__dirname, '..', 'src/app/municipal-theme.css'), {});
   stubModule('next/font/google', { Geist: (options) => { fontRequests.push(options); return { variable: 'font-geist' }; } });
+  stubModule('next/headers', { cookies: async () => ({ get: () => undefined }) });
   RootLayout = requireTs('src/app/layout.tsx').default;
   Home = requireTs('src/app/page.tsx').default;
   resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
@@ -79,13 +80,22 @@ const sessionReply = (accessToken, extra = {}) => ({
 const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
 const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
+const assertErrorMessage = (html, expected) => {
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM(html);
+  try {
+    const errors = [...dom.window.document.querySelectorAll('[role="alert"]')];
+    assert.equal(errors.length, 1, 'The form announces its error once');
+    assert.equal(errors[0].textContent, expected);
+  } finally { dom.window.close(); }
+};
 const assertStandalone = (html) => {
   assert.match(html, /<main[^>]*min-h-dvh/);
   assert.doesNotMatch(html, /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
   assert.doesNotMatch(html, /© 2026 Mairie360/);
 };
 const renderLogin = async (searchParams = {}) => {
-  view = mount(React.createElement(RootLayout, null, await Home({ searchParams: Promise.resolve(searchParams) })));
+  view = mount(await RootLayout({ children: await Home({ searchParams: Promise.resolve(searchParams) }) }));
 };
 
 test('the standalone document exposes a skip target before the real login form and shares the font configuration', async () => {
@@ -523,7 +533,7 @@ test('an empty submission is refused in the page without any network call', asyn
 
   await submit();
 
-  assert.match(view.html, /<p role="alert"[^>]*>Veuillez renseigner votre email et votre mot de passe\.<\/p>/);
+  assertErrorMessage(view.html, 'Veuillez renseigner votre email et votre mot de passe.');
   assert.deepEqual(front.browserCalls, []);
   assert.deepEqual(bff.requests, []);
 });
@@ -559,7 +569,7 @@ test('refused credentials are rendered as the page message, without a session', 
   await submit();
   const html = await view.waitFor((current) => current.includes('role="alert"'));
 
-  assert.match(html, /<p role="alert"[^>]*>Email ou mot de passe incorrect\.<\/p>/);
+  assertErrorMessage(html, 'Email ou mot de passe incorrect.');
   assert.equal(front.cookies.get('accessToken'), undefined);
   assert.deepEqual(window.location.assigned, []);
   assert.match(html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
@@ -591,7 +601,7 @@ test('a first connection switches to the password change form, then signs in wit
   await typeInto('new-password', 'N3w-secret');
   await typeInto('new-password-confirmation', 'other');
   await submit();
-  assert.match(view.html, /<p role="alert"[^>]*>Les mots de passe ne correspondent pas\.<\/p>/);
+  assertErrorMessage(view.html, 'Les mots de passe ne correspondent pas.');
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
 
   await typeInto('new-password-confirmation', 'N3w-secret');
@@ -634,6 +644,6 @@ test('an unreachable BFF is rendered as the unavailable-service message', async 
   await submit();
   const html = await view.waitFor((current) => current.includes('role="alert"'));
 
-  assert.match(html, /<p role="alert"[^>]*>Le service de connexion est indisponible\.<\/p>/);
+  assertErrorMessage(html, 'Le service de connexion est indisponible.');
   assert.equal(front.cookies.get('accessToken'), undefined);
 });

@@ -10,6 +10,7 @@ const eslintConfig = defineConfig([
     // They flag the existing fetch-in-effect pattern; report them without failing CI
     // until the data loading is migrated.
     rules: {
+      "no-await-in-loop": "error",
       "react-hooks/set-state-in-effect": "warn",
     },
   },

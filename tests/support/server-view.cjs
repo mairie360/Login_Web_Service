@@ -490,7 +490,7 @@ function ensureBrowserGlobals() {
   if (typeof globalThis.document === 'undefined') {
     globalThis.document = eventTarget({
       body: eventTarget({ style: {}, contains: () => false, classList: { add() {}, remove() {} } }),
-      documentElement: { style: {}, clientWidth: 1280, clientHeight: 800 },
+      documentElement: { dataset: {}, style: { setProperty(name, value) { this[name] = value; }, removeProperty(name) { delete this[name]; } }, clientWidth: 1280, clientHeight: 800 },
       activeElement: null,
       querySelector: () => null,
       querySelectorAll: () => [],

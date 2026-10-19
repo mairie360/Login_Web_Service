@@ -41,7 +41,7 @@ x-api-env: &api-env
 
 services:
   postgres:
-    image: ${DB_IMAGE:-ghcr.io/mairie360/database:dev-90c22bb}
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.2.0}
     container_name: login-front-sec-db
     environment:
       POSTGRES_USER: postgres
@@ -60,7 +60,7 @@ services:
       retries: 10
 
   liquibase:
-    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:dev-90c22bb}
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:3.2.0}
     container_name: login-front-sec-liquibase
     depends_on:
       postgres:
@@ -110,7 +110,7 @@ services:
       retries: 5
 
   core-api:
-    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:dev-95531e2}
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:2.1.0}
     container_name: login-front-sec-core-api
     depends_on:
       liquibase:
@@ -150,7 +150,7 @@ services:
       - backend
 
   bff-user:
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-46a698b}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.0.0}
     container_name: login-front-sec-bff-user
     depends_on:
       seeder:
@@ -224,6 +224,7 @@ services:
         condition: service_healthy
     volumes:
       - ./.zap/rules.tsv:/zap/wrk/rules.tsv:ro
+      - ./.zap/recovery-hooks.py:/zap/wrk/recovery-hooks.py:ro
     # zap-baseline.py: spider + passive scan (fit for a web UI, where the BFFs replay
     #   their OpenAPI with zap-api-scan.py).
     # -j: the AJAX spider renders the page in a headless browser and follows the fetch()
@@ -236,6 +237,7 @@ services:
     #   le proxy same-origin le convertit en Authorization: Bearer vers le BFF.
     command:
       - zap-baseline.py
+      - --hook=/zap/wrk/recovery-hooks.py
       - -t
       - http://login-front:5000/
       - -m

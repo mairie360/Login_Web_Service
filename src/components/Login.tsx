@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Button } from "@mairie360/lib-components";
+import { Button, Toast } from "@mairie360/lib-components/primitives";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type LoginResponse = {
@@ -12,7 +12,7 @@ type LoginResponse = {
 };
 
 const inputClassName =
-  "block w-full rounded-md border border-gray-300 bg-white p-2 text-sm !text-gray-700 placeholder:text-gray-400 shadow-sm outline-none transition focus:border-[#1256A6] focus:ring-2 focus:ring-[#1256A6]/20";
+  "block w-full rounded-md border border-[var(--mairie-control-border)] bg-[var(--mairie-surface)] p-2 text-sm text-[var(--mairie-text)] placeholder:text-gray-400 shadow-sm outline-none transition focus:border-[var(--mairie-accent)] focus:ring-2 focus:ring-[var(--mairie-accent)]/20";
 
 type LoginProps = {
   redirectUrl?: string;
@@ -212,21 +212,21 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
         method="post"
         aria-busy={isLoading}
         onSubmit={isPasswordChange ? handlePasswordChange : handleLogin}
-        className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0"
+        className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[var(--mairie-border)] bg-[var(--mairie-surface)] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0"
       >
-        <h1 className="text-2xl font-bold text-gray-900 !mb-2">
+        <h1 className="text-2xl font-bold text-[var(--mairie-text)] !mb-2">
           {isPasswordChange ? "Nouveau mot de passe" : "Connexion"}
         </h1>
         {isPasswordChange ? (
           <>
-            <p className="text-sm leading-5 text-gray-600">
+            <p className="text-sm leading-5 text-[var(--mairie-muted)]">
               Pour finaliser votre première connexion, choisissez un nouveau
               mot de passe.
             </p>
             <div className="w-full flex flex-col gap-1">
               <label
                 htmlFor="new-password"
-                className="text-sm text-gray-500"
+                className="text-sm text-[var(--mairie-muted)]"
               >
                 Nouveau mot de passe
               </label>
@@ -245,7 +245,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
             <div className="w-full flex flex-col gap-1">
               <label
                 htmlFor="new-password-confirmation"
-                className="text-sm text-gray-500"
+                className="text-sm text-[var(--mairie-muted)]"
               >
                 Confirmer le mot de passe
               </label>
@@ -266,8 +266,8 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
           </>
         ) : (
           <>
-            <div className="w-full flex flex-col gap-1 text-black">
-              <label htmlFor="email" className="text-sm text-gray-500">
+            <div className="w-full flex flex-col gap-1 text-[var(--mairie-text)]">
+              <label htmlFor="email" className="text-sm text-[var(--mairie-muted)]">
                 Email professionnel
               </label>
               <input
@@ -285,7 +285,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
             </div>
             <div className="w-full flex flex-col gap-1">
               <div className="flex justify-between items-center">
-                <label htmlFor="password" className="text-sm text-gray-500">
+                <label htmlFor="password" className="text-sm text-[var(--mairie-muted)]">
                   Mot de passe
                 </label>
               </div>
@@ -303,24 +303,20 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
             </div>
           </>
         )}
-        {isResuming && <p role="status" className="text-sm leading-5 text-gray-600">Reprise de votre session…</p>}
+        {!isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[var(--mairie-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
+        {isResuming && <p role="status" className="text-sm leading-5 text-[var(--mairie-muted)]">Reprise de votre session…</p>}
         {errorMessage && (
-          <p
-            role="alert"
-            className="w-full rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
-          >
-            {errorMessage}
-          </p>
+          <Toast variant="error" message={errorMessage} onClose={() => setErrorMessage("")} className="w-full" />
         )}
         {successMessage && (
           <p
             role="status"
-            className="w-full rounded-md bg-green-50 px-3 py-2 text-sm text-green-700"
+            className="w-full rounded-md bg-[var(--mairie-success-surface)] px-3 py-2 text-sm text-[var(--mairie-success-text)]"
           >
             {successMessage}
           </p>
         )}
-        <div className="w-full [&>button]:flex [&>button]:w-full [&>button]:py-[9px] [&>button]:pb-[11px] [&>button]:px-0 [&>button]:justify-center [&>button]:items-center [&>button]:self-stretch [&>button]:rounded-md [&>button]:bg-[#1256A6] [&>button]:shadow-[0_10px_15px_-3px_rgba(18,86,166,0.30),0_4px_6px_-4px_rgba(18,86,166,0.30)] [&>button]:hover:bg-[#0e4785] [&>button:disabled]:cursor-not-allowed [&>button:disabled]:opacity-60">
+        <div className="w-full [&>button]:flex [&>button]:w-full [&>button]:py-[9px] [&>button]:pb-[11px] [&>button]:px-0 [&>button]:justify-center [&>button]:items-center [&>button]:self-stretch [&>button]:rounded-md [&>button]:bg-[var(--mairie-action-background)] [&>button]:shadow-[0_10px_15px_-3px_rgba(18,86,166,0.30),0_4px_6px_-4px_rgba(18,86,166,0.30)] [&>button]:hover:bg-[var(--mairie-action-hover-background)] [&>button:disabled]:cursor-not-allowed [&>button:disabled]:opacity-60">
           <Button
             className="!text-white"
             label={

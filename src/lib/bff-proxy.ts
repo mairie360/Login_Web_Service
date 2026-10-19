@@ -1,8 +1,10 @@
 import { NextRequest } from 'next/server';
-import { proxyPublishedBffRequest } from '@mairie360/lib-components/next';
+import { proxyPublishedBffRequest } from '@mairie360/front-kit/next';
 import contract from '../../contracts/openapi.json';
 import { POST as login } from '../app/api/auth/login/route';
 import { POST as changePassword } from '../app/api/auth/force-change-password/route';
+import { POST as forgotPassword } from '../app/api/auth/forgot-password/route';
+import { POST as resetPassword } from '../app/api/auth/reset-password/route';
 import { POST as logout } from '../app/api/auth/logout/route';
 import { configuredBffUrl } from './bff-user';
 import { trustedClientIpHeaders } from './trusted-client-ip';
@@ -17,6 +19,8 @@ export async function proxyBffRequest(request: NextRequest, context: RouteContex
   if (request.method === 'POST' && path.length === 2 && path[0] === 'auth') {
     if (path[1] === 'login') return login(request);
     if (path[1] === 'force_change_password') return changePassword(request);
+    if (path[1] === 'forgot_password') return forgotPassword(request);
+    if (path[1] === 'reset_password') return resetPassword(request);
     if (path[1] === 'logout') return logout(request);
   }
   return proxyPublishedBffRequest(request, path, {

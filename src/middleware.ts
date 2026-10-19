@@ -3,7 +3,7 @@ import {
   buildContentSecurityPolicy,
   createNonce,
   NONCE_REQUEST_HEADER,
-} from "./lib/content-security-policy";
+} from "@mairie360/front-kit/shared";
 
 // La page de connexion est publique : pas de garde d'authentification ici.
 // Le middleware pose uniquement une Content-Security-Policy avec un nonce par
@@ -21,6 +21,10 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+  if (request.nextUrl.pathname === "/reset-password" || request.nextUrl.pathname === "/forgot-password") {
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("Cache-Control", "no-store");
+  }
 
   return response;
 }

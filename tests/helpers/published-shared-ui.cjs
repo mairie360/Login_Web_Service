@@ -29,7 +29,22 @@ function assertPublishedSharedUi(root, provenance) {
   const installed = readJson(join(packageDir, 'package.json'));
   assert.equal(installed.name, name);
   assert.equal(installed.version, pin);
-  assert.equal(installed.gitHead, release.gitHead);
+  if (Object.hasOwn(release, 'packageGitHead')) {
+    assert.equal(installed.gitHead ?? null, release.packageGitHead, 'the packed manifest must retain its actual source metadata');
+    assert.match(release.packageJsonSha256, /^[a-f0-9]{64}$/);
+    const manifestHash = createHash('sha256').update(readFileSync(join(root, packageDir, 'package.json'))).digest('hex');
+    assert.equal(manifestHash, release.packageJsonSha256, 'the complete package manifest must match the registry tarball');
+  } else {
+    assert.equal(installed.gitHead, release.gitHead);
+  }
+  if (release.exports) {
+    assert.deepEqual(installed.exports, release.exports, 'public modular exports must match the verified release');
+    const targets = (value) => typeof value === 'string' ? [value] : Object.values(value).flatMap(targets);
+    for (const target of targets(release.exports)) {
+      if (!target.startsWith('./dist/') || target.includes('*')) continue;
+      assert.ok(Object.hasOwn(release.sha256, target.slice(2)), `${target} must belong to the verified modular artifact`);
+    }
+  }
   assert.ok(Object.keys(release.sha256).length > 0, 'the published artifact files must be recorded');
   for (const [field, file] of Object.entries(release.entryPoints)) {
     assert.equal(installed[field], file);
