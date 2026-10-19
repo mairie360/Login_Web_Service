@@ -28,7 +28,8 @@ function libEntries() {
   return Object.keys(exportsMap).filter(key => /^\.\/[a-z-]+$/.test(key)).map(key => key.slice(2));
 }
 
-// The ESM file of an entry and the shared chunks it imports, transitively.
+// The ESM file of an entry and what it imports, transitively: shared chunks and other lib entries
+// (the react entry imports the published shared and theme entries).
 function reachableFiles(entry) {
   const seen = new Set();
   const visit = file => {
@@ -36,6 +37,7 @@ function reachableFiles(entry) {
     seen.add(file);
     const source = fs.readFileSync(file, 'utf8');
     for (const match of source.matchAll(/(?:from|import)\s*["'](\.\/[^"']+\.js)["']/g)) visit(path.join(path.dirname(file), match[1]));
+    for (const match of source.matchAll(/(?:from|import)\s*["']@mairie360\/lib-components\/([a-z-]+)["']/g)) visit(path.join(dist, `${match[1]}.js`));
   };
   visit(path.join(dist, `${entry}.js`));
   return seen;
@@ -87,8 +89,10 @@ test('MAIR-126: the client build ships no unused lib entry and no lib server cod
   const client = clientFiles.map(file => fs.readFileSync(file, 'utf8')).join('\n');
   const { used, sourceText } = importedEntries();
   const usedClient = [...used].filter(entry => !SERVER_ENTRIES.includes(entry));
-  const usedLiterals = textLiterals(new Set(usedClient.flatMap(entry => [...reachableFiles(entry)])));
-  const forbidden = libEntries().filter(entry => SERVER_ENTRIES.includes(entry) || !used.has(entry));
+  const usedFiles = new Set(usedClient.flatMap(entry => [...reachableFiles(entry)]));
+  const usedLiterals = textLiterals(usedFiles);
+  // An entry an imported client entry loads itself is used too.
+  const forbidden = libEntries().filter(entry => SERVER_ENTRIES.includes(entry) || (!used.has(entry) && !usedFiles.has(path.join(dist, `${entry}.js`))));
   const leaks = [];
   for (const entry of forbidden) {
     // Text also present in an imported client entry, or in this front's own code, proves nothing.
