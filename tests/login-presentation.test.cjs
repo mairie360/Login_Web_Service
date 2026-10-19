@@ -42,8 +42,14 @@ test('Login applies the reference 17px root scale to its document', (t) => {
   assert.equal(window.getComputedStyle(window.document.documentElement).fontSize, '17px');
 });
 
-test('MAIR-526: the document uses the shared Geist font stack, not a forced Arial', (t) => {
-  const window = loginDocument(t);
-  assert.equal(window.getComputedStyle(window.document.body).fontFamily, 'var(--font-geist-sans), system-ui, sans-serif');
+test('MAIR-526: the stylesheet uses the shared Geist font stack, not a forced Arial', () => {
+  const fonts = [];
+  postcss.parse(css).walkDecls((declaration) => {
+    if (declaration.prop === 'font-family' || declaration.prop === '--font-sans') fonts.push(`${declaration.parent.selector ?? declaration.parent.params} ${declaration.prop}: ${declaration.value}`);
+  });
+  assert.deepEqual(fonts.sort(), [
+    'body font-family: var(--font-geist-sans), system-ui, sans-serif',
+    'inline --font-sans: var(--font-geist-sans), system-ui, sans-serif',
+  ]);
   assert.doesNotMatch(css, /Arial|Helvetica/, 'Only the shared theme and the user preference choose the font');
 });
