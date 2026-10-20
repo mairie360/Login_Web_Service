@@ -66,6 +66,10 @@ npm run contracts:check     # fail if the version isn't an accepted exact versio
 
 These commands run offline. After a bump, also move the `bff-user` image tags in the `docker-compose*.yml` files to the image built from the same commit (`X.Y.Z` for a release, `dev-<sha7>` for a dev package, `staging-<sha7>` for a staging package; `package-contract.test.cjs` enforces it through `imageTagForContractVersion`), then adapt the route handlers. The stacks also pin dev images of Core API and the database; the dev Core API needs `JWT_ALLOW_WEAK_SECRET` for the shared test secret and `RATE_LIMIT_ENABLED=false`, BFF User needs `JWT_SECRET` and `AUTH_RATE_LIMIT_ENABLED=false` for ZAP, and `init-test.sql` must seed argon2id password hashes.
 
+## Figma mockup
+
+Figma is the source of truth: design and agree any UI change on **Mairie360 – Login_Web_Service** (https://www.figma.com/design/nBzRonQklXlr4qaakqP7mn) first, then code it. Shared components come from the lib mockup https://www.figma.com/design/T7vetUfuzPEXk5TxjHRiO2 and are instantiated, never redrawn. Login has no application shell (no sidebar / top bar), so MAIR-578 only adds this link here.
+
 ## Architecture
 
 - **Contract-gated catch-all proxy** — `src/app/[...path]/route.ts` exports `proxyBffRequest` (`src/lib/bff-proxy.ts`) for every method. It matches the path against `contracts/openapi.json` `paths` (brace segments are wildcards): unknown path → 404, method not declared → 405 with `Allow`, `.`/`..` segments → 400; `/openapi.json` and `/swagger.json` are always forwarded. **A BFF route is therefore reachable from the browser only once the synced contract declares it.**
