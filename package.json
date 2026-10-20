@@ -19,7 +19,7 @@
     "test:bundle": "node --test tests/bundle/*.test.cjs"
   },
   "dependencies": {
-    "@mairie360/bff-user-openapi": "1.0.0",
+    "@mairie360/bff-user-openapi": "0.0.0-dev.699a1ef8ebbf14878ebfe4ac4b4cca4543793118",
     "@mairie360/lib-components": "0.10.2",
     "next": "16.3.8",
     "react": "^19.0.0",
