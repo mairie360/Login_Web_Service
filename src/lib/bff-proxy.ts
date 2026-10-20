@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { proxyPublishedBffRequest } from '@mairie360/front-kit/next';
+import { proxyPublishedBffRequest } from '@mairie360/lib-components/next';
 import contract from '../../contracts/openapi.json';
 import { POST as login } from '../app/api/auth/login/route';
 import { POST as changePassword } from '../app/api/auth/force-change-password/route';

@@ -117,6 +117,7 @@ test('server-side BFF calls go through bffUserUrl to operations declared in the 
   assert.deepEqual(serverCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/app/api/auth/force-change-password/route.ts POST /auth/force_change_password',
     'src/app/api/auth/forgot-password/route.ts POST /auth/forgot_password',
+    'src/app/api/auth/keycloak/callback/route.ts POST /auth/keycloak',
     'src/app/api/auth/login/route.ts POST /auth/login',
     'src/app/api/auth/reset-password/route.ts POST /auth/reset_password',
   ]);
@@ -166,7 +167,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   assert.equal(properties.get('trustedHeaders'), 'trustedClientIpHeaders');
   assert.match(properties.get('loginUrl'), /process\.env\.LOGIN_FRONT_URL/);
   assert.match(properties.get('frontUrl'), /process\.env\.LOGIN_FRONT_URL/);
-  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /from '@mairie360\/front-kit\/next'/);
+  assert.match(fs.readFileSync(path.join(ROOT, PROXY_FILE), 'utf8'), /from '@mairie360\/lib-components\/next'/);
   const proxy = requireTs(PROXY_FILE).proxyBffRequest;
   for (const file of ['src/app/[...path]/route.ts','src/app/[...path]/route.ts']) {
     const exports = requireTs(file);

@@ -1,6 +1,6 @@
 # Shared frontend runtime
 
-All eight frontends consume exactly `@mairie360/front-kit@0.1.0` from the tracked `vendor/mairie360-front-kit-0.1.0.tgz` artifact. Its provenance records the Front_End_Template source commit and SHA-256/SHA-512 digests. This reviewable distribution does not claim an npm release or change the pinned lib-components 0.8.0 release.
+All eight frontends import the shared runtime (session refresh, logout and resume, proxy guard, CSP, theme, instance context) from the `next`, `guard`, `browser`, `shared`, `react` and `theme` subpaths of the published `@mairie360/lib-components` (MAIR-126), pinned to the same exact version as the UI components; the former vendored `@mairie360/front-kit` artifact is gone. Each front imports lib subpaths only, never the root entry, so its client build carries only the lib entries its own code uses: `npm run test:bundle` (after `npm run build`, run by the frontend performance workflow) fails when an unused entry or lib server code reaches `.next/static`.
 
 ## Session and proxy
 

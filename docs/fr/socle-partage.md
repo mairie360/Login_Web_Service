@@ -1,6 +1,6 @@
 # Socle frontend partagé
 
-Les huit fronts utilisent exactement `@mairie360/front-kit@0.1.0`, livré par l’archive versionnée `vendor/mairie360-front-kit-0.1.0.tgz`. Le fichier de provenance donne le commit source de Front_End_Template et les empreintes SHA-256/SHA-512. Cette distribution est vérifiable hors publication npm ; elle ne prétend pas publier une nouvelle version de lib-components (0.8.0 conservée).
+Les huit fronts importent le socle partagé (renouvellement, déconnexion et reprise de session, garde du proxy, CSP, thème, contexte d’instance) depuis les sous-chemins `next`, `guard`, `browser`, `shared`, `react` et `theme` du paquet publié `@mairie360/lib-components` (MAIR-126), épinglé à la même version exacte que les composants d’interface ; l’ancienne archive `@mairie360/front-kit` versionnée dans `vendor/` est supprimée. Chaque front n’importe que des sous-chemins de la lib, jamais l’entrée racine, pour que son build client ne contienne que les entrées utilisées par son code : `npm run test:bundle` (après `npm run build`, lancé par le workflow de performance) échoue si une entrée inutilisée ou du code serveur de la lib arrive dans `.next/static`.
 
 ## Session et proxy
 

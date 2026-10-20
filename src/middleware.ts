@@ -3,7 +3,7 @@ import {
   buildContentSecurityPolicy,
   createNonce,
   NONCE_REQUEST_HEADER,
-} from "@mairie360/front-kit/shared";
+} from "@mairie360/lib-components/shared";
 
 // La page de connexion est publique : pas de garde d'authentification ici.
 // Le middleware pose uniquement une Content-Security-Policy avec un nonce par

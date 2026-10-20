@@ -87,6 +87,8 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Priorité de gauche à droite; configurer explicitement une URL HTTP(S). Une configuration absente ou invalide renvoie un 503 non mis en cache, sans appel réseau. |
 | `COOKIE_DOMAIN` | — | Domaine des cookies partagés ; obligatoire pour la connexion en production et cohérent avec le domaine utilisé par la déconnexion. En local, les cookies peuvent rester limités à l’hôte. |
+| `KEYCLOAK_REALM_URL` | https://auth.mairie360.fr/realms/mairie360 | URL publique du realm, telle que le navigateur l’atteint (MAIR-153). Avec `KEYCLOAK_CLIENT_ID` et `LOGIN_FRONT_URL`, active **Se connecter avec le compte unique** ; si l’une des trois manque ou est invalide, le bouton est masqué et `/api/auth/keycloak` revient sur la page avec le message `unconfigured`. |
+| `KEYCLOAK_CLIENT_ID` | `core-api` | Client de la demande d’autorisation. Core API échange le code avec son propre client confidentiel : c’est donc le `KEYCLOAK_CLIENT_ID` de Core ; le realm doit accepter `<LOGIN_FRONT_URL>/api/auth/keycloak/callback` comme URI de redirection. |
 | `TRUST_INGRESS_IP_HEADERS` | `false` | Mettre à `true` uniquement si le front n’est joignable que par un ingress qui contrôle `X-Forwarded-For` et `X-Real-IP` (accès direct au pod bloqué). Les routes de connexion, de changement de mot de passe et le proxy transmettent alors ces en-têtes à BFF User pour limiter le débit par client. Par défaut, les requêtes directes/locales les écartent. La confiance du proxy côté BFF User se configure séparément ; cette variable ne configure pas le BFF. |
 | `DASHBOARD_FRONT_URL` | — | Destination par défaut si `redirect` est absent ou invalide. Nécessaire sauf retour explicite autorisé. |
 | `PROJECT_FRONT_URL` | — | Origine Projects autorisée pour un `redirect` explicite ; ce n’est plus le repli. |
@@ -147,6 +149,14 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 | POST | `/api/auth/force-change-password` | [src/app/api/auth/force-change-password/route.ts](../../src/app/api/auth/force-change-password/route.ts) |
 | POST | `/api/auth/force_change_password` | [src/app/api/auth/force_change_password/route.ts](../../src/app/api/auth/force_change_password/route.ts) |
 | POST | `/api/auth/login` | [src/app/api/auth/login/route.ts](../../src/app/api/auth/login/route.ts) |
+| GET | `/api/auth/keycloak?redirect=<URL du module>` | [src/app/api/auth/keycloak/route.ts](../../src/app/api/auth/keycloak/route.ts) |
+| GET | `/api/auth/keycloak/callback` | [src/app/api/auth/keycloak/callback/route.ts](../../src/app/api/auth/keycloak/callback/route.ts) |
+
+### Authentification unique Keycloak (MAIR-153)
+
+Flux OpenID Connect « authorization code » avec PKCE (`src/lib/keycloak-login.ts`). `GET /api/auth/keycloak` valide `redirect` comme la connexion par mot de passe (origines de fronts configurées, sinon Dashboard), tire au hasard un `state`, un `nonce` et un vérificateur PKCE, les conserve avec la destination dans le cookie `keycloakLogin` (HttpOnly, SameSite Lax car le retour est une navigation de premier niveau depuis le realm, chemin `/api/auth/keycloak`, 10 min) et répond 303 vers `<KEYCLOAK_REALM_URL>/protocol/openid-connect/auth` (`client_id`, `scope=openid email`, `redirect_uri=<LOGIN_FRONT_URL>/api/auth/keycloak/callback`, `code_challenge_method=S256`).
+
+`GET /api/auth/keycloak/callback` efface toujours ce cookie. Un cookie absent, un `state` différent ou l’absence de `code` arrêtent le parcours avant tout appel au BFF. Sinon, la route envoie `code`, `redirect_uri`, `code_verifier`, `nonce` et le user-agent comme `device_info` à BFF User `POST /auth/keycloak` (délai de 10 s), qui fait échanger le code par Core API. En cas de succès, les cookies partagés `accessToken` / `refreshToken` sont posés exactement comme pour la connexion par mot de passe, puis la route répond 303 vers le module demandé. Chaque échec répond 303 vers `/?keycloakError=<type>&redirect=<module>` et la page affiche le message français correspondant : `cancelled` (`access_denied` de Keycloak), `expired` (autres erreurs Keycloak, `state` différent, 401 du BFF), `account` (403 : pas d’e-mail vérifié ou aucun compte Mairie360 actif), `busy` (429), `unconfigured` (503 ou configuration absente), `unavailable` (`temporarily_unavailable` de Keycloak, autres statuts, cookies de session absents, BFF injoignable). Un `keycloakError` arrête aussi la reprise automatique de session, pour que le message reste affiché.
 
 ## Session, permissions et erreurs
 

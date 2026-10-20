@@ -87,6 +87,8 @@ Values below are local examples or explicitly described behavior, not production
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Left-to-right precedence; explicitly configure an HTTP(S) URL. Missing or invalid configuration returns an uncached 503 without an upstream call. |
 | `COOKIE_DOMAIN` | — | Shared cookie domain; required for sign-in in production and must match the frontend domain used for logout. Local development may use host-only cookies. |
+| `KEYCLOAK_REALM_URL` | https://auth.mairie360.fr/realms/mairie360 | Public realm URL, as the browser reaches it (MAIR-153). With `KEYCLOAK_CLIENT_ID` and `LOGIN_FRONT_URL`, enables **Se connecter avec le compte unique**; any of the three missing or invalid hides the button and `/api/auth/keycloak` returns to the page with the `unconfigured` message. |
+| `KEYCLOAK_CLIENT_ID` | `core-api` | Client of the authorization request. Core API redeems the code with its own confidential client, so this is Core's `KEYCLOAK_CLIENT_ID`; the realm must allow `<LOGIN_FRONT_URL>/api/auth/keycloak/callback` as a redirect URI. |
 | `TRUST_INGRESS_IP_HEADERS` | `false` | Set to `true` only when the frontend is reachable exclusively through an ingress that owns `X-Forwarded-For` and `X-Real-IP` (with direct pod access blocked). Then the login, password-change and proxied routes relay those headers to BFF User for per-client rate limiting. Direct/local requests discard them by default. BFF User must separately trust its proxy; this frontend flag does not configure the BFF. |
 | `DASHBOARD_FRONT_URL` | — | Default destination when `redirect` is absent or invalid. Required unless an explicit allowed return URL is supplied. |
 | `PROJECT_FRONT_URL` | — | Projects origin allowed for an explicit `redirect`; no longer the default. |
@@ -147,6 +149,14 @@ These data paths are exposed at the same origin through the proxy; Next.js pages
 | POST | `/api/auth/force-change-password` | [src/app/api/auth/force-change-password/route.ts](../../src/app/api/auth/force-change-password/route.ts) |
 | POST | `/api/auth/force_change_password` | [src/app/api/auth/force_change_password/route.ts](../../src/app/api/auth/force_change_password/route.ts) |
 | POST | `/api/auth/login` | [src/app/api/auth/login/route.ts](../../src/app/api/auth/login/route.ts) |
+| GET | `/api/auth/keycloak?redirect=<module URL>` | [src/app/api/auth/keycloak/route.ts](../../src/app/api/auth/keycloak/route.ts) |
+| GET | `/api/auth/keycloak/callback` | [src/app/api/auth/keycloak/callback/route.ts](../../src/app/api/auth/keycloak/callback/route.ts) |
+
+### Keycloak single sign-on (MAIR-153)
+
+OpenID Connect authorization code flow with PKCE (`src/lib/keycloak-login.ts`). `GET /api/auth/keycloak` validates `redirect` like the password sign-in (configured front origins, else Dashboard), draws a random `state`, `nonce` and PKCE verifier, keeps them with the destination in the `keycloakLogin` cookie (HttpOnly, SameSite Lax because the return is a top-level navigation from the realm, path `/api/auth/keycloak`, 10 min) and answers 303 to `<KEYCLOAK_REALM_URL>/protocol/openid-connect/auth` (`client_id`, `scope=openid email`, `redirect_uri=<LOGIN_FRONT_URL>/api/auth/keycloak/callback`, `code_challenge_method=S256`).
+
+`GET /api/auth/keycloak/callback` always clears that cookie. A missing cookie, a `state` that differs, or no `code` stops before any BFF call. Otherwise it sends `code`, `redirect_uri`, `code_verifier`, `nonce` and the user-agent as `device_info` to BFF User `POST /auth/keycloak` (10 s timeout), which has Core API redeem the code. A success sets the shared `accessToken` / `refreshToken` cookies exactly like the password sign-in and answers 303 to the requested module. Every failure answers 303 to `/?keycloakError=<kind>&redirect=<module>`, and the page shows the matching French message: `cancelled` (Keycloak `access_denied`), `expired` (any other Keycloak error, state mismatch, BFF 401), `account` (403: no verified e-mail or no active Mairie360 account), `busy` (429), `unconfigured` (503 or missing settings), `unavailable` (Keycloak `temporarily_unavailable`, other statuses, missing session cookies, BFF unreachable). A `keycloakError` also stops the automatic session resume, so the message stays on screen.
 
 ## Session, permissions and errors
 
