@@ -4,7 +4,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 
 // Le contrat du front est celui de BFF User publié dans @mairie360/bff-user-openapi, épinglé à une version
-// exacte (release X.Y.Z ou paquet dev 0.0.0-dev.<sha> du main du BFF, scripts/contract-version.mjs) :
+// exacte (release X.Y.Z ou paquet dev/staging d'un commit du main du BFF, scripts/contract-version.mjs) :
 // contracts/openapi.json doit en être la reconstruction exacte (scripts/orval-contract.mjs), et BFF User est
 // le seul BFF, dans l'image construite depuis le même commit, partout où ce dépôt le démarre.
 
@@ -16,7 +16,7 @@ const pinned = manifest.dependencies[PACKAGE_NAME];
 
 test('the BFF User contract package is pinned to an exact published version, installed as locked', async () => {
   const { isAcceptedContractVersion } = await import('../scripts/contract-version.mjs');
-  assert.ok(isAcceptedContractVersion(pinned), `${PACKAGE_NAME} doit être épinglé à une version exacte X.Y.Z ou 0.0.0-dev.<sha> (pas de plage ni de pré-version staging)`);
+  assert.ok(isAcceptedContractVersion(pinned), `${PACKAGE_NAME} must be pinned to an exact version X.Y.Z, 0.0.0-dev.<sha> or 0.0.0-staging.<sha> (no range)`);
   assert.equal(readJson(`node_modules/${PACKAGE_NAME}/package.json`).version, pinned);
   assert.equal(readJson('package-lock.json').packages[`node_modules/${PACKAGE_NAME}`].version, pinned);
 });
@@ -43,13 +43,15 @@ test('every Docker stack starts BFF User only, in the image built from the contr
   }
 });
 
-test('the contract version policy accepts releases and dev packages and maps them to image tags', async () => {
+test('the contract version policy accepts releases, dev and staging packages and maps them to image tags', async () => {
   const { isAcceptedContractVersion, imageTagForContractVersion } = await import('../scripts/contract-version.mjs');
   assert.equal(isAcceptedContractVersion('0.5.0'), true);
   assert.equal(imageTagForContractVersion('0.5.0'), '0.5.0');
   assert.equal(isAcceptedContractVersion('0.0.0-dev.0d80ef4e08e8db73ec2832911f42e75ae990a8d3'), true);
   assert.equal(imageTagForContractVersion('0.0.0-dev.0d80ef4e08e8db73ec2832911f42e75ae990a8d3'), 'dev-0d80ef4');
-  for (const rejected of ['^0.5.0', '0.5', '0.0.0-staging.0d80ef4e08e8db73ec2832911f42e75ae990a8d3', '0.0.0-dev.0d80ef4', 'latest']) {
+  assert.equal(isAcceptedContractVersion('0.0.0-staging.0d80ef4e08e8db73ec2832911f42e75ae990a8d3'), true);
+  assert.equal(imageTagForContractVersion('0.0.0-staging.0d80ef4e08e8db73ec2832911f42e75ae990a8d3'), 'staging-0d80ef4');
+  for (const rejected of ['^0.5.0', '0.5', '0.0.0-staging.0d80ef4', '0.0.0-dev.0d80ef4', 'latest']) {
     assert.equal(isAcceptedContractVersion(rejected), false, rejected);
   }
 });

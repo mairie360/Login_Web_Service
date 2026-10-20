@@ -51,7 +51,7 @@ Suites:
 
 ### OpenAPI contract
 
-The only contract is **BFF User's, as published in `@mairie360/bff-user-openapi`**, pinned to an exact version in `package.json`: a release `X.Y.Z`, or the `0.0.0-dev.<sha>` package the CICD publishes for each commit of BFF User `main` (used since MAIR-509 while no release is cut; `scripts/contract-version.mjs` is the policy, `staging` pre-releases are refused). Never copy it from a BFF checkout: the local `BFFs/BFF_user` can be ahead of what is published. The package is orval output (`endpoints/bffUser.ts` + `model/*.ts`, no `openapi.json`, and its `main` points to a missing `index.ts`), so:
+The only contract is **BFF User's, as published in `@mairie360/bff-user-openapi`**, pinned to an exact version in `package.json`: a release `X.Y.Z`, or the `0.0.0-dev.<sha>` package the CICD publishes for each commit of BFF User `main` (used since MAIR-509 while no release is cut), or, once that commit is released on staging, the `0.0.0-staging.<sha40>` package of the same commit, preferred on a staging release for readability (MAIR-600; `scripts/contract-version.mjs` is the policy, `0.0.0-staging.<short sha>` and ranges are refused). Never copy it from a BFF checkout: the local `BFFs/BFF_user` can be ahead of what is published. The package is orval output (`endpoints/bffUser.ts` + `model/*.ts`, no `openapi.json`, and its `main` points to a missing `index.ts`), so:
 
 - `scripts/orval-contract.mjs` rebuilds an OpenAPI document from it, using the TypeScript compiler API. It is an ESM port of `BFFs/BFF_user/tests/support/orval-contract.ts`. It writes that document to the committed `contracts/openapi.json`, which the proxy imports at build time and the tests load. Never hand-edit it.
 - orval keeps paths, methods, parameters, bodies, success models and JSDoc constraints (`@minLength`, `@nullable`…).
@@ -59,12 +59,12 @@ The only contract is **BFF User's, as published in `@mairie360/bff-user-openapi`
 - Route handlers import their types straight from the package (`import type { LoginView } from '@mairie360/bff-user-openapi/model'`). There is no generated `.d.ts` any more.
 
 ```bash
-npm install --save-exact @mairie360/bff-user-openapi@<version>   # bump: a release X.Y.Z or a published 0.0.0-dev.<sha40>, never staging
+npm install --save-exact @mairie360/bff-user-openapi@<version>   # bump: a release X.Y.Z, a published 0.0.0-dev.<sha40> or 0.0.0-staging.<sha40> (MAIR-600)
 npm run contracts:sync      # (= contracts:generate) rebuild contracts/openapi.json from the installed package
 npm run contracts:check     # fail if the version isn't an accepted exact version, installed != package.json, a second bff-*-openapi exists, or the snapshot is stale
 ```
 
-These commands run offline. After a bump, also move the `bff-user` image tags in the `docker-compose*.yml` files to the image built from the same commit (`X.Y.Z` for a release, `dev-<sha7>` for a dev package; `package-contract.test.cjs` enforces it through `imageTagForContractVersion`), then adapt the route handlers. The stacks also pin dev images of Core API and the database; the dev Core API needs `JWT_ALLOW_WEAK_SECRET` for the shared test secret and `RATE_LIMIT_ENABLED=false`, BFF User needs `JWT_SECRET` and `AUTH_RATE_LIMIT_ENABLED=false` for ZAP, and `init-test.sql` must seed argon2id password hashes.
+These commands run offline. After a bump, also move the `bff-user` image tags in the `docker-compose*.yml` files to the image built from the same commit (`X.Y.Z` for a release, `dev-<sha7>` for a dev package, `staging-<sha7>` for a staging package; `package-contract.test.cjs` enforces it through `imageTagForContractVersion`), then adapt the route handlers. The stacks also pin dev images of Core API and the database; the dev Core API needs `JWT_ALLOW_WEAK_SECRET` for the shared test secret and `RATE_LIMIT_ENABLED=false`, BFF User needs `JWT_SECRET` and `AUTH_RATE_LIMIT_ENABLED=false` for ZAP, and `init-test.sql` must seed argon2id password hashes.
 
 ## Architecture
 
