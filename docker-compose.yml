@@ -139,7 +139,7 @@ services:
   # de package.json (release X.Y.Z, ou dev-<sha7> pour un paquet 0.0.0-dev.<sha>).
   bff-user:
     container_name: bff-user-login-front
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.0.0}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-699a1ef}
     ports:
       - "4000:4000"
     networks:
