@@ -14,10 +14,19 @@ stubModule('next/image', { __esModule: true, default: ({ src, alt }) => React.cr
 const Login = requireTs('src/components/Login.tsx').default;
 const root = resolve(__dirname, '..');
 
-for (const [theme, fieldBackground, fieldText, errorBackground, errorText] of [
-  ['light', 'rgb(255, 255, 255)', 'rgb(22, 32, 51)', 'rgb(255, 240, 241)', 'rgb(164, 14, 38)'],
-  ['dark', 'rgb(16, 30, 49)', 'rgb(241, 245, 249)', 'rgb(72, 35, 43)', 'rgb(255, 193, 200)'],
-]) {
+// MAIR-608: colours come from the charte tokens; each pair must stay readable (WCAG AA, 4.5:1).
+const channels = value => value.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+const luminance = value => {
+  const [r, g, b] = channels(value).map(channel => { const c = channel / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (foreground, background) => {
+  const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
+};
+const sameColour = (actual, expected) => assert.deepEqual(channels(actual), channels(expected));
+
+for (const theme of ['light', 'dark']) {
   test(`the loaded shared stylesheet keeps the real ${theme} sign-in controls and error readable`, async t => {
     const view = mount(React.createElement(Login));
     t.after(() => view.unmount());
@@ -47,15 +56,20 @@ for (const [theme, fieldBackground, fieldText, errorBackground, errorText] of [
       return tokens.getPropertyValue(name).trim().replace(/var\((--[\w-]+)\)/g, (_match, dependency) => token(dependency, new Set([...seen, name])));
     };
     style.textContent = style.textContent.replace(/var\((--[\w-]+)\)/g, (match, name) => token(name) || match);
+    // Lib components set their tone colours inline with tokens; JSDOM does not resolve var() there either.
+    for (const node of document.querySelectorAll('[style*="var("]')) node.setAttribute('style', node.getAttribute('style').replace(/var\((--[\w-]+)\)/g, (match, name) => token(name) || match));
     const field = computed(document.getElementById('email'));
     const error = computed(document.querySelector('[role="alert"]'));
     const primary = computed(document.querySelector('button[type="submit"]'));
-    assert.equal(field.backgroundColor, fieldBackground);
-    assert.equal(field.color, fieldText);
-    assert.equal(error.backgroundColor, errorBackground);
-    assert.equal(error.color, errorText);
-    assert.equal(primary.backgroundColor, 'rgb(18, 86, 166)');
-    assert.equal(primary.color, 'rgb(255, 255, 255)');
+    const probe = document.createElement('span');
+    document.body.append(probe);
+    const resolved = name => { probe.style.color = token(name); return computed(probe).color; };
+    sameColour(field.color, resolved('--mairie-text'));
+    sameColour(primary.backgroundColor, resolved('--mairie-action-background'));
+    sameColour(primary.color, resolved('--mairie-on-action'));
+    for (const [label, foreground, background] of [['field', field.color, field.backgroundColor], ['error', error.color, error.backgroundColor], ['primary', primary.color, primary.backgroundColor]]) {
+      assert.ok(contrast(foreground, background) >= 4.5, `${theme} ${label} contrast ${contrast(foreground, background).toFixed(2)} (${foreground} on ${background})`);
+    }
     assert.equal(document.querySelectorAll('[role="alert"]').length, 1);
   });
 }

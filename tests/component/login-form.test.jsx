@@ -134,7 +134,7 @@ describe("Login form", () => {
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
     await screen.findByRole("alert");
 
-    await user.click(screen.getByRole("button", { name: "Fermer la notification" }));
+    await user.click(screen.getByRole("button", { name: "Fermer le message" }));
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByRole("textbox", { name: "Email professionnel" }).value).toBe("agent@example.invalid");
     expect(screen.getByLabelText("Mot de passe", { exact: true }).value).toBe("initial-test-password");

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Button, Toast } from "@mairie360/lib-components/primitives";
+import { Button, ErrorAlert } from "@mairie360/lib-components/primitives";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type LoginResponse = {
@@ -310,7 +310,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
         {!isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[var(--mairie-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
         {isResuming && <p role="status" className="text-sm leading-5 text-[var(--mairie-muted)]">Reprise de votre session…</p>}
         {errorMessage && (
-          <Toast variant="error" message={errorMessage} onClose={() => setErrorMessage("")} className="w-full" />
+          <ErrorAlert title={errorMessage} onDismiss={() => setErrorMessage("")} className="w-full" />
         )}
         {successMessage && (
           <p
@@ -320,9 +320,10 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
             {successMessage}
           </p>
         )}
-        <div className="w-full [&>button]:flex [&>button]:w-full [&>button]:py-[9px] [&>button]:pb-[11px] [&>button]:px-0 [&>button]:justify-center [&>button]:items-center [&>button]:self-stretch [&>button]:rounded-md [&>button]:bg-[var(--mairie-action-background)] [&>button]:shadow-[0_10px_15px_-3px_rgba(18,86,166,0.30),0_4px_6px_-4px_rgba(18,86,166,0.30)] [&>button]:hover:bg-[var(--mairie-action-hover-background)] [&>button:disabled]:cursor-not-allowed [&>button:disabled]:opacity-60">
+        <div className="w-full">
           <Button
-            className="!text-white"
+            fullWidth
+            loading={isLoading}
             label={
               isLoading
                 ? isPasswordChange
@@ -333,8 +334,6 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
                   : "Se connecter"
             }
             type="submit"
-            disabled={isLoading}
-            primary
           />
         </div>
         {keycloakLoginUrl && !isPasswordChange && (

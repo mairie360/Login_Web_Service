@@ -23,9 +23,10 @@ test('dismissing a credential validation receipt preserves the form draft and se
   assert.match(view.text(), /Veuillez renseigner votre email et votre mot de passe/);
   assert.equal(view.hostElements(props => props.role === 'alert').length, 1, 'Validation is announced exactly once');
 
-  const close = view.hostElements((props, _text, tag) => tag === 'button' && props['aria-label'] === 'Fermer la notification');
+  // MAIR-608: the feedback is the lib ErrorAlert (a standalone lib Toast is not announced).
+  const close = view.hostElements((props, _text, tag) => tag === 'button' && props['aria-label'] === 'Fermer le message');
   assert.equal(close.length, 1, 'The contextual feedback offers its keyboard-operable dismissal');
-  await view.fire(props => props['aria-label'] === 'Fermer la notification', 'onClick');
+  await view.fire(props => props['aria-label'] === 'Fermer le message', 'onClick');
 
   assert.equal(view.hostElements(props => props.role === 'alert').length, 0);
   assert.equal(view.hostElements(props => props.id === 'email')[0].props.value, 'draft@example.invalid');
