@@ -95,7 +95,7 @@ services:
 
   core:
     container_name: core-login-front-developpement
-    image: ghcr.io/mairie360/core-api:2.1.0
+    image: ghcr.io/mairie360/core-api:2.2.0
     ports:
       - "3000:3000"
     networks:
