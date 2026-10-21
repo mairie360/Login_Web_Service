@@ -1252,6 +1252,201 @@
         "dist/theme.js": "111049720c0822f107ce22f644d71d353730b276fcdab1dcbb1679568224f819",
         "dist/theme.js.map": "055b40b5089ce35f736cb611882c437474c0b87b7f1d103402e5450b1d46802c"
       }
+    },
+    "1.0.3": {
+      "publishedAt": "2026-10-21T15:20:01Z",
+      "registry": "https://npm.pkg.github.com",
+      "gitHead": "c2f81a019093cb702f58c985eca5824e4a4fea1b",
+      "tarball": "https://npm.pkg.github.com/download/@mairie360/lib-components/1.0.3/d24c22996932508f2f15c85f34abc5172e0c3230",
+      "integrity": "sha512-dNTzHfHrHAMAH5P2JNaz6Io4E4t972UCyl7SuHjiEYHXQK9iHSRAV/N3tProahGeZFplrOX31SjVQrFWoO31pQ==",
+      "packageGitHead": null,
+      "packageJsonSha256": "a0d98afe654191e878b48469c5d490d60d51ffef92767482ebc31ca5e8cb9c5e",
+      "entryPoints": {
+        "main": "dist/index.js",
+        "module": "dist/index.js",
+        "types": "dist/index.d.ts"
+      },
+      "exports": {
+        ".": {
+          "import": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+          },
+          "require": {
+            "types": "./dist/index.d.cts",
+            "default": "./dist/index.cjs"
+          }
+        },
+        "./next": {
+          "import": {
+            "types": "./dist/next.d.ts",
+            "default": "./dist/next.js"
+          },
+          "require": {
+            "types": "./dist/next.d.cts",
+            "default": "./dist/next.cjs"
+          }
+        },
+        "./guard": {
+          "import": {
+            "types": "./dist/guard.d.ts",
+            "default": "./dist/guard.js"
+          },
+          "require": {
+            "types": "./dist/guard.d.cts",
+            "default": "./dist/guard.cjs"
+          }
+        },
+        "./browser": {
+          "import": {
+            "types": "./dist/browser.d.ts",
+            "default": "./dist/browser.js"
+          },
+          "require": {
+            "types": "./dist/browser.d.cts",
+            "default": "./dist/browser.cjs"
+          }
+        },
+        "./shared": {
+          "import": {
+            "types": "./dist/shared.d.ts",
+            "default": "./dist/shared.js"
+          },
+          "require": {
+            "types": "./dist/shared.d.cts",
+            "default": "./dist/shared.cjs"
+          }
+        },
+        "./react": {
+          "import": {
+            "types": "./dist/react.d.ts",
+            "default": "./dist/react.js"
+          },
+          "require": {
+            "types": "./dist/react.d.cts",
+            "default": "./dist/react.cjs"
+          }
+        },
+        "./theme": {
+          "import": {
+            "types": "./dist/theme.d.ts",
+            "default": "./dist/theme.js"
+          },
+          "require": {
+            "types": "./dist/theme.d.cts",
+            "default": "./dist/theme.cjs"
+          }
+        },
+        "./primitives": {
+          "import": {
+            "types": "./dist/primitives.d.ts",
+            "default": "./dist/primitives.js"
+          },
+          "require": {
+            "types": "./dist/primitives.d.cts",
+            "default": "./dist/primitives.cjs"
+          }
+        },
+        "./shell": {
+          "import": {
+            "types": "./dist/shell.d.ts",
+            "default": "./dist/shell.js"
+          },
+          "require": {
+            "types": "./dist/shell.d.cts",
+            "default": "./dist/shell.cjs"
+          }
+        },
+        "./forms": {
+          "import": {
+            "types": "./dist/forms.d.ts",
+            "default": "./dist/forms.js"
+          },
+          "require": {
+            "types": "./dist/forms.d.cts",
+            "default": "./dist/forms.cjs"
+          }
+        },
+        "./styles.css": "./dist/styles.css",
+        "./*": "./*"
+      },
+      "sha256": {
+        "dist/browser.cjs": "f23a71fdf0bde8b572c677da554d1296cf8f757ca822a725373f4558bc106ec9",
+        "dist/browser.cjs.map": "58245ab1ce6491eaea095b68d390b05e0370b97ae88da32493bc19943e3268fd",
+        "dist/browser.d.cts": "ea79342d66c5e868117ba3ac469f36263426be38d04688f6f012f6cd1ebb80ca",
+        "dist/browser.d.ts": "ea79342d66c5e868117ba3ac469f36263426be38d04688f6f012f6cd1ebb80ca",
+        "dist/browser.js": "5d3afbb033f119e6148a9af55b0eeb1d3a96856a7216716ec5c03429488d5344",
+        "dist/browser.js.map": "3b1b787fa5de59d266ddb80dfc13cab72cbc6ea85236ad5c48a9131d94db982d",
+        "dist/chunk-6AVY7FVY.cjs": "e3eab6396f1c522ffebfd20ea44f762fbeacd77c36f9b7fc24d62aac6b52d134",
+        "dist/chunk-6AVY7FVY.cjs.map": "565057111d628368cbae033ad9abba3b6e60de79cba05de2b63b41f91ef320d2",
+        "dist/chunk-DL3OJ3EA.cjs": "559f900a7f31164c1093ad407428c61b731aff6fd29d239f1cc409ca29a85e9e",
+        "dist/chunk-DL3OJ3EA.cjs.map": "972c434daafafaf85bb0362be91f9aece560f450470a5d7b9cfd2d9468d1c3d7",
+        "dist/chunk-FPURI3ZJ.js": "cd5ca7db428bdad9701c98f847d7f7810a0ea38322411c950a133acfe35a7748",
+        "dist/chunk-FPURI3ZJ.js.map": "672053860177f4a5be8cfce6be6ea4c812d1f5c1253dcf085f241800b094edb3",
+        "dist/chunk-OFTPQ7OW.cjs": "eb1c7f8700280706ce40bcbe32863758b19c8fecc5d70c876cf3029ce4594f9c",
+        "dist/chunk-OFTPQ7OW.cjs.map": "194b59ad34ef86b6494d420613bdb0df34845c873b21cac971aaf0c57532457e",
+        "dist/chunk-SJNHNDLD.js": "0f89cc70bf5f83c54b8cc971574ec939d2af9e029adf3ac89e001691c5b359ea",
+        "dist/chunk-SJNHNDLD.js.map": "daaf2c6514450c5156460aafe1e1308e2c13df210ea78b2deeaf036ef58e42fc",
+        "dist/chunk-TQ7D5KEZ.js": "1998fcf773af442770c7ba1a5386363079f0eef11f00a57a25d2a7769d3225d8",
+        "dist/chunk-TQ7D5KEZ.js.map": "4be16957db9cfce127a10f531b21aba5ac0486fa538f439b5cd67ee33ad9c8d2",
+        "dist/forms.cjs": "9bb4604cd6200afdaa8d2824b0a09bd3f70c105681e85c024a6c01b8cde4f1f5",
+        "dist/forms.cjs.map": "b7f10bf196f98b5c8f9c39bfa56b67a639c184f6bc539af0300308caec94d135",
+        "dist/forms.d.cts": "51ef2da84b5a9ed879f21172d2bc8333196014238080d92a9a00687edad44946",
+        "dist/forms.d.ts": "51ef2da84b5a9ed879f21172d2bc8333196014238080d92a9a00687edad44946",
+        "dist/forms.js": "2de82667c46b10f6baae15eaaa511a0475956ac155ea13a5b86396031656f1e3",
+        "dist/forms.js.map": "6118958d018c349030c1841c7c41221d00144ae71bf4c65ec2acc4c2b4e8c2a3",
+        "dist/guard.cjs": "9f460c39ac884e84f18d80b4add8aa217bd8b3ce4492d1002cbead7b6acbf1ee",
+        "dist/guard.cjs.map": "e26a50c1fab4a5bf29550abe5c7f909d6a1c9ed0a1bd28e287f6a454274dd87e",
+        "dist/guard.d.cts": "82e0edf5f4311cdcb678545c04c0b42b19bc88f529e4a27ca3f126db6194aa00",
+        "dist/guard.d.ts": "82e0edf5f4311cdcb678545c04c0b42b19bc88f529e4a27ca3f126db6194aa00",
+        "dist/guard.js": "aba34d532d87ee5216b85c948f8adbe34cc84ddb637fce6bfe4329f0da6f9c04",
+        "dist/guard.js.map": "9791bc0373c52ef6a6f609e945930f2a837b233c7d3b6da003f62c59bdf3391d",
+        "dist/index.cjs": "66f84d978a01df07bdcb2509618886525041b43f0d6048d9bba5e049331d04cd",
+        "dist/index.cjs.map": "703a0aeac84d0e8f30f51a996f86a85255eca9677ae93b9bdf72a2b0a32a7c35",
+        "dist/index.d.cts": "604afc7eb1fa7152c2298e4d8698a60d83021328d6ce3d9c70f83d47d07e9d18",
+        "dist/index.d.ts": "ae7076979910526fd0e425e8065904f5de219de678164265025a3318c25b3b02",
+        "dist/index.js": "3a2ad45691835fd3e0cd83b6a19424d72c8a1c8dff3de149a9a18fae0da42bc3",
+        "dist/index.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/logo-PqHlbxaL.d.cts": "75a29b4c2b1d20024315f753e54698775062fe2bcea0d7911fd0d932014fb474",
+        "dist/logo-PqHlbxaL.d.ts": "75a29b4c2b1d20024315f753e54698775062fe2bcea0d7911fd0d932014fb474",
+        "dist/next.cjs": "89f31e2994b0e05b2fcdad7544f0e72c80fbd200888a8fd82a0cd41a2ce3bd40",
+        "dist/next.cjs.map": "0f24f028ebd509b5e9a775522be50e331e3b581ed52233cf4d86978351bad224",
+        "dist/next.d.cts": "f280441bf571835f6a7708b5292c3a129de64773ca8fbdd216449b582e4ae474",
+        "dist/next.d.ts": "f280441bf571835f6a7708b5292c3a129de64773ca8fbdd216449b582e4ae474",
+        "dist/next.js": "c5b8c05e5d70c9c17298a3d05422e72ca9c44299fc02a225fc0905df7fa5865e",
+        "dist/next.js.map": "2b38945703c396c28f811ae427d9b452e09a11f1343979644b57ddd3f2aa4b62",
+        "dist/primitives.cjs": "acb000f449f67a9bc4500727077170a9e89fa302e9a81b6e9fac88e67f7f0dde",
+        "dist/primitives.cjs.map": "6db4710554bc00b536743a363189f6986d93e507af2ea05e1af06ffef0f774cf",
+        "dist/primitives.d.cts": "c4bdf2316c3aa811bcb6480e314410924db1e7d512cf613db5f34c9ebf02af48",
+        "dist/primitives.d.ts": "c4bdf2316c3aa811bcb6480e314410924db1e7d512cf613db5f34c9ebf02af48",
+        "dist/primitives.js": "9902146f38b142bb8d1edecfabff798f6a48777366cc7b8691ae779037393a93",
+        "dist/primitives.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/react.cjs": "9bfbc5ea3eca977f4130afe446aedbb869da2588a9148b5f0f1e23dc4192c067",
+        "dist/react.cjs.map": "ff5f2cadd4f81a2ca7976af743fe6eb2bd6172c526055be5f9067c892c6f2531",
+        "dist/react.d.cts": "d894e3f281dcec11b75917da83c13ea2c63bc798979b2ad84d58cf3feae086c1",
+        "dist/react.d.ts": "d894e3f281dcec11b75917da83c13ea2c63bc798979b2ad84d58cf3feae086c1",
+        "dist/react.js": "345e80376df845367cb0f30c417a74d62132cedd891e8626dad0301291cbaac0",
+        "dist/react.js.map": "ff35621acc32e30e3ff30ed46a38e6d3c91d16016d4eae43b053d02a3cfc9504",
+        "dist/shared.cjs": "1d605706b15e9b47401ffa26bb6fd76fe02b458b8e4bed750886736bec4e84b8",
+        "dist/shared.cjs.map": "4fe325426c1fe70705fe2ff5f0f0c71169185b050ef048b1ee9318c52086733c",
+        "dist/shared.d.cts": "790ae219188ac107897d3c5870b691cde4eb4b916d1d726ab24ac3f7e571e9c7",
+        "dist/shared.d.ts": "790ae219188ac107897d3c5870b691cde4eb4b916d1d726ab24ac3f7e571e9c7",
+        "dist/shared.js": "4ed755475ebf2a6cca287b0f421891efc7cb64b22f82e3631f61d03ba3478e74",
+        "dist/shared.js.map": "52d2fd72f9c4d8d64847b553d48108462cde94bea7554db471088adfb1702529",
+        "dist/shell.cjs": "c1ce3d22f1087a379d33b7710568a7ee50d949649fdccbb6bc65fbdc7fb8f637",
+        "dist/shell.cjs.map": "1216a92884d98517f750631f6169746c3918373f5b02d7ce9a2a6e72f9bed086",
+        "dist/shell.d.cts": "4a935b76b5d7b2670698b515e5f5c1174b7681864ac1ba639f132fa6b972481b",
+        "dist/shell.d.ts": "3a6325b7e8bac1ba17f6c1d4d7bd6980ba358ad2efb352df4f78b5834302043f",
+        "dist/shell.js": "625026b3af40a052d1620cd6bc8fb40b2e8f536dd655d516173d2ccbece3dcee",
+        "dist/shell.js.map": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3",
+        "dist/styles.css": "a4fa43c66b143e736d973dd0336acab2eaac6fd97c4e9ba6528c73769e18a3b3",
+        "dist/theme.cjs": "d2962ee094e84b3f2b5d0b61b64d3474523793e2a5bbbcc83bb45d2e98340cb4",
+        "dist/theme.cjs.map": "3b6a8966c56be81b04d720284095d82aacbcde92e3e53aad37d8eb6c471291a0",
+        "dist/theme.d.cts": "37e92869678a50175a5ad9c07ae3bc259d0a80b93d7b00848765286b03bb065a",
+        "dist/theme.d.ts": "37e92869678a50175a5ad9c07ae3bc259d0a80b93d7b00848765286b03bb065a",
+        "dist/theme.js": "111049720c0822f107ce22f644d71d353730b276fcdab1dcbb1679568224f819",
+        "dist/theme.js.map": "055b40b5089ce35f736cb611882c437474c0b87b7f1d103402e5450b1d46802c"
+      }
     }
   }
 }
