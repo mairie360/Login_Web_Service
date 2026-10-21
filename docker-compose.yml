@@ -95,7 +95,7 @@ services:
 
   core:
     container_name: core-login-front-developpement
-    image: ghcr.io/mairie360/core-api:2.1.0
+    image: ghcr.io/mairie360/core-api:2.2.0
     ports:
       - "3000:3000"
     networks:
@@ -139,7 +139,7 @@ services:
   # de package.json (release X.Y.Z, ou dev-<sha7> pour un paquet 0.0.0-dev.<sha>).
   bff-user:
     container_name: bff-user-login-front
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:staging-b6b04cf}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
     ports:
       - "4000:4000"
     networks:
