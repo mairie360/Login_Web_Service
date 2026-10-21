@@ -1163,7 +1163,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-staging.b6b04cf7470d7fd32db46923707789cf008d0dc1"
+    "x-source-package": "@mairie360/bff-user-openapi@1.1.0"
   },
   "openapi": "3.1.0",
   "paths": {
