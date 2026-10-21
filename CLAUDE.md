@@ -20,9 +20,9 @@ npm run test:contracts                   # same tests, no coverage
 node --test --test-name-pattern="<name>" tests/proxy.test.cjs   # single test
 ```
 
-Tests are plain CommonJS `node:test` files. `tests/support/load-ts.cjs` (`requireTs`) transpiles `src/**/*.ts` on the fly with `typescript.transpileModule` through a temporary `require.extensions['.ts']` hook (the older suites inline the same hook). No Jest/Vitest, no DOM tests; new tests must match `tests/*.test.cjs`. The hook does not resolve the `@/*` tsconfig alias, so a module loaded by a test must use relative runtime imports (`import type … from '@/…'` is fine: `transpileModule` erases it). That is why `src/app/[...path]/route.ts` imports `../../lib/bff-proxy`.
+Tests under `tests/` are plain CommonJS `node:test` files; the co-located `src/**/*.test.jsx` run under Vitest + jsdom (`npm run test:components`). `tests/support/load-ts.cjs` (`requireTs`) transpiles `src/**/*.ts` on the fly with `typescript.transpileModule` through a temporary `require.extensions['.ts']` hook (the older suites inline the same hook). No Jest/Vitest, no DOM tests; new tests must match `tests/*.test.cjs`. The hook does not resolve the `@/*` tsconfig alias, so a module loaded by a test must use relative runtime imports (`import type … from '@/…'` is fine: `transpileModule` erases it). That is why `src/app/[...path]/route.ts` imports `../../lib/bff-proxy`.
 
-`npm test` fails below 60% lines/branches/functions, but Node only counts modules a test actually loads. A new server module under `src/` must be required by a test, or it is silently left out of coverage. `src/components/Login.tsx` is loaded and measured by `tests/login-page-html.test.cjs` only.
+`npm test` fails below 60% lines/branches/functions, but Node only counts modules a test actually loads. A new server module under `src/` must be required by a test, or it is silently left out of coverage. `src/components/Login/Login.tsx` is loaded and measured by `tests/login-page-html.test.cjs` only.
 
 Suites:
 - `bff-contract.test.cjs` is the main one. It loads the login and force-change route handlers, the alias and the catch-all route, and runs them with the **real** `fetch` against a fake BFF User. The fake BFF is `tests/support/contract-mock-server.cjs`, a real HTTP server on `127.0.0.1:0` driven by `contracts/openapi.json` through `tests/support/openapi-contract.cjs`. Both are CommonJS ports of `BFFs/BFF_user/tests/support/*.ts`, so keep the logic aligned. The mock records a violation for any request outside the contract (path, method, path/query parameter, JSON body) and for any mocked reply whose status is undeclared or whose body doesn't match its schema. `afterEach` fails the test on any violation, or when `fetch` reached an origin other than the mock. The package-derived contract only types `2XX` (plus `412` on login), so every error reply must say `outOfContract: true`. Use the `apiError()` helper, which still validates the body against the published `ErrorResponse` model (`{ error: { code, message, details } }`). The proxy block builds requests and replies with `contract.sample(schema)` for **every** contract operation, so a package bump with new routes is covered automatically.
@@ -66,6 +66,41 @@ npm run contracts:check     # fail if the version isn't an accepted exact versio
 
 These commands run offline. After a bump, also move the `bff-user` image tags in the `docker-compose*.yml` files to the image built from the same commit (`X.Y.Z` for a release, `dev-<sha7>` for a dev package, `staging-<sha7>` for a staging package; `package-contract.test.cjs` enforces it through `imageTagForContractVersion`), then adapt the route handlers. The stacks also pin dev images of Core API and the database; the dev Core API needs `JWT_ALLOW_WEAK_SECRET` for the shared test secret and `RATE_LIMIT_ENABLED=false`, BFF User needs `JWT_SECRET` and `AUTH_RATE_LIMIT_ENABLED=false` for ZAP, and `init-test.sql` must seed argon2id password hashes.
 
+## Figma mockup
+
+Figma is the source of truth: design and agree any UI change on **Mairie360 – Login_Web_Service** (https://www.figma.com/design/nBzRonQklXlr4qaakqP7mn) first, then code it. Shared components come from the lib mockup https://www.figma.com/design/T7vetUfuzPEXk5TxjHRiO2 and are instantiated, never redrawn. Login has no application shell (no sidebar / top bar), so MAIR-578 only adds this link here.
+
+## Component tree convention
+
+Every component under `src/components/` is a **folder named after it**, and the folder tree
+mirrors the composition tree:
+
+```
+Name/
+  index.ts          # exports the component (and the helpers it owns)
+  Name.tsx          # imports ONLY its direct sub-components, through their index.ts
+  Name.test.jsx     # its tests, co-located (vitest + jsdom; `.jsx` in this repo, `.tsx` in the TypeScript-tested fronts)
+  components/       # one such folder per direct sub-component, recursively
+```
+
+- A component needs nothing but the `index.ts` of its direct sub-components: `Name.tsx` imports
+  `./components/Sub`, never `./components/Sub/Sub` nor a sub-sub-component. Leaves are folders
+  too (without `components/`).
+- Helpers a component owns (models, hooks, `*.ts`) sit beside it and are exported by its
+  `index.ts`; a helper shared by two siblings sits in their closest common ancestor.
+- A big component is acceptable only for a technical reason stated in a comment; otherwise
+  split it so that each visible part is a component and what composes it a sub-component.
+- Page and journey tests stay in `tests/`; per-component tests are the co-located
+  `Name.test.jsx`. `tests/component-tree-convention.test.cjs` enforces the folder, the index,
+  the co-located test and the index-only imports.
+
+## Front tickets and the Figma mockup
+
+A front ticket (Jira + GitHub issue + PR) **must link the Figma frame that serves as the
+example** of what is being built or changed. Without that link the ticket cannot be worked
+on, unless the change does not affect the display (tooling, tests, proxy, contracts…). Update
+and agree the mockup first, then code it: the sync direction is Figma → code.
+
 ## Architecture
 
 - **Contract-gated catch-all proxy** — `src/app/[...path]/route.ts` exports `proxyBffRequest` (`src/lib/bff-proxy.ts`) for every method. It matches the path against `contracts/openapi.json` `paths` (brace segments are wildcards): unknown path → 404, method not declared → 405 with `Allow`, `.`/`..` segments → 400; `/openapi.json` and `/swagger.json` are always forwarded. **A BFF route is therefore reachable from the browser only once the synced contract declares it.**
@@ -73,7 +108,8 @@ These commands run offline. After a bump, also move the `bff-user` image tags in
 - **BFF URL** — BFF User is the only BFF. `src/lib/bff-user.ts` resolves `BFF_USER_API_URL` → `USER_BFF_URL` per request; an explicit HTTP(S) URL is required. Missing or invalid configuration returns an uncached 503 without an upstream call. The proxy uses `configuredBffUrl()`, and the route handlers call `fetch(bffUserUrl('/auth/…'))` after checking the configuration.
 - **Security headers** — `src/middleware.ts` (matcher excludes paths starting with `api`, `_next/static`, `_next/image` and paths with a dot, so proxied BFF paths do go through it) sets a per-request nonce `Content-Security-Policy` on every page (built in `src/lib/content-security-policy.ts`, forwarded to Next.js via request headers); there is no auth gate because the sign-in page is public. `src/app/layout.tsx` forces dynamic rendering for that reason: a prerendered page would carry no nonce and its scripts would be blocked. Any new external origin (images, fonts, browser-side API calls) must be added to that policy. `style-src-attr 'unsafe-inline'` exists only for the inline `style` attributes set by lib-components. The middleware injects `x-nonce` / `content-security-policy` request headers, which `forwardToBff` strips before calling the BFF.
 - **Client calls** — pages call same-origin paths (e.g. `/me`, `/session/me`).
-- `src/components/Login.tsx` (mounted by `src/app/page.tsx`, which passes a validated return URL or `DASHBOARD_FRONT_URL` as the post-login destination) posts to the dedicated route handlers, not to the generic proxy. The `<form>` keeps `method="post"` so that a native submission (no JavaScript, crawlers such as the ZAP spider) never puts the credentials in the URL.
+- **Component tree (MAIR-608)** — `src/components/` holds one folder per page component following the convention above: `Login/` (`Login.tsx`, its sign-in/resume/password-change flow in `use-login-form.ts`, and `components/{CredentialsFields, PasswordChangeFields, LoginField, LoginFeedback, LoginSubmit, SingleAccountLink}`), `Logout/`, `ForgotPassword/`, `ResetPassword/` and the `RecoveryLayout/` they share (with the `recovery*Class` helpers). `tests/login-component-tree.test.cjs` pins that composition, `tests/component-tree-convention.test.cjs` the convention; component tests are the co-located `Name.test.jsx`, journeys stay in `tests/component/`.
+- `src/components/Login/` (mounted by `src/app/page.tsx`, which passes a validated return URL or `DASHBOARD_FRONT_URL` as the post-login destination) posts to the dedicated route handlers, not to the generic proxy. The `<form>` keeps `method="post"` so that a native submission (no JavaScript, crawlers such as the ZAP spider) never puts the credentials in the URL.
 - `src/app/api/auth/login/route.ts`: validates the credentials before calling BFF User. `EMAIL_PATTERN` is the `z.email()` regex of BFF User's `LoginViewSchema`, a format the orval package no longer carries, and the password must be non-empty. It then sends `email`, `password` and the user-agent as `device_info` to BFF User `/auth/login`, falling back to `Navigateur inconnu` when the user-agent is empty, because `LoginView` requires `minLength 1`. The call has a 10 s timeout and distinguishes 502 from 504. Error responses carry front-owned French messages chosen by status. BFF User's `message` values (`Upstream service error`, raw Core API text) are technical English and are never shown. On success the tokens are read from the upstream `Set-Cookie` pair `accessToken`/`refreshToken` (`readBffCookieSession`, the only protocol of the current contract, whose body is `AuthSessionResponse { message }`); a reply without session cookies falls back to the `0.5.0` protocol (`Authorization: Bearer` header + `refresh_token` body). The access token is stored in the `accessToken` cookie: HttpOnly, SameSite strict, path `/`, 24 h, Secure in production, `COOKIE_DOMAIN` when set (must match the other fronts so they can read it).
 - A 412 with a body `token` means first login: the token goes into a `passwordChangeToken` cookie (HttpOnly, path `/api/auth`, 10 min) and the client gets `{ requiresPasswordChange: true }`. `api/auth/force-change-password/route.ts` maps `newPassword` → `new_password`, forwards that token and clears the cookie (also on upstream 401 — token refused by Core — and 403 — first-connection token unknown or expired in BFF User — which return `restartLogin: true`; other statuses are kept, with a French message). `api/auth/force_change_password/route.ts` is a re-export alias, but it is the URL `Login.tsx` actually calls, so don't remove it. After a successful change, the client immediately logs in again with the new password.
 - `tests/bff-contract.test.cjs` (and the older `tests/login.test.cjs`) pin this cookie and error-mapping behaviour; keep them green when touching the login routes.

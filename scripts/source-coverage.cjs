@@ -9,7 +9,7 @@ async function sourcesIn(directory) {
   for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
     const filename = path.join(directory, entry.name);
     if (entry.isDirectory()) files.push(...await sourcesIn(filename));
-    else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts')) files.push(filename);
+    else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts') && !/\.test\.(tsx?|jsx)$/.test(entry.name)) files.push(filename);
   }
   return files.sort();
 }

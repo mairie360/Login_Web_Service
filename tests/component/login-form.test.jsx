@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import Login from "@/components/Login";
+import Login from '@/components/Login';
 
 const requestedFront = "https://projects.example.invalid/expected";
 let fetchMock;
@@ -134,7 +134,7 @@ describe("Login form", () => {
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
     await screen.findByRole("alert");
 
-    await user.click(screen.getByRole("button", { name: "Fermer la notification" }));
+    await user.click(screen.getByRole("button", { name: "Fermer le message" }));
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByRole("textbox", { name: "Email professionnel" }).value).toBe("agent@example.invalid");
     expect(screen.getByLabelText("Mot de passe", { exact: true }).value).toBe("initial-test-password");

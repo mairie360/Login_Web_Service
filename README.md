@@ -1,5 +1,11 @@
 # Login_Web_Service
 
+## Figma mockup / Maquette Figma
+
+Source of truth for every screen of this front: **[Mairie360 – Login_Web_Service](https://www.figma.com/design/nBzRonQklXlr4qaakqP7mn)** (Mairie360 Figma team), built from the published **[Mairie360 – lib-components](https://www.figma.com/design/T7vetUfuzPEXk5TxjHRiO2)** library. A visual or behavioural change is designed and agreed in Figma first; the code then implements the mockup.
+
+Référence de chaque écran de ce front : **[Mairie360 – Login_Web_Service](https://www.figma.com/design/nBzRonQklXlr4qaakqP7mn)**, construit à partir de la bibliothèque **[Mairie360 – lib-components](https://www.figma.com/design/T7vetUfuzPEXk5TxjHRiO2)**. Tout changement visuel ou de comportement est d’abord conçu et validé dans Figma ; le code implémente ensuite la maquette.
+
 ## Current shared UI artifact — 10 October 2026
 
 This frontend consumes the published `@mairie360/lib-components@0.6.12` artifact from source commit `6c022cb53da535fd16d4fa80a5cdb943d3791f31`. The selected manifest version, root lock entry, installed package, registry integrity and recorded distribution hashes are checked together by the release tests. Application pins and published BFF contracts are unchanged by this documentation update. Historical 0.6.11 notes below describe the earlier delivery.

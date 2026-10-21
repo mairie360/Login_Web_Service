@@ -14,7 +14,7 @@ const contract = OpenApiContract.load(path.join(__dirname, 'fixtures/user-sessio
 const user = new ContractMockServer('PUBLISHED_USER_SESSION', contract);
 const front = new BrowserFront(user);
 const Home = requireTs('src/app/page.tsx').default;
-const Login = requireTs('src/components/Login.tsx').default;
+const Login = requireTs('src/components/Login/Login.tsx').default;
 const savedEnv = Object.fromEntries(['LOGIN_FRONT_URL', 'PROJECT_FRONT_URL', 'DASHBOARD_FRONT_URL', 'COOKIE_DOMAIN', 'NODE_ENV', 'BFF_USER_API_URL'].map(k => [k, process.env[k]]));
 const target = 'https://projects.mairie.test/?project=retained&task=42';
 let serial = 0;

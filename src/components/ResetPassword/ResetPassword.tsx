@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { RESET_TOKEN_PATTERN, RESET_EXPIRED_MESSAGE } from "../lib/password-recovery-validation";
-import RecoveryLayout, { recoveryInputClass, recoveryButtonClass, recoveryLinkClass } from "./RecoveryLayout";
+import { RESET_TOKEN_PATTERN, RESET_EXPIRED_MESSAGE } from '../../lib/password-recovery-validation';
+import RecoveryLayout, { recoveryInputClass, recoveryButtonClass, recoveryLinkClass } from '../RecoveryLayout';
 
 const navigateToFront = (url: string) => window.location.assign(url);
 type Props = { token?: string; redirectUrl?: string; navigate?: (url: string) => void };

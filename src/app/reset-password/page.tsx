@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ResetPassword from "../../components/ResetPassword";
+import ResetPassword from '../../components/ResetPassword';
 import { resolveLoginRedirect } from "../../lib/login-redirect";
 
 export const metadata: Metadata = { title: "Réinitialiser le mot de passe | Mairie360", robots: { index: false, follow: false }, referrer: "no-referrer" };

@@ -226,7 +226,7 @@ For a proxy error, compare the path and method with the inventory, then check th
 ## Repository reference
 
 - [src/app/page.tsx](../../src/app/page.tsx)
-- [src/components/Login.tsx](../../src/components/Login.tsx)
+- [src/components/Login/Login.tsx](../../src/components/Login/Login.tsx)
 - [src/app/api/auth/login/route.ts](../../src/app/api/auth/login/route.ts)
 - [src/app/api/auth/force-change-password/route.ts](../../src/app/api/auth/force-change-password/route.ts)
 - [src/lib/bff-proxy.ts](../../src/lib/bff-proxy.ts)
