@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 const { test } = require('node:test');
 const { requireTs } = require('./support/load-ts.cjs');
 
-for (const relative of ['src/components/Login.tsx', 'src/app/api/auth/reset-password/route.ts']) test(`the actual loader maps emitted code to unchanged ${relative}`, () => {
+for (const relative of ['src/components/Login/Login.tsx', 'src/app/api/auth/reset-password/route.ts']) test(`the actual loader maps emitted code to unchanged ${relative}`, () => {
   const filename = path.resolve(__dirname, '..', relative);
   const originalCompile = Module.prototype._compile;
   let compiled;

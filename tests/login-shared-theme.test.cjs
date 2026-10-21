@@ -11,7 +11,7 @@ const { installReactRuntime, mount, stubModule } = require('./support/server-vie
 installReactRuntime();
 const React = require('react');
 stubModule('next/image', { __esModule: true, default: ({ src, alt }) => React.createElement('img', { src, alt }) });
-const Login = requireTs('src/components/Login.tsx').default;
+const Login = requireTs('src/components/Login/Login.tsx').default;
 const root = resolve(__dirname, '..');
 
 // MAIR-608: colours come from the charte tokens; each pair must stay readable (WCAG AA, 4.5:1).

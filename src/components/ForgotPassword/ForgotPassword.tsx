@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { RECOVERY_EMAIL_PATTERN, RECOVERY_SENT_MESSAGE } from "../lib/password-recovery-validation";
-import RecoveryLayout, { recoveryInputClass, recoveryButtonClass, recoveryLinkClass } from "./RecoveryLayout";
+import { RECOVERY_EMAIL_PATTERN, RECOVERY_SENT_MESSAGE } from '../../lib/password-recovery-validation';
+import RecoveryLayout, { recoveryInputClass, recoveryButtonClass, recoveryLinkClass } from '../RecoveryLayout';
 
 export default function ForgotPassword({ redirectUrl }: { redirectUrl?: string }) {
   const [email, setEmail] = useState("");

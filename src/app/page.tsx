@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import Login from "../components/Login";
+import Login from '../components/Login';
 import { resolveLoginRedirect } from "../lib/login-redirect";
 import { parseFrontUrl } from "../lib/front-url";
 import { isKeycloakLoginError, KEYCLOAK_ERRORS, keycloakSettings } from "../lib/keycloak-login";

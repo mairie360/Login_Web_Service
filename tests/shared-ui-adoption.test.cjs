@@ -7,7 +7,7 @@ installReactRuntime();
 const React = require('react');
 // Next's image transform is build-owned; the actual sign-in form and feedback stay real.
 stubModule('next/image', { __esModule: true, default: ({ src, alt }) => React.createElement('img', { src, alt }) });
-const Login = requireTs('src/components/Login.tsx').default;
+const Login = requireTs('src/components/Login/Login.tsx').default;
 
 test('dismissing a credential validation receipt preserves the form draft and sends no request', async t => {
   const previousWindow = global.window;

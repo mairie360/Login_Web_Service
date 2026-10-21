@@ -4,7 +4,7 @@ const { after, afterEach, before, beforeEach, test } = require('node:test');
 const { requireTs } = require('./support/load-ts.cjs');
 const { installReactRuntime, mount, stubModule } = require('./support/server-view.cjs');
 
-// HTML of the sign-in page (src/app/page.tsx → src/components/Login.tsx) rendered with react-dom/server
+// HTML of the sign-in page (src/app/page.tsx → src/components/Login/Login.tsx) rendered with react-dom/server
 // against the mocked BFF User: the real component is rendered, the hook state is kept between render passes
 // (tests/support/server-view.cjs), the form submissions go through the real route handlers of src/app/api/auth
 // (tests/support/browser-front.cjs) and the markup reflects what BFF User answered.

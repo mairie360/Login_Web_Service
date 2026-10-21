@@ -10,7 +10,7 @@ async function captureSources(root) {
     for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
       const filename = path.join(directory, entry.name);
       if (entry.isDirectory()) await visit(filename);
-      else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
+      else if (/\.tsx?$/.test(entry.name) && !entry.name.endsWith('.d.ts') && !/\.test\.(tsx?|jsx)$/.test(entry.name)) {
         sources[path.relative(root, filename).split(path.sep).join('/')] = hash(await fs.readFile(filename));
       }
     }

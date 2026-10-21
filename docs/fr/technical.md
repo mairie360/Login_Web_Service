@@ -227,7 +227,7 @@ En cas d’erreur de proxy, comparer la route et la méthode à l’inventaire, 
 ## Repères dans le dépôt
 
 - [src/app/page.tsx](../../src/app/page.tsx)
-- [src/components/Login.tsx](../../src/components/Login.tsx)
+- [src/components/Login/Login.tsx](../../src/components/Login/Login.tsx)
 - [src/app/api/auth/login/route.ts](../../src/app/api/auth/login/route.ts)
 - [src/app/api/auth/force-change-password/route.ts](../../src/app/api/auth/force-change-password/route.ts)
 - [src/lib/bff-proxy.ts](../../src/lib/bff-proxy.ts)

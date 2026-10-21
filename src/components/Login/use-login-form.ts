@@ -1,11 +1,3 @@
-"use client";
-
-import Image from "next/image";
-import { CredentialsFields } from "./login/CredentialsFields";
-import { LoginFeedback } from "./login/LoginFeedback";
-import { LoginSubmit } from "./login/LoginSubmit";
-import { PasswordChangeFields } from "./login/PasswordChangeFields";
-import { SingleAccountLink } from "./login/SingleAccountLink";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type LoginResponse = {
@@ -15,19 +7,15 @@ type LoginResponse = {
   restartLogin?: boolean;
 };
 
-type LoginProps = {
+export type LoginFormOptions = {
   redirectUrl?: string;
-  navigate?: (url: string) => void;
-  resumeSession?: boolean;
-  /** Start of the Keycloak sign-in (MAIR-153), absent when the instance does not configure it. */
-  keycloakLoginUrl?: string;
-  /** Message of a Keycloak sign-in that came back without a session. */
-  initialError?: string;
+  navigate: (url: string) => void;
+  resumeSession: boolean;
+  initialError: string;
 };
 
-const navigateToFront = (url: string) => window.location.assign(url);
-
-export default function Login({ redirectUrl, navigate = navigateToFront, resumeSession = false, keycloakLoginUrl, initialError = "" }: LoginProps) {
+// Session resume, password sign-in and the first-login password change of the sign-in card.
+export function useLoginForm({ redirectUrl, navigate, resumeSession, initialError }: LoginFormOptions) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordChange, setIsPasswordChange] = useState(false);
@@ -200,44 +188,10 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
     }
   };
 
-  return (
-    <div className="flex w-full flex-col items-center justify-center px-6 py-8">
-      <Image
-        src="/logo.png"
-        alt="Logo Mairie360"
-        width={400}
-        height={104}
-        className="mb-4 max-w-full"
-        priority
-      />
-
-      <form
-        // method="post" : si le JavaScript n'est pas exécuté (robot, JS désactivé),
-        // une soumission native ne doit jamais placer les identifiants dans l'URL.
-        method="post"
-        aria-busy={isLoading}
-        onSubmit={isPasswordChange ? handlePasswordChange : handleLogin}
-        className="flex flex-col items-start gap-4 w-full max-w-md p-6 rounded-2xl border border-[var(--mairie-border)] bg-[var(--mairie-surface)] shadow-[0_20px_25px_-5px_rgba(0,0,0,0.10),0_8px_10px_-6px_rgba(0,0,0,0.10)] [&_input]:!my-0 [&_*]:!mb-0"
-      >
-        <h1 className="text-2xl font-bold text-[var(--mairie-text)] !mb-2">
-          {isPasswordChange ? "Nouveau mot de passe" : "Connexion"}
-        </h1>
-        {isPasswordChange ? (
-          <PasswordChangeFields
-            password={newPassword}
-            confirmation={newPasswordConfirmation}
-            disabled={isLoading}
-            onPasswordChange={setNewPassword}
-            onConfirmationChange={setNewPasswordConfirmation}
-          />
-        ) : (
-          <CredentialsFields email={email} password={password} disabled={isLoading} onEmailChange={setEmail} onPasswordChange={setPassword} />
-        )}
-        {!isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[var(--mairie-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
-        <LoginFeedback resuming={isResuming} error={errorMessage} success={successMessage} onDismissError={() => setErrorMessage("")} />
-        <LoginSubmit loading={isLoading} passwordChange={isPasswordChange} />
-        {keycloakLoginUrl && !isPasswordChange && <SingleAccountLink href={keycloakLoginUrl} disabled={isLoading} />}
-      </form>
-    </div>
-  );
+  return {
+    email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword, newPasswordConfirmation, setNewPasswordConfirmation,
+    isLoading, isResuming, errorMessage, successMessage,
+    dismissError: () => setErrorMessage(""),
+    onSubmit: isPasswordChange ? handlePasswordChange : handleLogin,
+  };
 }

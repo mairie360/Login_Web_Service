@@ -9,7 +9,7 @@ const { ContractMockServer } = require('./support/contract-mock-server.cjs');
 
 installReactRuntime();
 const React = require('react');
-const Logout = requireTs('src/components/Logout.tsx').default;
+const Logout = requireTs('src/components/Logout/index.ts').default;
 const owner = requireTs('src/app/api/auth/logout/route.ts');
 const contract = OpenApiContract.load(path.join(__dirname, 'fixtures/user-session-openapi.json'));
 const bff = new ContractMockServer('DISPOSABLE_LOGOUT_OWNER', contract);

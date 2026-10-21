@@ -1,4 +1,4 @@
-import { LoginField } from "./LoginField";
+import { LoginField } from '../LoginField';
 
 export interface PasswordChangeFieldsProps {
   password: string;
