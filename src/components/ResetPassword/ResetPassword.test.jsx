@@ -13,7 +13,7 @@ describe('ResetPassword', () => {
   });
   it('checks the passwords before any request', () => {
     const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
-    render(<ResetPassword token="94a0c99b-e39c-4a8e-96e8-1c8caad20cab" />);
+    render(<ResetPassword token={crypto.randomUUID()} />);
     fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'motdepasse1' } });
     fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'motdepasse2' } });
     fireEvent.submit(document.querySelector('form'));
