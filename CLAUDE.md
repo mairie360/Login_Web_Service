@@ -20,9 +20,9 @@ npm run test:contracts                   # same tests, no coverage
 node --test --test-name-pattern="<name>" tests/proxy.test.cjs   # single test
 ```
 
-Tests are plain CommonJS `node:test` files. `tests/support/load-ts.cjs` (`requireTs`) transpiles `src/**/*.ts` on the fly with `typescript.transpileModule` through a temporary `require.extensions['.ts']` hook (the older suites inline the same hook). No Jest/Vitest, no DOM tests; new tests must match `tests/*.test.cjs`. The hook does not resolve the `@/*` tsconfig alias, so a module loaded by a test must use relative runtime imports (`import type … from '@/…'` is fine: `transpileModule` erases it). That is why `src/app/[...path]/route.ts` imports `../../lib/bff-proxy`.
+Tests under `tests/` are plain CommonJS `node:test` files; the co-located `src/**/*.test.jsx` run under Vitest + jsdom (`npm run test:components`). `tests/support/load-ts.cjs` (`requireTs`) transpiles `src/**/*.ts` on the fly with `typescript.transpileModule` through a temporary `require.extensions['.ts']` hook (the older suites inline the same hook). No Jest/Vitest, no DOM tests; new tests must match `tests/*.test.cjs`. The hook does not resolve the `@/*` tsconfig alias, so a module loaded by a test must use relative runtime imports (`import type … from '@/…'` is fine: `transpileModule` erases it). That is why `src/app/[...path]/route.ts` imports `../../lib/bff-proxy`.
 
-`npm test` fails below 60% lines/branches/functions, but Node only counts modules a test actually loads. A new server module under `src/` must be required by a test, or it is silently left out of coverage. `src/components/Login.tsx` is loaded and measured by `tests/login-page-html.test.cjs` only.
+`npm test` fails below 60% lines/branches/functions, but Node only counts modules a test actually loads. A new server module under `src/` must be required by a test, or it is silently left out of coverage. `src/components/Login/Login.tsx` is loaded and measured by `tests/login-page-html.test.cjs` only.
 
 Suites:
 - `bff-contract.test.cjs` is the main one. It loads the login and force-change route handlers, the alias and the catch-all route, and runs them with the **real** `fetch` against a fake BFF User. The fake BFF is `tests/support/contract-mock-server.cjs`, a real HTTP server on `127.0.0.1:0` driven by `contracts/openapi.json` through `tests/support/openapi-contract.cjs`. Both are CommonJS ports of `BFFs/BFF_user/tests/support/*.ts`, so keep the logic aligned. The mock records a violation for any request outside the contract (path, method, path/query parameter, JSON body) and for any mocked reply whose status is undeclared or whose body doesn't match its schema. `afterEach` fails the test on any violation, or when `fetch` reached an origin other than the mock. The package-derived contract only types `2XX` (plus `412` on login), so every error reply must say `outOfContract: true`. Use the `apiError()` helper, which still validates the body against the published `ErrorResponse` model (`{ error: { code, message, details } }`). The proxy block builds requests and replies with `contract.sample(schema)` for **every** contract operation, so a package bump with new routes is covered automatically.
@@ -79,7 +79,7 @@ mirrors the composition tree:
 Name/
   index.ts          # exports the component (and the helpers it owns)
   Name.tsx          # imports ONLY its direct sub-components, through their index.ts
-  Name.test.tsx     # its tests, co-located (vitest + jsdom)
+  Name.test.jsx     # its tests, co-located (vitest + jsdom; `.jsx` in this repo, `.tsx` in the TypeScript-tested fronts)
   components/       # one such folder per direct sub-component, recursively
 ```
 
@@ -91,7 +91,7 @@ Name/
 - A big component is acceptable only for a technical reason stated in a comment; otherwise
   split it so that each visible part is a component and what composes it a sub-component.
 - Page and journey tests stay in `tests/`; per-component tests are the co-located
-  `Name.test.tsx`. `tests/component-tree-convention.test.cjs` enforces the folder, the index,
+  `Name.test.jsx`. `tests/component-tree-convention.test.cjs` enforces the folder, the index,
   the co-located test and the index-only imports.
 
 ## Front tickets and the Figma mockup
