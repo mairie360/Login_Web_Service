@@ -1,7 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Button, ErrorAlert } from "@mairie360/lib-components/primitives";
+import { CredentialsFields } from "./login/CredentialsFields";
+import { LoginFeedback } from "./login/LoginFeedback";
+import { LoginSubmit } from "./login/LoginSubmit";
+import { PasswordChangeFields } from "./login/PasswordChangeFields";
+import { SingleAccountLink } from "./login/SingleAccountLink";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type LoginResponse = {
@@ -10,9 +14,6 @@ type LoginResponse = {
   requiresPasswordChange?: boolean;
   restartLogin?: boolean;
 };
-
-const inputClassName =
-  "block w-full rounded-md border border-[var(--mairie-control-border)] bg-[var(--mairie-surface)] p-2 text-sm text-[var(--mairie-text)] placeholder:text-gray-400 shadow-sm outline-none transition focus:border-[var(--mairie-accent)] focus:ring-2 focus:ring-[var(--mairie-accent)]/20";
 
 type LoginProps = {
   redirectUrl?: string;
@@ -222,133 +223,20 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
           {isPasswordChange ? "Nouveau mot de passe" : "Connexion"}
         </h1>
         {isPasswordChange ? (
-          <>
-            <p className="text-sm leading-5 text-[var(--mairie-muted)]">
-              Pour finaliser votre première connexion, choisissez un nouveau
-              mot de passe.
-            </p>
-            <div className="w-full flex flex-col gap-1">
-              <label
-                htmlFor="new-password"
-                className="text-sm text-[var(--mairie-muted)]"
-              >
-                Nouveau mot de passe
-              </label>
-              <input
-                id="new-password"
-                name="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                autoComplete="new-password"
-                disabled={isLoading}
-                required
-                className={inputClassName}
-              />
-            </div>
-            <div className="w-full flex flex-col gap-1">
-              <label
-                htmlFor="new-password-confirmation"
-                className="text-sm text-[var(--mairie-muted)]"
-              >
-                Confirmer le mot de passe
-              </label>
-              <input
-                id="new-password-confirmation"
-                name="new-password-confirmation"
-                type="password"
-                value={newPasswordConfirmation}
-                onChange={(event) =>
-                  setNewPasswordConfirmation(event.target.value)
-                }
-                autoComplete="new-password"
-                disabled={isLoading}
-                required
-                className={inputClassName}
-              />
-            </div>
-          </>
+          <PasswordChangeFields
+            password={newPassword}
+            confirmation={newPasswordConfirmation}
+            disabled={isLoading}
+            onPasswordChange={setNewPassword}
+            onConfirmationChange={setNewPasswordConfirmation}
+          />
         ) : (
-          <>
-            <div className="w-full flex flex-col gap-1 text-[var(--mairie-text)]">
-              <label htmlFor="email" className="text-sm text-[var(--mairie-muted)]">
-                Email professionnel
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                disabled={isLoading}
-                placeholder="exemple@domaine.com"
-                required
-                className={inputClassName}
-              />
-            </div>
-            <div className="w-full flex flex-col gap-1">
-              <div className="flex justify-between items-center">
-                <label htmlFor="password" className="text-sm text-[var(--mairie-muted)]">
-                  Mot de passe
-                </label>
-              </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                disabled={isLoading}
-                required
-                className={inputClassName}
-              />
-            </div>
-          </>
+          <CredentialsFields email={email} password={password} disabled={isLoading} onEmailChange={setEmail} onPasswordChange={setPassword} />
         )}
         {!isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[var(--mairie-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
-        {isResuming && <p role="status" className="text-sm leading-5 text-[var(--mairie-muted)]">Reprise de votre session…</p>}
-        {errorMessage && (
-          <ErrorAlert title={errorMessage} onDismiss={() => setErrorMessage("")} className="w-full" />
-        )}
-        {successMessage && (
-          <p
-            role="status"
-            className="w-full rounded-md bg-[var(--mairie-success-surface)] px-3 py-2 text-sm text-[var(--mairie-success-text)]"
-          >
-            {successMessage}
-          </p>
-        )}
-        <div className="w-full">
-          <Button
-            fullWidth
-            loading={isLoading}
-            label={
-              isLoading
-                ? isPasswordChange
-                  ? "Modification…"
-                  : "Connexion…"
-                : isPasswordChange
-                  ? "Modifier le mot de passe"
-                  : "Se connecter"
-            }
-            type="submit"
-          />
-        </div>
-        {keycloakLoginUrl && !isPasswordChange && (
-          <>
-            <p aria-hidden="true" className="flex w-full items-center gap-3 text-sm text-[var(--mairie-muted)] before:h-px before:flex-1 before:bg-[var(--mairie-border)] after:h-px after:flex-1 after:bg-[var(--mairie-border)]">ou</p>
-            <a
-              href={keycloakLoginUrl}
-              aria-disabled={isLoading || undefined}
-              onClick={(event) => { if (isLoading) event.preventDefault(); }}
-              className="flex w-full justify-center rounded-md border border-[var(--mairie-control-border)] bg-[var(--mairie-surface)] px-3 py-2 text-sm font-semibold text-[var(--mairie-accent)] shadow-sm transition hover:bg-[var(--mairie-background)] focus-visible:outline-2 focus-visible:outline-offset-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
-            >
-              Se connecter avec le compte unique
-            </a>
-          </>
-        )}
+        <LoginFeedback resuming={isResuming} error={errorMessage} success={successMessage} onDismissError={() => setErrorMessage("")} />
+        <LoginSubmit loading={isLoading} passwordChange={isPasswordChange} />
+        {keycloakLoginUrl && !isPasswordChange && <SingleAccountLink href={keycloakLoginUrl} disabled={isLoading} />}
       </form>
     </div>
   );
