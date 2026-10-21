@@ -7,7 +7,7 @@
       "customType": "regex",
       "description": "Keep the cicd_version and cicd_ref inputs on the same mairie360/CICD commit and tag as the reusable workflow refs (bumped by the github-actions manager)",
       "managerFilePatterns": [
-        "/^\\.github/workflows/(cicd|dev-dependency-exception)\\.yml$/"
+        "/^\\.github/workflows/(cicd|dev-dependency-exception|promote-staging|promote-prod)\\.yml$/"
       ],
       "matchStrings": [
         "cicd_version:\\s*\"(?<currentDigest>[a-f0-9]{40})\"\\s*#\\s*(?<currentValue>v\\d+\\.\\d+\\.\\d+)",
