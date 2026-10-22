@@ -16,7 +16,9 @@
     "test": "npm run test:node && node scripts/test-components-coverage.cjs",
     "performance:report": "node scripts/frontend-performance.mjs",
     "test:node:native": "mkdir -p coverage && node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
-    "test:bundle": "node --test tests/bundle/*.test.cjs"
+    "test:bundle": "node --test tests/bundle/*.test.cjs",
+    "e2e:install": "npm --prefix e2e ci && npx --prefix e2e playwright install --with-deps chromium",
+    "e2e": "npm --prefix e2e test"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "1.1.0",
