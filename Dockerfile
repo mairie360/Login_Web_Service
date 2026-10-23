@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # MAIR-436: keep the exact Node release aligned with all frontend CI workflows.
-ARG NODE_VERSION=24.21.0
-FROM node:${NODE_VERSION}-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 AS dependencies
+ARG NODE_VERSION=24.22.1
+FROM node:${NODE_VERSION}-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS dependencies
 WORKDIR /app
 
 # Keep the tracked npm policy read-only and the existing CI credential ephemeral.
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # --- Runtime base: only Node and the existing healthcheck are needed. ---
-FROM node:${NODE_VERSION}-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6 AS runtime-base
+FROM node:${NODE_VERSION}-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS runtime-base
 WORKDIR /app
 
 # Sécurité & Healthcheck

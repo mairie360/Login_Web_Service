@@ -55,7 +55,7 @@ jobs:
     uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@6d1599e9a521bc9d91d63e3e9df46e911feea26c # v4.4.3
     with:
       package_name: "login-front"
-      node_version: "24.21.0"
+      node_version: "24.22.1"
       cicd_version: "6d1599e9a521bc9d91d63e3e9df46e911feea26c" # v4.4.3
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
