@@ -1,0 +1,254 @@
+# Isolated end-to-end stack of the Login front (Login_Web_Service), MAIR-603.
+#
+#   ./e2e_test.sh                       (local or CI: stack + Playwright journeys of e2e/, then teardown)
+#   docker compose -f docker-compose-e2e.yml up -d login-front
+#       then E2E_BASE_URL=http://localhost:5000 npm run e2e      (iterate on the specs against the stack)
+#
+# Same services as docker-compose-performance.yml (published images of the database, the APIs and
+# the BFFs, the front built here or TARGET_IMAGE), with Playwright in place of k6. The prod
+# promotion (MAIR-602) runs it on the verified `staging-<sha>` front image with the other images
+# at the tags of the target environment (the *_IMAGE variables).
+#
+# The browser always reaches the front as http://localhost:5000: the `playwright` service shares
+# the front container's network, and local runs use the published port. Chromium treats localhost
+# as a secure context, so it keeps the `Secure` session cookies and sends the `Sec-Fetch-Site`
+# header the fronts' same-origin guards require, which a compose host name over HTTP would not.
+
+secrets:
+  node_auth_token:
+    environment: NODE_AUTH_TOKEN
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  backend:
+
+x-db-env: &db-env
+  DB_TYPE: postgres
+  DB_NAME: mairie_360_database
+  DB_USER: postgres
+  DB_PASSWORD: password
+  DB_HOST: postgres
+  DB_PORT: 5432
+
+# JWT_SECRET identique sur toute la chaîne : le cookie accessToken du front est
+# relayé tel quel (Bearer) à BFF User, seul BFF de ce front, puis à Core API.
+x-api-env: &api-env
+  <<: *db-env
+  HOST: "0.0.0.0"
+  REDIS_URL: redis://redis:6379
+  JWT_SECRET: b"secret"
+  JWT_TIMEOUT: 3600
+
+services:
+  postgres:
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.3.0}
+    container_name: login-front-e2e-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mairie_360_database
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  liquibase:
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:3.3.0}
+    container_name: login-front-e2e-liquibase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/mairie_360_database
+      LIQUIBASE_COMMAND_USERNAME: postgres
+      LIQUIBASE_COMMAND_PASSWORD: password
+      LIQUIBASE_SEARCH_PATH: /migrations
+    # Database >= MAIR-413 only seeds the template admin (users.id = 1) with -Dallow_template_admin=true;
+    # without it the migration fails on a fresh database. Test / dev stacks only.
+    command: >
+      --changelog-file=changelog.xml
+      update
+      -Dallow_template_admin=true
+    networks:
+      - backend
+
+  seeder:
+    image: postgres:18-alpine
+    container_name: login-front-e2e-seeder
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+    volumes:
+      - ./init-test.sql:/init-test.sql:ro
+    environment:
+      PGPASSWORD: password
+    command: >
+      sh -c "psql -h postgres -U postgres -d mairie_360_database -f /init-test.sql"
+    networks:
+      - backend
+
+  redis:
+    image: redis:8.4.0-bookworm
+    container_name: login-front-e2e-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  core-api:
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:2.2.0}
+    container_name: login-front-e2e-core-api
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *api-env
+      PORT: 3000
+      PUBLIC_URL: http://core-api:3000
+      # Core refuses to start without its Resend configuration (MAIR-522). No page of this front sends an
+      # e-mail through these stacks, so the key is fake and the URL never called.
+      RESEND_API_KEY: "re_fake_local"
+      RESEND_BASE_URL: "http://fake-resend.invalid"
+      EMAIL_DOMAIN: "mairie360.local"
+      # Core API >= 2.0 refuses the weak shared test secret unless this flag is set (MAIR-428),
+      # and rate-limits each account (MAIR-425): the scan / load test hammer it as one user.
+      JWT_ALLOW_WEAK_SECRET: "true"
+      RATE_LIMIT_ENABLED: "false"
+    expose:
+      - "3000"
+    networks:
+      - backend
+    # L'image publiée est "distroless" (ni shell ni curl) : la disponibilité est
+    # sondée depuis le conteneur core-api-ready ci-dessous.
+
+  core-api-ready:
+    image: curlimages/curl:latest
+    container_name: login-front-e2e-core-api-ready
+    depends_on:
+      core-api:
+        condition: service_started
+    command: >
+      sh -c 'until curl -fsS http://core-api:3000/health >/dev/null; do
+      echo "waiting for core-api..."; sleep 2; done; echo "core-api ready"'
+    networks:
+      - backend
+
+  bff-user:
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
+    container_name: login-front-e2e-bff-user
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+      core-api-ready:
+        condition: service_completed_successfully
+    environment:
+      <<: *db-env
+      HOST: "0.0.0.0"
+      PORT: 4000
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: 'b"secret"'
+      CORE_API_URL: http://core-api:3000
+      # The scanners replay the auth routes from one IP with invalid credentials on purpose: the
+      # auth rate limits of BFF User (MAIR-226) would answer 429 and hide the real responses.
+      AUTH_RATE_LIMIT_ENABLED: "false"
+    expose:
+      - "4000"
+    networks:
+      - backend
+
+  bff-user-ready:
+    image: curlimages/curl:latest
+    container_name: login-front-e2e-bff-user-ready
+    depends_on:
+      bff-user:
+        condition: service_started
+    command: >
+      sh -c 'until curl -fsS http://bff-user:4000/health >/dev/null; do
+      echo "waiting for bff-user..."; sleep 2; done; echo "bff-user ready"'
+    networks:
+      - backend
+
+  login-front:
+    image: ${TARGET_IMAGE:-login-front:e2e}
+    container_name: login-front-e2e-front
+    # Image de production (Next.js standalone), identique à celle publiée par la CI.
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - node_auth_token
+    depends_on:
+      bff-user-ready:
+        condition: service_completed_successfully
+    environment:
+      HOSTNAME: "0.0.0.0"
+      PORT: 5000
+      BFF_USER_API_URL: http://bff-user:4000
+      # The production image refuses to issue the session cookie without a domain (503), and the
+      # authentication routes only accept requests whose Origin is this front (403 otherwise).
+      COOKIE_DOMAIN: login-front
+      # Default destination after sign-in (MAIR-603): no Dashboard runs in this stack, the journeys
+      # intercept this origin in the browser and only check that the sign-in navigates to it.
+      DASHBOARD_FRONT_URL: http://dashboard.e2e.invalid/
+      # Public origin of the front, the one its same-origin guards accept on writes: the browser of
+      # the journeys reaches it as localhost (see the header), in the stack as on the host.
+      LOGIN_FRONT_URL: http://localhost:5000
+    expose:
+      - "5000"
+    ports:
+      - "${E2E_FRONT_PORT:-5000}:5000"
+    networks:
+      - backend
+    # curl est installé dans l'image runner (seul un statut >= 400 fait échouer curl -f).
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  playwright:
+    # Browsers and system dependencies of the pinned @playwright/test (e2e/package.json): keep the
+    # two versions identical (the test runner refuses a browser build of another version).
+    image: mcr.microsoft.com/playwright:v1.64.1-noble
+    container_name: login-front-e2e-playwright
+    # The host user (exported by e2e_test.sh): the report written in ./e2e-report stays theirs.
+    user: "${E2E_UID:-1000}:${E2E_GID:-1000}"
+    depends_on:
+      login-front:
+        condition: service_healthy
+    volumes:
+      - ./e2e:/src/e2e:ro
+      - ./e2e-report:/report
+    environment:
+      CI: "true"
+      E2E_BASE_URL: http://localhost:5000
+      E2E_JWT_SECRET: 'b"secret"'
+      E2E_REPORT_DIR: /report
+      HOME: /tmp
+      E2E_DASHBOARD_URL: http://dashboard.e2e.invalid/
+    # The specs are copied: /src/e2e is read-only and the host must not receive the runner's node_modules.
+    command: >
+      sh -c 'cp -r /src/e2e /tmp/work && cd /tmp/work && npm ci --no-audit --no-fund
+      && npx playwright test'
+    # Same network namespace as the front: the browser opens http://localhost:5000 (see the header).
+    network_mode: service:login-front

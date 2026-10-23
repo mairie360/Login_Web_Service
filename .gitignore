@@ -11,3 +11,7 @@ dist
 /performance/
 /.performance-base/
 /performance-server.log
+
+# end-to-end journeys (MAIR-603)
+/e2e/node_modules
+/e2e-report

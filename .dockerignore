@@ -18,3 +18,9 @@ load-test.js
 init-test.sql
 security_test.sh
 performance_test.sh
+
+# end-to-end journeys (MAIR-603): run from the docker-compose-e2e.yml stack, not in the image
+e2e
+e2e-report
+docker-compose-e2e.yml
+e2e_test.sh
