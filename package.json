@@ -21,7 +21,7 @@
   "dependencies": {
     "@mairie360/bff-user-openapi": "1.1.0",
     "@mairie360/lib-components": "1.0.3",
-    "next": "16.3.8",
+    "next": "16.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -44,7 +44,7 @@
     "braces": "file:./vendor/braces",
     "c8": "12.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.2",
     "jest-axe": "11.0.0",
     "jsdom": "30.1.1",
     "playwright-core": "1.64.0",
