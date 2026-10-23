@@ -1,0 +1,207 @@
+--- a/src/v3/types.ts
++++ b/src/v3/types.ts
+@@ -2263,6 +2263,7 @@
+           exact: true,
+           message: def.exactLength.message,
+         });
++        if (tooBig) return INVALID;
+         status.dirty();
+       }
+     }
+@@ -2291,7 +2292,7 @@
+           exact: false,
+           message: def.maxLength.message,
+         });
+-        status.dirty();
++        return INVALID;
+       }
+     }
+ 
+@@ -3723,7 +3724,7 @@
+           exact: false,
+           message: def.maxSize.message,
+         });
+-        status.dirty();
++        return INVALID;
+       }
+     }
+ 
+--- a/v3/types.js
++++ b/v3/types.js
+@@ -1769,6 +1769,7 @@
+                     exact: true,
+                     message: def.exactLength.message,
+                 });
++                if (tooBig) return INVALID;
+                 status.dirty();
+             }
+         }
+@@ -1795,7 +1796,7 @@
+                     exact: false,
+                     message: def.maxLength.message,
+                 });
+-                status.dirty();
++                return INVALID;
+             }
+         }
+         if (ctx.common.async) {
+@@ -2814,7 +2815,7 @@
+                     exact: false,
+                     message: def.maxSize.message,
+                 });
+-                status.dirty();
++                return INVALID;
+             }
+         }
+         const valueType = this._def.valueType;
+--- a/v3/types.cjs
++++ b/v3/types.cjs
+@@ -1790,6 +1790,7 @@
+                     exact: true,
+                     message: def.exactLength.message,
+                 });
++                if (tooBig) return parseUtil_js_1.INVALID;
+                 status.dirty();
+             }
+         }
+@@ -1816,7 +1817,7 @@
+                     exact: false,
+                     message: def.maxLength.message,
+                 });
+-                status.dirty();
++                return parseUtil_js_1.INVALID;
+             }
+         }
+         if (ctx.common.async) {
+@@ -2843,7 +2844,7 @@
+                     exact: false,
+                     message: def.maxSize.message,
+                 });
+-                status.dirty();
++                return parseUtil_js_1.INVALID;
+             }
+         }
+         const valueType = this._def.valueType;
+--- a/src/v4/core/schemas.ts
++++ b/src/v4/core/schemas.ts
+@@ -169,6 +169,30 @@
+   // _zod: T;
+ }
+ 
++// Reject oversized containers before walking elements, using only leading size checks.
++function rejectOversizedContainer(inst: $ZodType, payload: ParsePayload, bounds: checks.$ZodCheck<never>[]) {
++    const input = payload.value;
++    const type = inst._zod.def.type;
++    const size = type === "array" && Array.isArray(input) ? input.length
++        : type === "set" && input instanceof Set || type === "map" && input instanceof Map ? input.size : -1;
++    if (size < 0) return false;
++    for (const bound of bounds) {
++        const def = bound._zod.def as checks.$ZodCheckDef & { maximum?: number; length?: number; size?: number };
++        // Earlier checks can rewrite the collection; preserve their original order.
++        if (!/_(length|size)$|_equals$/.test(def.check)) break;
++        const maximum = def.maximum ?? def.length ?? def.size;
++        if (maximum !== undefined && maximum >= 0 && size > maximum && (!def.when || def.when(payload))) {
++            const start = payload.issues.length;
++            bound._zod.check(payload as any);
++            if (payload.issues.length > start) {
++                payload.issues[start].continue = false;
++                return true;
++            }
++        }
++    }
++    return false;
++}
++
+ export const $ZodType: core.$constructor<$ZodType> = /*@__PURE__*/ core.$constructor("$ZodType", (inst, def) => {
+   inst ??= {} as any;
+ 
+@@ -242,6 +266,7 @@
+     };
+ 
+     inst._zod.run = (payload, ctx) => {
++      if (rejectOversizedContainer(inst, payload, checks)) return payload;
+       const result = inst._zod.parse(payload, ctx);
+ 
+       if (result instanceof Promise) {
+--- a/v4/core/schemas.js
++++ b/v4/core/schemas.js
+@@ -5,6 +5,30 @@
+ import * as regexes from "./regexes.js";
+ import * as util from "./util.js";
+ import { version } from "./versions.js";
++// Reject oversized containers before walking elements, using only leading size checks.
++function rejectOversizedContainer(inst, payload, bounds) {
++    const input = payload.value;
++    const type = inst._zod.def.type;
++    const size = type === "array" && Array.isArray(input) ? input.length
++        : type === "set" && input instanceof Set || type === "map" && input instanceof Map ? input.size : -1;
++    if (size < 0) return false;
++    for (const bound of bounds) {
++        const def = bound._zod.def;
++        // Earlier checks can rewrite the collection; preserve their original order.
++        if (!/_(length|size)$|_equals$/.test(def.check)) break;
++        const maximum = def.maximum ?? def.length ?? def.size;
++        if (maximum >= 0 && size > maximum && (!def.when || def.when(payload))) {
++            const start = payload.issues.length;
++            bound._zod.check(payload);
++            if (payload.issues.length > start) {
++                payload.issues[start].continue = false;
++                return true;
++            }
++        }
++    }
++    return false;
++}
++
+ export const $ZodType = /*@__PURE__*/ core.$constructor("$ZodType", (inst, def) => {
+     var _a;
+     inst ?? (inst = {});
+@@ -74,6 +98,7 @@
+             return payload;
+         };
+         inst._zod.run = (payload, ctx) => {
++            if (rejectOversizedContainer(inst, payload, checks)) return payload;
+             const result = inst._zod.parse(payload, ctx);
+             if (result instanceof Promise) {
+                 if (ctx.async === false)
+--- a/v4/core/schemas.cjs
++++ b/v4/core/schemas.cjs
+@@ -35,6 +35,30 @@
+ const regexes = __importStar(require("./regexes.cjs"));
+ const util = __importStar(require("./util.cjs"));
+ const versions_js_1 = require("./versions.cjs");
++// Reject oversized containers before walking elements, using only leading size checks.
++function rejectOversizedContainer(inst, payload, bounds) {
++    const input = payload.value;
++    const type = inst._zod.def.type;
++    const size = type === "array" && Array.isArray(input) ? input.length
++        : type === "set" && input instanceof Set || type === "map" && input instanceof Map ? input.size : -1;
++    if (size < 0) return false;
++    for (const bound of bounds) {
++        const def = bound._zod.def;
++        // Earlier checks can rewrite the collection; preserve their original order.
++        if (!/_(length|size)$|_equals$/.test(def.check)) break;
++        const maximum = def.maximum ?? def.length ?? def.size;
++        if (maximum >= 0 && size > maximum && (!def.when || def.when(payload))) {
++            const start = payload.issues.length;
++            bound._zod.check(payload);
++            if (payload.issues.length > start) {
++                payload.issues[start].continue = false;
++                return true;
++            }
++        }
++    }
++    return false;
++}
++
+ exports.$ZodType = core.$constructor("$ZodType", (inst, def) => {
+     var _a;
+     inst ?? (inst = {});
+@@ -104,6 +128,7 @@
+             return payload;
+         };
+         inst._zod.run = (payload, ctx) => {
++            if (rejectOversizedContainer(inst, payload, checks)) return payload;
+             const result = inst._zod.parse(payload, ctx);
+             if (result instanceof Promise) {
+                 if (ctx.async === false)
