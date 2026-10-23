@@ -23,5 +23,5 @@ jobs:
     with:
       package_name: login-front
       cicd_ref: 6d1599e9a521bc9d91d63e3e9df46e911feea26c # v4.4.3
-      node_version: "24.21.0"
+      node_version: "24.22.1"
       reason: ${{ inputs.reason }}

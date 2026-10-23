@@ -71,8 +71,8 @@ test('npm resolution keeps the seven-day window except for the internal UI packa
 });
 
 test('CI uses Node 24 and the toolchain supports npm release-age policy', () => {
-  assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.21\.0"/);
-  assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.21\.0'/);
+  assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.22\.1"/);
+  assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.22\.1'/);
   const version = execFileSync('npm', ['--version'], { cwd: root, encoding: 'utf8' }).trim();
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
   assert.ok(match, 'npm must report a stable version');
@@ -99,11 +99,11 @@ test('Docker dependency installation requires ephemeral secret and policy mounts
 test('Docker and all frontend workflows use the same exact pinned Node LTS release', () => {
   const dockerfile = read('Dockerfile');
   const nodeVersion = dockerfile.match(/^ARG NODE_VERSION=(\d+\.\d+\.\d+)$/m)?.[1];
-  assert.equal(nodeVersion, '24.21.0');
+  assert.equal(nodeVersion, '24.22.1');
   const bases = [...dockerfile.matchAll(/^FROM node:\$\{NODE_VERSION\}-bookworm-slim@sha256:([a-f0-9]{64}) AS ([\w-]+)$/gm)];
   assert.deepEqual(bases.map(([, digest, stage]) => [digest, stage]), [
-    ['0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6', 'dependencies'],
-    ['0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6', 'runtime-base'],
+    ['55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205', 'dependencies'],
+    ['55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205', 'runtime-base'],
   ]);
   assert.match(dockerfile, /^FROM dependencies AS builder$/m);
   assert.match(dockerfile, /^FROM runtime-base AS runner$/m);
