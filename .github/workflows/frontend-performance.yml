@@ -44,6 +44,15 @@ jobs:
           (cd .performance-base && npm ci && npm run build -- --webpack)
           node scripts/frontend-performance.mjs --source .performance-base --output performance/baseline/report.json --commit "$baseline_ref"
           node scripts/compare-performance.mjs performance/baseline/report.json performance/candidate/report.json performance/comparison.json
+      - name: Archive client provenance diagnostics after a failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-bundle-diagnostics
+          path: .next/static/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Archive measurements and screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

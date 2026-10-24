@@ -201,6 +201,70 @@ test('generated manifests may only contain their expected data and completion ca
   assert.throws(() => verifyClientSourceMaps(options), /source map/i);
 }));
 
+const nextFixtures = path.join(__dirname, 'fixtures/client-bundle-next');
+
+test('actual Next 16.4.2 data manifests accept the generated comma sequence and reject executable additions', () => fixture(({ root, write, options }) => {
+  for (const name of ['_buildManifest.js', '_ssgManifest.js']) {
+    const file = path.join(root, '.next/static/build-id', name);
+    const source = fs.readFileSync(path.join(nextFixtures, name), 'utf8');
+    write(file, source); options.clientFiles.push(file);
+    assert.equal(verifyClientSourceMaps(options).size, 2);
+    for (const injected of [source + ';globalThis.Form = () => 2;', source.replace(/self\.__[A-Z_]+_CB\(\)/, 'globalThis.Form()')]) {
+      write(file, injected); assert.throws(() => verifyClientSourceMaps(options), /source map/i);
+    }
+    write(file, source);
+  }
+}));
+
+test('actual empty Webpack entries require empty factories and the exact bootstrap to a present empty module', () => fixture(({ root, write, options }) => {
+  const file = path.join(root, '.next/static/chunks/app/[...path]/route-proof.js');
+  const source = fs.readFileSync(path.join(nextFixtures, 'empty-entry.js'), 'utf8');
+  write(file, source); options.clientFiles.push(file);
+  assert.equal(verifyClientSourceMaps(options).size, 2);
+  for (const injected of [
+    source.replace('{703:()=>{}}', '{703:()=>{globalThis.Form=()=>2}}'),
+    source.replace('_.s=703', '_.s=999'),
+    source.replace('_.O(0,', 'globalThis.run(0,'),
+    source.replace('()=>_(_.s=703)', '()=>globalThis.Form()'),
+    source.replace('[780,10,358]', '[globalThis.Form()]'),
+    source.replace('703:()=>{}', '703:async()=>{}'),
+    source + ';globalThis.readSessionCookies=()=>2;',
+  ]) { assert.notEqual(injected, source); write(file, injected); assert.throws(() => verifyClientSourceMaps(options), /source map/i); }
+}));
+
+test('the only unmapped executable exception is the exact official pinned Next polyfill', t => fixture(({ root, write, options }) => {
+  const installed = require.resolve('next/dist/build/polyfills/polyfill-nomodule.js');
+  const metadata = require('next/package.json');
+  const bytes = fs.readFileSync(installed);
+  const file = path.join(root, '.next/static/chunks/polyfills-42372ed130431b0a.js');
+  write(file, bytes.toString('utf8')); options.clientFiles.push(file);
+  assert.equal(verifyClientSourceMaps(options).size, 2);
+  const version = metadata.version;
+  try {
+    metadata.version = '16.4.1'; assert.throws(() => verifyClientSourceMaps(options), /source map/i);
+  } finally { metadata.version = version; }
+  for (const changed of [bytes.toString('utf8') + '\n', bytes.toString('utf8') + ';globalThis.Form=()=>2;']) {
+    write(file, changed); assert.throws(() => verifyClientSourceMaps(options), /source map/i);
+  }
+  const changed = bytes.toString('utf8') + ';globalThis.readSessionCookies=()=>2;';
+  const read = fs.readFileSync;
+  t.mock.method(fs, 'readFileSync', (target, ...args) => target === installed ? Buffer.from(changed) : read(target, ...args));
+  write(file, bytes.toString('utf8'));
+  assert.throws(() => verifyClientSourceMaps(options), /source map/i, 'a modified installed reference must fail byte equality');
+  write(file, changed);
+  assert.throws(() => verifyClientSourceMaps(options), /source map/i, 'changing both mutable copies must still fail the static official hash');
+  t.mock.restoreAll();
+}));
+
+test('Next generated fixtures retain their recorded output hashes and official package provenance', () => {
+  const provenance = JSON.parse(fs.readFileSync(path.join(nextFixtures, 'provenance.json'), 'utf8'));
+  assert.equal(provenance.next, '16.4.2');
+  assert.equal(provenance.officialPackage.polyfillSha256, '0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683');
+  for (const [name, expected] of Object.entries(provenance.files)) {
+    assert.equal(createHash('sha256').update(fs.readFileSync(path.join(nextFixtures, name))).digest('hex'), expected.sha256, name);
+  }
+});
+
 test('the actual bundle gate accepts the mapped build and rejects missing/corrupt maps and official forms/server runtime injections', () => fixture(f => {
   const { root, libRoot, write } = f;
   const build = officialBuild(f);

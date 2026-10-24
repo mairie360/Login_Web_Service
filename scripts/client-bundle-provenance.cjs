@@ -1,9 +1,14 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 const { pathToFileURL } = require('node:url');
 const ts = require('typescript');
 const { AnyMap, decodedMappings, eachMapping } = require('@jridgewell/trace-mapping');
+
+const unwrap = node => ts.isParenthesizedExpression(node) ? unwrap(node.expression) : node;
+const sequence = node => ts.isBinaryExpression(unwrap(node)) && unwrap(node).operatorToken.kind === ts.SyntaxKind.CommaToken
+  ? [...sequence(unwrap(node).left), ...sequence(unwrap(node).right)] : [unwrap(node)];
 
 // Next writes these data-only manifests without a source map. No arbitrary module
 // code, imports or external function calls are accepted under that exception.
@@ -11,7 +16,6 @@ function isGeneratedManifest(file) {
   const names = { '_buildManifest.js': '__BUILD_MANIFEST', '_ssgManifest.js': '__SSG_MANIFEST' };
   const name = names[path.basename(file)];
   if (!name) return false;
-  const unwrap = node => ts.isParenthesizedExpression(node) ? unwrap(node.expression) : node;
   const selfProperty = (node, property) => ts.isPropertyAccessExpression(node)
     && ts.isIdentifier(node.expression) && node.expression.text === 'self' && node.name.text === property;
   const data = (input, scope = new Set()) => {
@@ -34,17 +38,71 @@ function isGeneratedManifest(file) {
       && (!node.arguments || node.arguments.length === 0 || (node.arguments.length === 1 && ts.isArrayLiteralExpression(node.arguments[0]) && data(node.arguments[0], scope)));
   };
   const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-  if (source.parseDiagnostics.length || source.statements.length < 1 || source.statements.length > 2) return false;
-  const first = source.statements[0];
-  if (!ts.isExpressionStatement(first) || !ts.isBinaryExpression(first.expression)
-    || first.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken
-    || !selfProperty(first.expression.left, name) || !data(first.expression.right)) return false;
-  if (source.statements.length === 1) return true;
-  const last = source.statements[1];
-  return ts.isExpressionStatement(last) && ts.isBinaryExpression(last.expression)
-    && last.expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-    && selfProperty(last.expression.left, name + '_CB') && ts.isCallExpression(last.expression.right)
-    && selfProperty(last.expression.right.expression, name + '_CB') && last.expression.right.arguments.length === 0;
+  if (source.parseDiagnostics.length || !source.statements.every(ts.isExpressionStatement)) return false;
+  const expressions = source.statements.flatMap(statement => sequence(statement.expression));
+  if (expressions.length < 1 || expressions.length > 2) return false;
+  const first = expressions[0];
+  if (!ts.isBinaryExpression(first) || first.operatorToken.kind !== ts.SyntaxKind.EqualsToken
+    || !selfProperty(first.left, name) || !data(first.right)) return false;
+  if (expressions.length === 1) return true;
+  const last = expressions[1];
+  return ts.isBinaryExpression(last) && last.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+    && selfProperty(last.left, name + '_CB') && ts.isCallExpression(last.right)
+    && selfProperty(last.right.expression, name + '_CB') && last.right.arguments.length === 0;
+}
+
+// Actual Next 16.4.2 Webpack entries contain one empty module and only the
+// standard registration/bootstrap pointing to that same module. No module code
+// or arbitrary runtime call can be hidden behind an unmapped route filename.
+function isEmptyWebpackEntry(file) {
+  const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  if (source.parseDiagnostics.length || source.statements.length !== 1 || !ts.isExpressionStatement(source.statements[0])) return false;
+  const identifier = (node, name) => ts.isIdentifier(node) && node.text === name;
+  const property = (node, owner, name) => ts.isPropertyAccessExpression(node) && !node.questionDotToken
+    && identifier(node.expression, owner) && identifier(node.name, name);
+  const integer = node => ts.isNumericLiteral(node) && /^\d+$/.test(node.text) && Number.isSafeInteger(Number(node.text));
+  const integers = node => ts.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.every(integer);
+  const call = (node, count) => ts.isCallExpression(node) && !node.questionDotToken && !node.typeArguments?.length && node.arguments.length === count;
+  const arrow = (node, count) => ts.isArrowFunction(node) && !node.modifiers?.length && !node.typeParameters?.length && !node.type && node.parameters.length === count
+    && node.parameters.every(parameter => ts.isIdentifier(parameter.name) && !parameter.initializer && !parameter.dotDotDotToken && !parameter.type && !parameter.questionToken);
+  const push = unwrap(source.statements[0].expression);
+  if (!call(push, 1) || !ts.isPropertyAccessExpression(push.expression) || push.expression.questionDotToken
+    || !identifier(push.expression.name, 'push')) return false;
+  const register = unwrap(push.expression.expression);
+  if (!ts.isBinaryExpression(register) || register.operatorToken.kind !== ts.SyntaxKind.EqualsToken
+    || !property(register.left, 'self', 'webpackChunk_N_E') || !ts.isBinaryExpression(register.right)
+    || register.right.operatorToken.kind !== ts.SyntaxKind.BarBarToken || !property(register.right.left, 'self', 'webpackChunk_N_E')
+    || !ts.isArrayLiteralExpression(register.right.right) || register.right.right.elements.length !== 0) return false;
+  const payload = push.arguments[0];
+  if (!ts.isArrayLiteralExpression(payload) || payload.elements.length !== 3 || !integers(payload.elements[0])) return false;
+  const modules = payload.elements[1], runtime = payload.elements[2];
+  if (!ts.isObjectLiteralExpression(modules) || modules.properties.length !== 1 || !arrow(runtime, 1) || !ts.isBlock(runtime.body)
+    || runtime.body.statements.length !== 1 || !ts.isExpressionStatement(runtime.body.statements[0])) return false;
+  const module = modules.properties[0];
+  if (!ts.isPropertyAssignment(module) || !integer(module.name) || !arrow(module.initializer, 0)
+    || !ts.isBlock(module.initializer.body) || module.initializer.body.statements.length !== 0) return false;
+  const name = runtime.parameters[0].name.text;
+  const operations = sequence(runtime.body.statements[0].expression);
+  if (operations.length !== 2) return false;
+  const schedule = operations[0], finish = operations[1];
+  if (!call(schedule, 3) || !property(schedule.expression, name, 'O') || !integer(schedule.arguments[0])
+    || Number(schedule.arguments[0].text) !== 0 || !integers(schedule.arguments[1]) || !arrow(schedule.arguments[2], 0)) return false;
+  const execute = schedule.arguments[2].body;
+  if (!call(execute, 1) || !identifier(execute.expression, name) || !ts.isBinaryExpression(execute.arguments[0])) return false;
+  const entry = execute.arguments[0];
+  return entry.operatorToken.kind === ts.SyntaxKind.EqualsToken && property(entry.left, name, 's') && integer(entry.right)
+    && Number(entry.right.text) === Number(module.name.text) && ts.isBinaryExpression(finish)
+    && finish.operatorToken.kind === ts.SyntaxKind.EqualsToken && identifier(finish.left, '_N_E')
+    && call(finish.right, 0) && property(finish.right.expression, name, 'O');
+}
+
+function isKnownNextPolyfill(file) {
+  if (!/^polyfills-[a-f0-9]{16}\.js$/.test(path.basename(file)) || require('next/package.json').version !== '16.4.2') return false;
+  const bytes = fs.readFileSync(file);
+  // Verified from the SHA512-checked official next@16.4.2 npm tarball. Comparing
+  // only two mutable files would not establish that neither contains app code.
+  if (createHash('sha256').update(bytes).digest('hex') !== '0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683') return false;
+  return bytes.equals(fs.readFileSync(require.resolve('next/dist/build/polyfills/polyfill-nomodule.js')));
 }
 
 function ownedSource(source) {
@@ -167,7 +225,7 @@ function verifyClientSourceMaps({ clientFiles, usedFiles, forbidden, libRoot }) 
   const used = librarySources(usedFiles);
   const client = new Set();
   for (const file of clientFiles) {
-    if (!fs.existsSync(file + '.map') && isGeneratedManifest(file)) continue;
+    if (!fs.existsSync(file + '.map') && (isKnownNextPolyfill(file) || isGeneratedManifest(file) || isEmptyWebpackEntry(file))) continue;
     for (const source of readMappedSources(file, { browser: true }).sources) client.add(source);
   }
   const proven = new Map();
