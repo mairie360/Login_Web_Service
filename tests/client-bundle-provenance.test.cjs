@@ -117,9 +117,27 @@ test('runtime JavaScript and compiler maps from each official forms/server imple
   }
 }));
 
-test('encoded package paths and indexed maps retain their ownership', () => fixture(({ client, map, write, options }) => {
+test('official Form, FormField and session runtime injections remain forbidden under flattened Next aliases', () => fixture(f => {
+  const build = officialBuild(f);
+  const usedMap = JSON.parse(fs.readFileSync(build.client + '.map', 'utf8'));
+  usedMap.sourceRoot = 'webpack://_N_E/../src/';
+  f.write(build.client + '.map', usedMap);
+  assert.equal(verifyClientSourceMaps(build.options).size, 2);
+  for (const [name, file] of Object.entries(build.implementation)) {
+    const injected = build.copyToClient(file), map = JSON.parse(fs.readFileSync(injected + '.map', 'utf8'));
+    map.sourceRoot = 'webpack://_N_E/../src/' + (name === 'session.ts' ? 'server/' : 'forms/');
+    f.write(injected + '.map', map);
+    assert.throws(() => verifyClientSourceMaps({ ...build.options, clientFiles: [build.client, injected] }), /forbidden library source/);
+    map.sourcesContent[0] += ' /* changed */';
+    f.write(injected + '.map', map);
+    assert.throws(() => verifyClientSourceMaps({ ...build.options, clientFiles: [build.client, injected] }), /source content/i);
+    fs.unlinkSync(injected); fs.unlinkSync(injected + '.map');
+  }
+}));
+
+test('encoded package paths retain their ownership', () => fixture(({ client, map, write, options }) => {
   const owned = 'webpack://_N_E/./node_modules/%40mairie360/lib-components/src/forms/Form.tsx';
-  write(client + '.map', { version: 3, sections: [{ offset: { line: 0, column: 0 }, map: map([owned]) }] });
+  write(client + '.map', map([owned]));
   assert.throws(() => verifyClientSourceMaps(options), /forms|forbidden/i);
 }));
 
@@ -264,6 +282,98 @@ test('Next generated fixtures retain their recorded output hashes and official p
     assert.equal(createHash('sha256').update(fs.readFileSync(path.join(nextFixtures, name))).digest('hex'), expected.sha256, name);
   }
 });
+
+test('flattened Next library paths need matching reference source contents for the positive control', () => fixture(({ used, client, map, write, options }) => {
+  const content = 'export const Button = () => 1;';
+  write(used + '.map', { ...map(['../src/components/Button.tsx']), sourcesContent: [content] });
+  write(client + '.map', { ...map(['webpack://_N_E/../src/components/Button.tsx']), sourcesContent: [content] });
+  assert.equal(verifyClientSourceMaps(options).size, 2);
+}));
+
+test('flattened forms and server identities still block beside a genuine used positive control', () => fixture(({ forms, next, client, usedSource, map, write, options }) => {
+  for (const [reference, relative] of [[forms, 'src/forms/Form.tsx'], [next, 'src/next.ts']]) {
+    const content = 'export const forbidden = () => 2;';
+    write(reference + '.map', { ...map(['../' + relative]), sourcesContent: [content] });
+    write(client + '.map', { ...map([usedSource, 'webpack://_N_E/../' + relative]), mappings: 'AAAA,ACAA', sourcesContent: [null, content] });
+    assert.throws(() => verifyClientSourceMaps(options), /forbidden library source/);
+  }
+}));
+
+test('missing or altered flattened contents cannot hide a forbidden source beside the positive control', () => fixture(({ forms, client, usedSource, map, write, options }) => {
+  const content = 'export const Form = () => 2;';
+  for (const referenceContent of [content, null, content + ' /* reference changed */']) {
+    write(forms + '.map', { ...map(['../src/forms/Form.tsx']), sourcesContent: [referenceContent] });
+    for (const browserContent of [undefined, null, content + ' /* changed */']) {
+      const payload = { ...map([usedSource, 'webpack://_N_E/../src/forms/Form.tsx']), mappings: 'AAAA,ACAA' };
+      if (browserContent !== undefined) payload.sourcesContent = [null, browserContent];
+      write(client + '.map', payload);
+      assert.throws(() => verifyClientSourceMaps(options), /source content|reference content/i);
+    }
+  }
+}));
+
+test('partial source contents never establish a hash for an unavailable mapped library source', () => fixture(({ used, forms, client, map, write, options }) => {
+  const content = 'export const Button = () => 1;', formContent = 'export const Form = () => 2;';
+  write(used + '.map', { ...map(['../src/components/Button.tsx']), sourcesContent: [content] });
+  write(forms + '.map', { ...map(['../src/forms/Form.tsx']), sourcesContent: [formContent] });
+  const payload = { ...map(['webpack://_N_E/../src/components/Button.tsx', 'webpack://_N_E/../src/forms/Form.tsx']), sourcesContent: [content, formContent] };
+  write(client + '.map', payload);
+  assert.equal(verifyClientSourceMaps(options).size, 2);
+  payload.mappings = 'AAAA,ACAA';
+  write(client + '.map', payload);
+  assert.throws(() => verifyClientSourceMaps(options), /forbidden library source/);
+  payload.sourcesContent = [content];
+  write(client + '.map', payload);
+  assert.throws(() => verifyClientSourceMaps(options), /source content/i);
+  payload.mappings = 'AAAA';
+  write(client + '.map', payload);
+  assert.equal(verifyClientSourceMaps(options).size, 2);
+}));
+
+test('equal source contents at different paths never alias a forbidden entry to a used entry', () => fixture(({ used, forms, client, usedSource, map, write, options }) => {
+  const content = 'export const component = () => 1;';
+  write(used + '.map', { ...map(['../src/components/Button.tsx']), sourcesContent: [content] });
+  write(forms + '.map', { ...map(['../src/forms/Form.tsx']), sourcesContent: [content] });
+  write(client + '.map', { ...map([usedSource, 'webpack://_N_E/../src/forms/Form.tsx']), mappings: 'AAAA,ACAA', sourcesContent: [content, content] });
+  assert.throws(() => verifyClientSourceMaps(options), /forbidden library source/);
+  write(client + '.map', { ...map([usedSource, 'webpack://_N_E/../src/renamed.ts']), mappings: 'AAAA,ACAA', sourcesContent: [content, content] });
+  assert.throws(() => verifyClientSourceMaps(options), /source path changed/i);
+}));
+
+test('ambiguous reference paths and normalized browser-source collisions fail closed', () => fixture(({ used, forms, client, usedSource, map, write, options }) => {
+  const content = 'export const Button = () => 1;';
+  write(used + '.map', { ...map(['../src/components/Button.tsx']), sourcesContent: [content] });
+  write(forms + '.map', { ...map(['../src/components/Button.tsx']), sourcesContent: ['different implementation'] });
+  write(client + '.map', map([usedSource]));
+  assert.throws(() => verifyClientSourceMaps(options), /ambiguous reference source/i);
+  write(forms + '.map', map(['../src/forms/Form.tsx']));
+  write(client + '.map', { ...map(['webpack://_N_E/../src/components/Button.tsx', 'webpack://_N_E/./src/components/Button.tsx']), mappings: 'AAAA,ACAA', sourcesContent: [content, 'different implementation'] });
+  assert.throws(() => verifyClientSourceMaps(options), /source content/i);
+}));
+
+test('indexed sections cannot truncate mapped forms through equal, reversed or overlapping offsets', () => fixture(({ client, usedSource, map, write, options }) => {
+  const form = 'webpack://_N_E/./node_modules/@mairie360/lib-components/src/forms/Form.tsx';
+  const section = (line, column, source, mappings = 'AAAA') => ({ offset: { line, column }, map: { ...map([source]), mappings } });
+  const cases = [
+    [section(0, 0, usedSource)], // Even a valid indexed map is deliberately unsupported.
+    [section(0, 0, form), section(0, 0, usedSource)],
+    [section(1, 0, form), section(0, 0, usedSource)],
+    [section(0, 0, form, ';AAAA'), section(1, 0, usedSource)],
+    [section(0, 0, form, 'KAAA'), section(0, 5, usedSource)],
+  ];
+  for (const sections of cases) {
+    write(client + '.map', { version: 3, sections });
+    assert.throws(() => verifyClientSourceMaps(options), /section|overlap|order/i);
+    write(client + '.map', { version: 3, sections: [{ offset: { line: 0, column: 0 }, map: { version: 3, sections } }] });
+    assert.throws(() => verifyClientSourceMaps(options), /section|overlap|order/i);
+  }
+  for (const sections of [null, undefined, [], false]) {
+    write(client + '.map', { ...map([usedSource]), sections });
+    // JSON omits undefined; an ordinary simple map remains valid.
+    if (sections === undefined) assert.equal(verifyClientSourceMaps(options).size, 2);
+    else assert.throws(() => verifyClientSourceMaps(options), /indexed source map/i);
+  }
+}));
 
 test('the actual bundle gate accepts the mapped build and rejects missing/corrupt maps and official forms/server runtime injections', () => fixture(f => {
   const { root, libRoot, write } = f;

@@ -4,7 +4,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { pathToFileURL } = require('node:url');
 const ts = require('typescript');
-const { AnyMap, decodedMappings, eachMapping } = require('@jridgewell/trace-mapping');
+const { AnyMap, decodedMappings } = require('@jridgewell/trace-mapping');
 
 const unwrap = node => ts.isParenthesizedExpression(node) ? unwrap(node.expression) : node;
 const sequence = node => ts.isBinaryExpression(unwrap(node)) && unwrap(node).operatorToken.kind === ts.SyntaxKind.CommaToken
@@ -117,18 +117,27 @@ function ownedSource(source) {
   return clean;
 }
 
+// Next can compose a package's source map into webpack://_N_E/src/... and
+// discard the package namespace. A path alone never establishes ownership:
+// the installed library's mapped source content must also match exactly.
+function flattenedSource(source) {
+  const normalized = decodeURIComponent(source).replaceAll('\\', '/').replace(/[?#].*$/, '');
+  const relative = normalized.match(/^webpack:\/\/_N_E\/(src\/.+)$/)?.[1];
+  if (!relative) return undefined;
+  assert.equal(path.posix.normalize(relative), relative, 'Invalid flattened source path');
+  return relative;
+}
+
 function validateMap(map) {
   assert.ok(map && map.version === 3, 'Invalid source map version');
-  if (map.sections) {
-    assert.ok(Array.isArray(map.sections) && map.sections.length > 0, 'Invalid indexed source map');
-    for (const section of map.sections) {
-      assert.ok(Number.isInteger(section.offset?.line) && section.offset.line >= 0 && Number.isInteger(section.offset?.column) && section.offset.column >= 0 && !section.url, 'Invalid source map section');
-      validateMap(section.map);
-    }
-    return;
-  }
+  // Flattening indexed maps can truncate earlier sections and erase a mapped
+  // forbidden source. The measured Next output uses simple maps exclusively;
+  // reject sections rather than infer coverage after a lossy transformation.
+  assert.ok(!Object.hasOwn(map, 'sections'), 'Indexed source map sections cannot establish complete ownership');
   assert.ok(Array.isArray(map.sources) && map.sources.every(source => typeof source === 'string'), 'Invalid source map sources');
   assert.ok(Array.isArray(map.names) && map.names.every(name => typeof name === 'string'), 'Invalid source map names');
+  if (map.sourcesContent != null) assert.ok(Array.isArray(map.sourcesContent)
+    && map.sourcesContent.length <= map.sources.length && map.sourcesContent.every(content => content === null || typeof content === 'string'), 'Invalid source content array');
   assert.ok(typeof map.mappings === 'string' && /^[A-Za-z0-9+/;,]*$/.test(map.mappings), 'Invalid source map mappings');
 }
 
@@ -165,7 +174,7 @@ function barrelReferences(file) {
   return references.length > 0 && exported.length > 0 && exported.every(name => imported.has(name)) ? references : undefined;
 }
 
-function readMappedSources(file, { browser = false } = {}) {
+function readMappedSources(file, { browser = false, referenceContents, referenceHashes } = {}) {
   const mapFile = file + '.map';
   assert.ok(fs.existsSync(mapFile), `Source map required for ${file}; use the CI bundle provenance build`);
   let payload;
@@ -174,6 +183,7 @@ function readMappedSources(file, { browser = false } = {}) {
   validateMap(payload);
   const map = AnyMap(payload, pathToFileURL(mapFile).href);
   let mapped = 0;
+  const mappedIndices = new Set();
   for (const line of decodedMappings(map)) {
     let previous = -1;
     for (const segment of line) {
@@ -182,24 +192,45 @@ function readMappedSources(file, { browser = false } = {}) {
       if (segment.length === 1) continue;
       assert.ok(segment[1] < map.sources.length && (segment.length < 5 || segment[4] < map.names.length), 'Source map index is out of range');
       mapped++;
+      mappedIndices.add(segment[1]);
     }
   }
   if (browser) assert.ok(mapped > 0, `Browser source map has no mapped sources: ${mapFile}`);
   const sources = new Set();
-  eachMapping(map, mapping => {
-    if (!mapping.source) return;
-    const owned = ownedSource(mapping.source);
+  // Read content by source index, not by its normalized URL: two distinct raw
+  // paths may normalize to the same URL while carrying different contents.
+  for (const index of mappedIndices) {
+    const source = map.resolvedSources[index], content = map.sourcesContent?.[index];
+    let owned = ownedSource(source);
     // Every mapped reference source must retain its package identity. The
     // compiled dist path alone cannot prove original TSX absent from Next maps.
-    if (!browser) assert.ok(owned, `Library source map lost ownership: ${mapFile}: ${mapping.source}`);
+    if (!browser) {
+      assert.ok(owned, `Library source map lost ownership: ${mapFile}: ${source}`);
+      if (referenceContents) {
+        const sha256 = typeof content === 'string' ? createHash('sha256').update(content).digest('hex') : undefined;
+        const previous = referenceContents.get(owned);
+        assert.ok(!previous?.sha256 || !sha256 || previous.sha256 === sha256, `Ambiguous reference source content: ${owned}`);
+        referenceContents.set(owned, { sha256: previous?.sha256 ?? sha256, missing: previous?.missing || !sha256 });
+      }
+    } else if (!owned) {
+      const relative = flattenedSource(source), reference = referenceContents?.get(relative);
+      const sha256 = relative && typeof content === 'string' ? createHash('sha256').update(content).digest('hex') : undefined;
+      assert.ok(!relative || reference || !referenceHashes?.has(sha256), `Flattened library source path changed: ${relative}`);
+      if (reference) {
+        assert.ok(reference.sha256 && !reference.missing, `Reference content required for flattened library source: ${relative}`);
+        assert.ok(typeof content === 'string', `Browser source content required for flattened library source: ${relative}`);
+        assert.equal(sha256, reference.sha256, `Flattened library source content changed: ${relative}`);
+        owned = relative;
+      }
+    }
     if (owned) sources.add(owned);
-  });
+  }
   if (!browser && mapped > 0) assert.ok(sources.size > 0, `No owned library source in ${mapFile}`);
   return { sources, mapped };
 }
 
 function verifyClientSourceMaps({ clientFiles, usedFiles, forbidden, libRoot }) {
-  const cache = new Map(), visiting = new Set();
+  const cache = new Map(), visiting = new Set(), referenceContents = new Map();
   const librarySources = files => {
     const result = new Set();
     for (const file of files) {
@@ -209,7 +240,7 @@ function verifyClientSourceMaps({ clientFiles, usedFiles, forbidden, libRoot }) 
         visiting.add(file);
         const relative = path.relative(libRoot, file).replaceAll('\\', '/');
         assert.ok(!relative.startsWith('../') && !path.isAbsolute(relative), 'Library source escaped its package');
-        const { sources, mapped } = readMappedSources(file);
+        const { sources, mapped } = readMappedSources(file, { referenceContents });
         if (mapped === 0) {
           const references = barrelReferences(file);
           assert.ok(references, `Library source map has no mapped sources and no covering barrel proof: ${file}.map`);
@@ -223,14 +254,18 @@ function verifyClientSourceMaps({ clientFiles, usedFiles, forbidden, libRoot }) 
     return result;
   };
   const used = librarySources(usedFiles);
+  // Load forbidden references too, before interpreting browser aliases. An
+  // intact used source cannot hide an unmapped forms/server implementation.
+  const forbiddenSources = new Map([...forbidden].map(([entry, files]) => [entry, librarySources(files)]));
+  const referenceHashes = new Set([...referenceContents.values()].map(reference => reference.sha256).filter(Boolean));
   const client = new Set();
   for (const file of clientFiles) {
     if (!fs.existsSync(file + '.map') && (isKnownNextPolyfill(file) || isGeneratedManifest(file) || isEmptyWebpackEntry(file))) continue;
-    for (const source of readMappedSources(file, { browser: true }).sources) client.add(source);
+    for (const source of readMappedSources(file, { browser: true, referenceContents, referenceHashes }).sources) client.add(source);
   }
   const proven = new Map();
-  for (const [entry, files] of forbidden) {
-    const distinct = [...librarySources(files)].filter(source => !used.has(source));
+  for (const [entry, sources] of forbiddenSources) {
+    const distinct = [...sources].filter(source => !used.has(source));
     assert.ok(distinct.length > 0, `${entry}: no distinct mapped source identity`);
     const leaked = distinct.filter(source => client.has(source));
     assert.deepEqual(leaked, [], `${entry}: forbidden library sources reached the browser bundle`);

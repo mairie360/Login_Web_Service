@@ -41,6 +41,7 @@ jobs:
           baseline_ref="${BASE_REF:-$(git rev-parse HEAD^)}"
           [[ "$baseline_ref" =~ ^[a-f0-9]{40}$ ]]
           git worktree add --detach .performance-base "$baseline_ref"
+          node scripts/prepare-performance-baseline.cjs --base "$baseline_ref" --worktree .performance-base --output performance/baseline/lock-provenance.json
           (cd .performance-base && npm ci && npm run build -- --webpack)
           node scripts/frontend-performance.mjs --source .performance-base --output performance/baseline/report.json --commit "$baseline_ref"
           node scripts/compare-performance.mjs performance/baseline/report.json performance/candidate/report.json performance/comparison.json
