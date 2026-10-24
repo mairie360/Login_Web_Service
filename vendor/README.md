@@ -32,3 +32,27 @@ generated regular expression, arbitrary AST getter/proxy or array-valued text.
 Callers must handle invalid input as with existing length/range errors. Replace
 this fork only with a verified official fix that passes the same tests. No sprintf
 fork is included because this frontend's fresh audit only identifies braces.
+
+
+## Compatible Zod 3 production security backport
+
+The shared UI package requires the Zod `^3.23.0` peer API. The root local
+`zod` dependency and `$zod` override select the reviewed
+`3.25.76+mairie360.1` backport for production consumers as well as tests.
+The build metadata identifies a private local revision, not an official release.
+See `zod/SECURITY-PATCH.md`, its exact patch, upstream MIT license and
+`security-patches.json` for source provenance and every retained file hash.
+
+Native npm audit omits local file links. `verify-security-backports.mjs` therefore
+verifies the complete Zod tree, lockfile links and actual installed peer/ordinary
+consumers, then separately queries the official npm advisory service for the
+original 3.25.76 version. Only the exact reviewed GHSA metadata is accepted;
+new advisories, changed metadata and service errors fail the gate. `postinstall`
+runs that complete gate, including in the existing Docker dependency stage.
+`prebuild` and `pretest` recheck installed integrity. Existing native audit
+thresholds and CI checks are retained.
+
+Behavioral tests cover all retained public CJS/ESM entry points, constrained
+collections, synchronous/asynchronous parsing, raw-input bound semantics and
+the real React Hook Form resolver used by the shared UI peer. Unbounded
+collections keep their upstream behavior and still need application size limits.

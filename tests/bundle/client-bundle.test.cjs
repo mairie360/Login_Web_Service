@@ -3,11 +3,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 const ts = require('typescript');
+const { verifyClientSourceMaps } = require('../../scripts/client-bundle-provenance.cjs');
 
 // MAIR-126: the browser only receives the parts of @mairie360/lib-components this front's client code uses.
-// Run after `npm run build` (the frontend performance workflow does). Each lib entry the client code does not
+// Run after the CI measurement build (the performance workflow enables provenance maps). Each lib entry the client code does not
 // use, and every server entry of the lib, is identified by the sentences that only its own bundle files
-// contain; none of them may appear in the client JavaScript of the build. Identical file in every front.
+// contain; none of them may appear in the client JavaScript of the build. Source maps also identify
+// code-only entries without a distinctive sentence. Identical file in every front.
 const root = path.resolve(__dirname, '../..');
 const src = path.join(root, 'src');
 const lib = path.join(root, 'node_modules/@mairie360/lib-components');
@@ -183,6 +185,9 @@ test('MAIR-126: the client build ships no lib entry its client code does not use
     const found = markers.filter(text => client.includes(text));
     if (found.length) leaks.push(`${entry}: ${found.slice(0, 3).map(text => JSON.stringify(text)).join(', ')}`);
   }
-  assert.deepEqual(unprovable, [], 'no distinctive sentence left to prove these lib entries are absent from the browser bundle');
+  const mapped = verifyClientSourceMaps({ clientFiles, usedFiles, libRoot: lib,
+    forbidden: new Map(forbidden.map(entry => [entry, reachableFiles(entry)])) });
+  for (const entry of unprovable) t.diagnostic(`${entry}: ${mapped.get(entry)} distinct mapped source identities checked`);
+  assert.deepEqual(unprovable.filter(entry => !mapped.has(entry)), [], 'neither strings nor mapped source identities prove these lib entries absent');
   assert.deepEqual(leaks, [], 'lib code this front does not use on the client (or lib server code) reached the browser bundle');
 });

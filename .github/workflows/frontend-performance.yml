@@ -29,19 +29,31 @@ jobs:
           npm run performance:report -- --output performance/candidate/report.json --commit "$CANDIDATE_REF"
         env:
           CANDIDATE_REF: ${{ github.sha }}
+          MAIRIE360_BUNDLE_PROVENANCE: '1'
       - name: Check the client bundle only ships the lib entries this front imports
         run: npm run test:bundle
       - name: Build and measure the baseline on the same runner
         env:
           BASE_REF: ${{ github.event.pull_request.base.sha }}
+          MAIRIE360_BUNDLE_PROVENANCE: '1'
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           baseline_ref="${BASE_REF:-$(git rev-parse HEAD^)}"
           [[ "$baseline_ref" =~ ^[a-f0-9]{40}$ ]]
           git worktree add --detach .performance-base "$baseline_ref"
+          node scripts/prepare-performance-baseline.cjs --base "$baseline_ref" --worktree .performance-base --output performance/baseline/lock-provenance.json
           (cd .performance-base && npm ci && npm run build -- --webpack)
           node scripts/frontend-performance.mjs --source .performance-base --output performance/baseline/report.json --commit "$baseline_ref"
           node scripts/compare-performance.mjs performance/baseline/report.json performance/candidate/report.json performance/comparison.json
+      - name: Archive client provenance diagnostics after a failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-bundle-diagnostics
+          path: .next/static/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Archive measurements and screenshots
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

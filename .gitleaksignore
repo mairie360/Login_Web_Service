@@ -11,3 +11,10 @@
 
 # MAIR-608: literal reset token of an early co-located test commit, replaced by crypto.randomUUID() in d4fd04c
 f02086cf0a85b1467935a235467294caba9f740b:src/components/ResetPassword/ResetPassword.test.jsx:generic-api-key:16
+
+# Reviewed SHA256 Zod file-integrity entries; exact historical findings only.
+0e8851b58f106479b658e35002fd406ddbdfea67:vendor/security-patches.json:generic-api-key:44
+0e8851b58f106479b658e35002fd406ddbdfea67:vendor/security-patches.json:generic-api-key:199
+0e8851b58f106479b658e35002fd406ddbdfea67:vendor/security-patches.json:generic-api-key:200
+0e8851b58f106479b658e35002fd406ddbdfea67:vendor/security-patches.json:generic-api-key:201
+0e8851b58f106479b658e35002fd406ddbdfea67:vendor/security-patches.json:generic-api-key:202
