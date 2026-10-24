@@ -55,6 +55,7 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "5.0.5",
-    "zod": "file:vendor/zod"
+    "zod": "file:vendor/zod",
+    "@jridgewell/trace-mapping": "0.3.31"
   }
 }

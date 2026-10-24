@@ -29,11 +29,13 @@ jobs:
           npm run performance:report -- --output performance/candidate/report.json --commit "$CANDIDATE_REF"
         env:
           CANDIDATE_REF: ${{ github.sha }}
+          MAIRIE360_BUNDLE_PROVENANCE: '1'
       - name: Check the client bundle only ships the lib entries this front imports
         run: npm run test:bundle
       - name: Build and measure the baseline on the same runner
         env:
           BASE_REF: ${{ github.event.pull_request.base.sha }}
+          MAIRIE360_BUNDLE_PROVENANCE: '1'
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           baseline_ref="${BASE_REF:-$(git rev-parse HEAD^)}"

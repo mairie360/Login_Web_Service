@@ -185,7 +185,7 @@ function rejectOversizedContainer(inst: $ZodType, payload: ParsePayload, bounds:
             const start = payload.issues.length;
             bound._zod.check(payload as any);
             if (payload.issues.length > start) {
-                payload.issues[start].continue = false;
+                payload.issues[start] = { ...payload.issues[start], continue: false };
                 return true;
             }
         }

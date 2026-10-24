@@ -110,3 +110,33 @@ test('the shared UI Zod 3 peer keeps the React Hook Form resolver contract', asy
   assert.equal(invalid.errors.name.type, 'too_small');
   assert.equal(invalid.errors.tags.type, 'too_big');
 });
+
+test('v4 early abort replaces readonly issues without changing their metadata or parsing elements', async () => {
+  for (const z of [require('zod/v4'), require('zod/v4/mini'), await import('zod/v4'), await import('zod/v4/mini')]) {
+    for (const kind of ['array', 'set', 'map']) {
+      for (const asynchronous of [false, true]) {
+        let elements = 0, followingChecks = 0, originalIssue, checkedPayload;
+        const element = z.custom(() => { elements++; return true; });
+        const bound = kind === 'array' ? z.maxLength(1) : z.maxSize(1);
+        const check = bound._zod.check;
+        bound._zod.check = payload => {
+          check(payload);
+          checkedPayload = payload;
+          originalIssue = payload.issues.at(-1);
+          Object.freeze(originalIssue);
+        };
+        const container = kind === 'array' ? z.array(element) : kind === 'set' ? z.set(element) : z.map(element, element);
+        const schema = container.check(bound, z.check(() => { followingChecks++; }));
+        const input = kind === 'array' ? ['a', 'b'] : kind === 'set' ? new Set(['a', 'b']) : new Map([['a', 'a'], ['b', 'b']]);
+        const result = asynchronous ? await schema.safeParseAsync(input) : schema.safeParse(input);
+        assert.equal(result.success, false);
+        assert.equal(elements, 0);
+        assert.equal(followingChecks, 0);
+        assert.equal(originalIssue.continue, true);
+        assert.notEqual(checkedPayload.issues[0], originalIssue);
+        assert.deepEqual(checkedPayload.issues[0], { ...originalIssue, continue: false });
+        assert.deepEqual(result.error.issues.map(issue => issue.code), ['too_big']);
+      }
+    }
+  }
+});

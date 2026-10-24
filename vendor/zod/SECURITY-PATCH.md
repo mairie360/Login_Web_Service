@@ -28,6 +28,12 @@ again. This is an intentional change from the original embedded v4 behavior,
 covered by regression tests. Applications using these conditional checks must account for that documented
 raw-input behavior.
 
+The early abort replaces the emitted issue in the mutable payload issues array,
+preserving every other field and its position. It does not mutate the issue
+object, whose `continue` property is readonly in the published source types.
+The regression test freezes that original issue and checks CJS/ESM, synchronous
+and asynchronous collection parsing without running element or later checks.
+
 Unbounded collections retain their original behavior. Applications accepting
 untrusted collections still need their own size constraints.
 

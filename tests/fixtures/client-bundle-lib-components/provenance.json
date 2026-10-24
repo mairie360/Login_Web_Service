@@ -1,0 +1,48 @@
+{
+  "repository": "mairie360/lib-components",
+  "tag": "v1.0.3",
+  "commit": "c2f81a019093cb702f58c985eca5824e4a4fea1b",
+  "note": "Unchanged official source fixtures. Tests compile their JavaScript and maps together, without installing or executing the private package.",
+  "files": {
+    "Form.tsx": {
+      "path": "src/forms/Form.tsx",
+      "gitBlob": "09ec6c936b4d9db9edbcd228d0796fc3361f180d",
+      "sha256": "67c7caf745543335c8ed9287f4809e0b95f790d64a26df244896471524196dbe"
+    },
+    "FormField.tsx": {
+      "path": "src/forms/FormField.tsx",
+      "gitBlob": "36da7abba074f43c167c9b8135d3b27244168652",
+      "sha256": "29a305c7c35df2508cb7639b7ce206a5b408c096feddb9c6d5570cffa73c6fc5"
+    },
+    "session.ts": {
+      "path": "src/server/session.ts",
+      "gitBlob": "297f54469244e7dfd6f35552a775b7326e0285b7",
+      "sha256": "49decb861172c46c235b2ff62729d82b49941b04451f696c3b6093d7d9c74566"
+    }
+  },
+  "builtBarrels": {
+    "sourceCommit": "c2f81a019093cb702f58c985eca5824e4a4fea1b",
+    "commands": [
+      "node --max-old-space-size=768 node_modules/tsup/dist/cli-default.js --no-dts",
+      "node --max-old-space-size=768 node_modules/tsup/dist/cli-default.js --config tsup.server.config.ts --no-dts"
+    ],
+    "tsup": "8.5.1",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "note": "Actual isolated official TSUP output. Declaration generation alone is disabled; runtime JavaScript/map options remain those of the official configs.",
+    "files": {
+      "tsup/primitives.js": {
+        "sha256": "9902146f38b142bb8d1edecfabff798f6a48777366cc7b8691ae779037393a93"
+      },
+      "tsup/primitives.js.map": {
+        "sha256": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3"
+      },
+      "tsup/shell.js": {
+        "sha256": "625026b3af40a052d1620cd6bc8fb40b2e8f536dd655d516173d2ccbece3dcee"
+      },
+      "tsup/shell.js.map": {
+        "sha256": "cba81f7ad4d5b1b629bf43823f1082e73a10d0c3114c937515e7f8c1047629b3"
+      }
+    }
+  }
+}
