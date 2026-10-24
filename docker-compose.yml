@@ -1,3 +1,6 @@
+# Local development only: development image, source mounts and test database.
+# Supply a unique strong JWT_SECRET through the environment or an untracked .env.
+# Public authentication fixtures belong to the isolated security/performance labs.
 volumes:
   postgres-data:
   redis-data:
@@ -97,7 +100,7 @@ services:
     container_name: core-login-front-developpement
     image: ghcr.io/mairie360/core-api:2.2.0
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - backend
     dns:
@@ -119,9 +122,9 @@ services:
       RESEND_API_KEY: "re_fake_local"
       RESEND_BASE_URL: "http://fake-resend.invalid"
       EMAIL_DOMAIN: "mairie360.local"
-      JWT_SECRET: b"secret"
-      # Core API >= 2.0 refuses a weak JWT_SECRET unless this flag is set (MAIR-428): local stack only.
-      JWT_ALLOW_WEAK_SECRET: "true"
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET to a unique strong local signing key}"
+      # Keep Core signing-key validation enabled for the local development stack.
+      JWT_ALLOW_WEAK_SECRET: "false"
       JWT_TIMEOUT: 3600
     depends_on:
       liquibase:
@@ -141,7 +144,7 @@ services:
     container_name: bff-user-login-front
     image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     networks:
       - backend
       - frontend
@@ -149,7 +152,7 @@ services:
       CORE_API_URL: "core"
       CORE_API_PORT: 3000
       # Same secret as Core: BFF User refuses to start without it (admin session check).
-      JWT_SECRET: b"secret"
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET to a unique strong local signing key}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
       interval: 10s
@@ -165,7 +168,7 @@ services:
       secrets:
         - node_auth_token
     ports:
-      - "3001:3000" # On map le 3000 interne sur 3001 pour éviter le conflit avec 'core'
+      - "127.0.0.1:3001:3000" # On map le 3000 interne sur 3001 pour éviter le conflit avec 'core'
     develop:
       watch:
         - action: sync
