@@ -18,3 +18,8 @@ load-test.js
 init-test.sql
 security_test.sh
 performance_test.sh
+accessibility_test.sh
+init-accessibility.sql
+rgaa.yaml
+rgaa-report
+.rgaa-ai-cache

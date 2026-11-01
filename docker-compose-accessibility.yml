@@ -1,0 +1,249 @@
+# RGAA accessibility stack of the Login front (MAIR-316), run by accessibility_test.sh and by the
+# rgaa job of mairie360/CICD promote-prod.yml (IMAGE_REF=<image>@<staging digest>).
+#
+# Same upstream chain as docker-compose-security.yml (database + init-test.sql, Redis, Core API,
+# BFF User) plus init-accessibility.sql (a first-connection user), the front on ${IMAGE_REF} and the RGAA runner of mairie360/CICD (cicd-repo/tests/a11y)
+# instead of ZAP. It plays the states of rgaa.yaml (anonymous: Login is the sign-in page) and
+# writes rgaa-report/.
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  backend:
+
+x-db-env: &db-env
+  DB_TYPE: postgres
+  DB_NAME: mairie_360_database
+  DB_USER: postgres
+  DB_PASSWORD: password
+  DB_HOST: postgres
+  DB_PORT: 5432
+
+# JWT_SECRET identique sur toute la chaîne : le cookie accessToken du front est
+# relayé tel quel (Bearer) à BFF User, seul BFF de ce front, puis à Core API.
+x-api-env: &api-env
+  <<: *db-env
+  HOST: "0.0.0.0"
+  REDIS_URL: redis://redis:6379
+  JWT_SECRET: b"secret"
+  JWT_TIMEOUT: 3600
+
+services:
+  postgres:
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.3.0}
+    container_name: login-front-a11y-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mairie_360_database
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  liquibase:
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:3.3.0}
+    container_name: login-front-a11y-liquibase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/mairie_360_database
+      LIQUIBASE_COMMAND_USERNAME: postgres
+      LIQUIBASE_COMMAND_PASSWORD: password
+      LIQUIBASE_SEARCH_PATH: /migrations
+    # Database >= MAIR-413 only seeds the template admin (users.id = 1) with -Dallow_template_admin=true;
+    # without it the migration fails on a fresh database. Test / dev stacks only.
+    command: >
+      --changelog-file=changelog.xml
+      update
+      -Dallow_template_admin=true
+    networks:
+      - backend
+
+  seeder:
+    image: postgres:18-alpine
+    container_name: login-front-a11y-seeder
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+    volumes:
+      - ./init-test.sql:/init-test.sql:ro
+    environment:
+      PGPASSWORD: password
+    command: >
+      sh -c "psql -h postgres -U postgres -d mairie_360_database -f /init-test.sql"
+    networks:
+      - backend
+
+  seeder-a11y:
+    image: postgres:18-alpine
+    container_name: login-front-a11y-seeder-a11y
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+    volumes:
+      - ./init-accessibility.sql:/init-accessibility.sql:ro
+    environment:
+      PGPASSWORD: password
+    command: ["psql", "-v", "ON_ERROR_STOP=1", "-h", "postgres", "-U", "postgres", "-d", "mairie_360_database", "-f", "/init-accessibility.sql"]
+    networks:
+      - backend
+
+  redis:
+    image: redis:8.4.0-bookworm
+    container_name: login-front-a11y-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  core-api:
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:2.2.0}
+    container_name: login-front-a11y-core-api
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *api-env
+      PORT: 3000
+      PUBLIC_URL: http://core-api:3000
+      # Core refuses to start without its Resend configuration (MAIR-522). No page of this front sends an
+      # e-mail through these stacks, so the key is fake and the URL never called.
+      RESEND_API_KEY: "re_fake_local"
+      RESEND_BASE_URL: "http://fake-resend.invalid"
+      EMAIL_DOMAIN: "mairie360.local"
+      # Core API >= 2.0 refuses the weak shared test secret unless this flag is set (MAIR-428),
+      # and rate-limits each account (MAIR-425): the scan / load test hammer it as one user.
+      JWT_ALLOW_WEAK_SECRET: "true"
+      RATE_LIMIT_ENABLED: "false"
+    expose:
+      - "3000"
+    networks:
+      - backend
+    # L'image publiée est "distroless" (ni shell ni curl) : la disponibilité est
+    # sondée depuis le conteneur core-api-ready ci-dessous.
+
+  core-api-ready:
+    image: curlimages/curl:latest
+    container_name: login-front-a11y-core-api-ready
+    depends_on:
+      core-api:
+        condition: service_started
+    command: >
+      sh -c 'until curl -fsS http://core-api:3000/health >/dev/null; do
+      echo "waiting for core-api..."; sleep 2; done; echo "core-api ready"'
+    networks:
+      - backend
+
+  bff-user:
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
+    container_name: login-front-a11y-bff-user
+    depends_on:
+      seeder-a11y:
+        condition: service_completed_successfully
+      seeder:
+        condition: service_completed_successfully
+      core-api-ready:
+        condition: service_completed_successfully
+    environment:
+      <<: *db-env
+      HOST: "0.0.0.0"
+      PORT: 4000
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: 'b"secret"'
+      CORE_API_URL: http://core-api:3000
+      # The scanners replay the auth routes from one IP with invalid credentials on purpose: the
+      # auth rate limits of BFF User (MAIR-226) would answer 429 and hide the real responses.
+      AUTH_RATE_LIMIT_ENABLED: "false"
+    expose:
+      - "4000"
+    networks:
+      - backend
+
+  bff-user-ready:
+    image: curlimages/curl:latest
+    container_name: login-front-a11y-bff-user-ready
+    depends_on:
+      bff-user:
+        condition: service_started
+    command: >
+      sh -c 'until curl -fsS http://bff-user:4000/health >/dev/null; do
+      echo "waiting for bff-user..."; sleep 2; done; echo "bff-user ready"'
+    networks:
+      - backend
+
+  login-front:
+    # The image under test: <image>@<staging digest> from promote-prod.yml, or the image
+    # accessibility_test.sh built locally. Never rebuilt here.
+    image: ${IMAGE_REF:?IMAGE_REF is set by accessibility_test.sh}
+    container_name: login-front-a11y-front
+    depends_on:
+      bff-user-ready:
+        condition: service_completed_successfully
+    environment:
+      HOSTNAME: "0.0.0.0"
+      PORT: 5000
+      BFF_USER_API_URL: http://bff-user:4000
+      # The production image refuses to issue the session cookie without a domain (503), and the
+      # authentication routes only accept requests whose Origin is this front (403 otherwise).
+      # The runner shares this container's network (network_mode below) and opens the front as
+      # http://localhost:5000: Chromium only sends Sec-Fetch-Site on a trustworthy origin, and the
+      # authentication routes refuse a request without "same-origin" (src/lib/auth-request.ts).
+      COOKIE_DOMAIN: localhost
+      LOGIN_FRONT_URL: http://localhost:5000
+      # Post-login destination: without it the page only shows "Connexion temporairement
+      # indisponible" (src/lib/login-redirect.ts). Never reached by the RGAA states.
+      DASHBOARD_FRONT_URL: http://dashboard.invalid/
+    expose:
+      - "5000"
+    networks:
+      - backend
+    # curl est installé dans l'image runner (seul un statut >= 400 fait échouer curl -f).
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  a11y:
+    image: ${A11Y_RUNNER_IMAGE:?A11Y_RUNNER_IMAGE comes from cicd-repo/tests/a11y/runner-image}
+    # Run as the caller (accessibility_test.sh exports them), so that rgaa-report/ and
+    # .rgaa-ai-cache/ are not root-owned in the checkout.
+    user: "${RGAA_UID:-0}:${RGAA_GID:-0}"
+    container_name: login-front-a11y-runner
+    depends_on:
+      login-front:
+        condition: service_healthy
+    command: ["sh", "/engine/run.sh"]
+    # Same network namespace as the front, so that rgaa.yaml can target http://localhost:5000.
+    network_mode: "service:login-front"
+    environment:
+      RGAA_MIN_RATE: ${RGAA_MIN_RATE:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}
+      RGAA_AI_MODEL: ${RGAA_AI_MODEL:-}
+    volumes:
+      - ./cicd-repo/tests/a11y:/engine:ro
+      - ./rgaa.yaml:/scope/rgaa.yaml:ro
+      - ./rgaa-report:/report
+      - ./.rgaa-ai-cache:/ai-cache
