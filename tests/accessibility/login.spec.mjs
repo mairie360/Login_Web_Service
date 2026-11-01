@@ -12,9 +12,13 @@ for (const mode of modes) {
         await expect(page).toHaveURL(`${frontend.origin}/`);
         await inspect(page, mode, info, 'sign-in');
         await page.keyboard.press('Tab');
+        await expect(page.getByRole('link', { name: 'Aller au contenu' })).toBeFocused();
+        await page.keyboard.press('Tab');
         await expect(page.getByLabel('Email professionnel')).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.getByLabel('Mot de passe', { exact: true })).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('link', { name: 'Mot de passe oublié ?' })).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.getByRole('button', { name: 'Se connecter' })).toBeFocused();
         await page.keyboard.press('Enter');
@@ -109,34 +113,48 @@ for (const mode of modes) {
       await inspect(page, mode, info, 'transport-unavailable');
     });
 
-    test('sign-out pending, refusal, retry, local expiry refusal and final navigation', async ({ page, frontend }, info) => {
+    test('sign-out confirmation, pending, refusal, retry, unconfirmed server session and return', async ({ page, frontend }, info) => {
       const gate = deferred();
-      const upstream = await responses(page, frontend.origin, '/auth/logout', [
-        { gate, status: 503 }, { json: { success: true } }, { json: { success: true } },
+      const local = await responses(page, frontend.origin, '/api/auth/logout', [
+        { gate, status: 503 }, { json: { session_revoked: false } },
       ]);
-      const local = await responses(page, frontend.origin, '/api/auth/logout', [{ status: 503 }, { json: { success: true } }]);
       try {
         await page.goto(`${frontend.origin}/logout`);
+        await expect(page.getByRole('heading', { name: 'Déconnexion' })).toBeVisible();
+        await inspect(page, mode, info, 'sign-out-confirm');
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('link', { name: 'Aller au contenu' })).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Se déconnecter' })).toBeFocused();
+        await page.keyboard.press('Enter');
         await expect(page.getByRole('status')).toHaveText('Déconnexion en cours…');
         await inspect(page, mode, info, 'sign-out-pending');
         gate.release();
         await expect(page.getByRole('main').getByRole('alert')).toHaveText('La déconnexion n’a pas abouti. Veuillez réessayer.');
-        expect(local).toHaveLength(0);
         await inspect(page, mode, info, 'sign-out-refused');
-        await page.keyboard.press('Tab');
-        await expect(page.getByRole('button', { name: 'Réessayer' })).toBeFocused();
-        await page.keyboard.press('Enter');
-        await expect.poll(() => local.length).toBe(1);
-        await expect(page.getByRole('main').getByRole('alert')).toBeVisible();
-        await inspect(page, mode, info, 'local-expiry-refused');
         await page.getByRole('button', { name: 'Réessayer' }).press('Enter');
+        await expect(page.getByRole('main').getByRole('alert')).toHaveText('La session locale est fermée. La fermeture de la session serveur n’a pas pu être confirmée.');
+        await inspect(page, mode, info, 'sign-out-unconfirmed');
+        await page.getByRole('button', { name: 'Retour à la connexion' }).press('Enter');
         await expect(page).toHaveURL(`${frontend.origin}/`);
         await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
-        await inspect(page, mode, info, 'sign-out-success-return');
-        expect(upstream).toHaveLength(3);
+        await inspect(page, mode, info, 'sign-out-return');
         expect(local).toHaveLength(2);
       } finally { gate.release(); }
     });
+
+    for (const [path, title, heading, state] of [
+      ['/forgot-password', 'Mot de passe oublié | Mairie360', 'Mot de passe oublié', 'forgot-password'],
+      ['/reset-password?token=isolated-test-token', 'Réinitialiser le mot de passe | Mairie360', 'Réinitialiser le mot de passe', 'reset-password'],
+      ['/mentions-legales', 'Mentions légales | Mairie360', 'Mentions légales', 'legal-notice'],
+      ['/confidentialite', 'Politique de confidentialité | Mairie360', 'Politique de confidentialité', 'privacy-policy'],
+    ]) {
+      test(`${state} page initial state`, async ({ page, frontend }, info) => {
+        await page.goto(`${frontend.origin}${path}`);
+        await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+        await inspect(page, mode, info, state, title);
+      });
+    }
 
     test.describe('missing frontend destination', () => {
       test.use({ configured: false });

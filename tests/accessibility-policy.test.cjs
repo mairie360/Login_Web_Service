@@ -15,9 +15,14 @@ function pages(directory, prefix = '') {
 }
 
 test('accessibility scope inventories every actual Login UI page, not HTTP handlers', () => {
-  assert.deepEqual(pages(join(root, 'src/app')).sort(), ['/', '/logout']);
+  const routes = pages(join(root, 'src/app')).sort();
+  assert.deepEqual(routes, ['/', '/confidentialite', '/forgot-password', '/logout', '/mentions-legales', '/reset-password']);
   const scope = read('docs/accessibility.md');
-  assert.match(scope, /UI routes are `\/` and `\/logout`/);
+  const spec = read('tests/accessibility/login.spec.mjs');
+  for (const route of routes) {
+    assert.ok(scope.includes(`| \`${route}\``), `${route} must be listed in the scope table`);
+    if (route !== '/') assert.ok(spec.includes(`'${route}`) || spec.includes(`/${route.slice(1)}\``), `${route} must be scanned`);
+  }
   assert.match(scope, /HTTP handlers, not UI/);
   assert.match(scope, /Transient final status is not scan-certified/);
   assert.match(scope, /MAIR-316/);

@@ -3,12 +3,14 @@
 This document describes **only Login_Web_Service**. It does not declare RGAA
 compliance, backend authorization, deployment acceptance, or visual parity with
 the old local Login, whose production reference is not exploitable. Login remains
-standalone: no AppShell, header, sidebar or footer before authentication.
+standalone: no AppShell, header or sidebar before authentication. The only
+landmark outside `main` is the legal links footer every page carries (MAIR-292).
 
 ## Route and state inventory
 
-The UI routes are `/` and `/logout`, corresponding to the two `page.tsx` files
-under `src/app`. `/api/auth/*` and the `[...path]` proxy are HTTP handlers, not UI
+The UI routes are `/`, `/logout`, `/forgot-password`, `/reset-password`,
+`/mentions-legales` and `/confidentialite`, corresponding to the six `page.tsx`
+files under `src/app`. `/api/auth/*` and the `[...path]` proxy are HTTP handlers, not UI
 pages. They are not omitted UI routes or accessibility exemptions.
 
 | UI route | State exercised against real compiled markup/CSS | Interaction/evidence |
@@ -25,10 +27,15 @@ pages. They are not omitted UI routes or accessibility exemptions.
 | `/` → Dashboard | Sign-in success | Actual successful navigation and existing request bodies; destination is intercepted test HTML. Transient final status is not scan-certified (see limits) |
 | `/` | Transport unavailable | Aborted isolated request, service-unavailable alert |
 | `/` | Destination configuration unavailable | Separate frontend process without Dashboard URL, meaningful heading/message, no form |
+| `/logout` | Confirmation | Skip link then « Se déconnecter » in tab order, no request before the explicit choice |
 | `/logout` | Pending | Delayed first response, real live status |
-| `/logout` | Upstream refused | HTTP 503, alert/retry, local cookie-expiry request not attempted |
-| `/logout` | Local expiry refused | HTTP 503, alert/retry, no navigation |
-| `/logout` → `/` | Success after keyboard retry | Existing request order, observed root navigation and sign-in rendered |
+| `/logout` | Refused | HTTP 503, alert and keyboard retry |
+| `/logout` | Server session unconfirmed | `session_revoked: false` receipt, alert, explicit return |
+| `/logout` → `/` | Return to sign-in | Keyboard « Retour à la connexion », observed root navigation and sign-in rendered |
+| `/forgot-password` | Initial form | Full-page scan of the recovery request form |
+| `/reset-password` | Initial form | Full-page scan with a synthetic token, no request sent |
+| `/mentions-legales` | Legal notice | Full-page scan of the `LEGAL_CONFIG`-less placeholder content |
+| `/confidentialite` | Privacy policy | Full-page scan of the `LEGAL_CONFIG`-less placeholder content |
 
 Each scenario runs at desktop **1280×720**, **320×720**, native browser **200%
 zoom** at a 1280×720 physical viewport, and **320×720 with text spacing**. Each
@@ -47,9 +54,14 @@ Text spacing sets line height=1.5, letter spacing=.12em, word spacing=.16em and
 paragraph trailing margin=2em. Computed styles are asserted. The test-only style
 uses the page's existing nonce; CSP and production CSS remain unchanged.
 
+Scans run on the resting state: the pointer is moved off the page first, so a
+control left hovered by a click is not scanned with its hover colours (the
+lib-components hover pair `--mairie-on-action` on `--mairie-action-hover-background`
+measures 3.71:1 and belongs to the shared library).
+
 Every scan records full axe results (**including `incomplete`**), screenshot,
 layout metrics and console/network events. Tests assert meaningful page identity,
-no AppShell/framework overlay, horizontal reflow, positive visible control boxes,
+no AppShell/framework overlay (only the legal links footer), horizontal reflow, positive visible control boxes,
 and operability through actual keyboard/click/focus interactions. Expected
 browser resource-error logs are retained and explicitly classified only for the
 exact intercepted failing endpoint/status; other warnings/errors fail the test.

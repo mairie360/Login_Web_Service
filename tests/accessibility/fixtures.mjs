@@ -180,12 +180,20 @@ export async function enterCredentials(page) {
   await page.getByLabel('Mot de passe', { exact: true }).fill(credentials.password);
 }
 
-export async function inspect(page, mode, testInfo, state) {
+export async function inspect(page, mode, testInfo, state, title = 'Connexion | Mairie360') {
   // A URL/heading after location.replace can precede its new stylesheet load.
   await page.waitForLoadState('load');
-  await expect(page).toHaveTitle('Connexion | Mairie360');
+  // Scan the resting state: a pointer left over a clicked control would turn the scan into
+  // a check of its hover colours, which belong to the shared library tokens.
+  await page.mouse.move(0, 0);
+  await expect(page).toHaveTitle(title);
   await expect(page.locator('main h1')).toBeVisible();
-  await expect(page.locator('header, aside, nav, footer, nextjs-portal')).toHaveCount(0);
+  // Standalone: no application shell. The only landmark outside main is the legal links
+  // footer every page carries (MAIR-292).
+  await expect(page.locator('header, aside, nextjs-portal')).toHaveCount(0);
+  await expect(page.locator('footer')).toHaveCount(1);
+  await expect(page.locator('nav')).toHaveCount(1);
+  await expect(page.locator('footer > nav[aria-label="Informations légales"]')).toHaveCount(1);
   const metrics = await page.evaluate(() => ({
     width: innerWidth, documentWidth: document.documentElement.scrollWidth,
     dpr: devicePixelRatio, cssZoom: getComputedStyle(document.documentElement).zoom,
