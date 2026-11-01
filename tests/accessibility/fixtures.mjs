@@ -227,6 +227,12 @@ export async function inspect(page, mode, testInfo, state, title = 'Connexion | 
     }
   }
   await testInfo.attach(`${state}-layout`, { body: JSON.stringify({ metrics, boxes }, null, 2), contentType: 'application/json' });
+  // A control re-enabled just before the scan is still mid colour transition: wait for the
+  // running CSS transitions (finite, unlike a spinner's infinite animation) so axe measures the
+  // final colours, not an interpolated frame.
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter((animation) => animation instanceof CSSTransition)
+    .map((animation) => animation.finished.catch(() => undefined))));
   const scan = await new AxeBuilder({ page }).analyze();
   // All default rules/all impacts, including incomplete results in the attachment.
   await testInfo.attach(`${state}-axe`, { body: JSON.stringify(scan, null, 2), contentType: 'application/json' });

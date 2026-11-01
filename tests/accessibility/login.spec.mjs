@@ -50,6 +50,8 @@ for (const mode of modes) {
         await page.getByRole('button', { name: 'Se connecter' }).click();
         await expect(page.getByRole('heading', { name: 'Nouveau mot de passe' })).toBeVisible();
         await inspect(page, mode, info, 'mandatory-password');
+        await expect(page.getByLabel('Nouveau mot de passe', { exact: true })).toHaveAttribute('autocomplete', 'new-password');
+        await expect(page.getByLabel('Confirmer le mot de passe')).toHaveAttribute('autocomplete', 'new-password');
         await page.getByLabel('Nouveau mot de passe', { exact: true }).focus();
         await page.keyboard.press('Tab');
         await expect(page.getByLabel('Confirmer le mot de passe')).toBeFocused();
