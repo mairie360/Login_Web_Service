@@ -1,7 +1,8 @@
 import type { ForceChangePasswordView } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
-import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
+import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
+import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 
 type ForceChangePasswordBody = {
   newPassword?: unknown;
@@ -36,6 +37,9 @@ function getErrorMessage(status: number) {
 }
 
 export async function POST(request: NextRequest) {
+  const rejected = rejectUnsafeAuthRequest(request, true);
+  if (rejected) return rejected;
+
   let body: ForceChangePasswordBody;
 
   try {
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const upstreamResponse = await fetch(
-      bffUserUrl("/auth/force_change_password"),
+      bffUserUrl(bffUserOperations.getPostAuthForceChangePasswordUrl()),
       {
         method: "POST",
         headers: {

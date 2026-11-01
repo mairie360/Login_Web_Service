@@ -50,7 +50,7 @@ L’état React gère l’affichage et les opérations en cours. Ce dépôt ne d
 
 ## Installation et lancement local
 
-Utiliser Node.js 22 pour reproduire le job de contrats et npm avec le fichier de verrouillage versionné. Les versions des autres jobs et de Docker sont précisées plus bas.
+Utiliser Node.js 24.21.0 (la version épinglée en CI et dans Docker) pour reproduire le job de contrats et npm avec le fichier de verrouillage versionné. Les versions des autres jobs et de Docker sont précisées plus bas.
 
 Les dépendances privées `@mairie360/*` nécessitent un accès GitHub Packages. Configurer `NODE_AUTH_TOKEN` dans l’environnement avec un jeton autorisé à lire ces packages, conformément à `.npmrc`. Ne pas enregistrer la valeur dans Git.
 
@@ -87,6 +87,8 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 | --- | --- | --- |
 | `BFF_USER_API_URL` → `USER_BFF_URL` | http://localhost:4000 | Priorité de gauche à droite; configurer explicitement une URL HTTP(S). Une configuration absente ou invalide renvoie un 503 non mis en cache, sans appel réseau. |
 | `COOKIE_DOMAIN` | — | Domaine des cookies partagés ; obligatoire pour la connexion en production et cohérent avec le domaine utilisé par la déconnexion. En local, les cookies peuvent rester limités à l’hôte. |
+| `KEYCLOAK_REALM_URL` | https://auth.mairie360.fr/realms/mairie360 | URL publique du realm, telle que le navigateur l’atteint (MAIR-153). Avec `KEYCLOAK_CLIENT_ID` et `LOGIN_FRONT_URL`, active **Se connecter avec le compte unique** ; si l’une des trois manque ou est invalide, le bouton est masqué et `/api/auth/keycloak` revient sur la page avec le message `unconfigured`. |
+| `KEYCLOAK_CLIENT_ID` | `core-api` | Client de la demande d’autorisation. Core API échange le code avec son propre client confidentiel : c’est donc le `KEYCLOAK_CLIENT_ID` de Core ; le realm doit accepter `<LOGIN_FRONT_URL>/api/auth/keycloak/callback` comme URI de redirection. |
 | `TRUST_INGRESS_IP_HEADERS` | `false` | Mettre à `true` uniquement si le front n’est joignable que par un ingress qui contrôle `X-Forwarded-For` et `X-Real-IP` (accès direct au pod bloqué). Les routes de connexion, de changement de mot de passe et le proxy transmettent alors ces en-têtes à BFF User pour limiter le débit par client. Par défaut, les requêtes directes/locales les écartent. La confiance du proxy côté BFF User se configure séparément ; cette variable ne configure pas le BFF. |
 | `DASHBOARD_FRONT_URL` | — | Destination par défaut si `redirect` est absent ou invalide. Nécessaire sauf retour explicite autorisé. |
 | `PROJECT_FRONT_URL` | — | Origine Projects autorisée pour un `redirect` explicite ; ce n’est plus le repli. |
@@ -98,7 +100,7 @@ Dans un conteneur, `localhost` désigne le conteneur lui-même. Utiliser le nom 
 
 Inventaire extrait de `contracts/openapi.json`, reconstruit depuis le paquet publié `@mairie360/bff-user-openapi` épinglé dans `package.json`. Les paramètres entre accolades sont remplacés par des identifiants réels. Les types détaillés et champs requis sont définis dans ce contrat. Le paquet (sortie orval) ne type que les réponses de succès, notées `2XX`, et les réponses modélisées par statut comme `412` : erreurs, formats et en-têtes de réponse n’en font pas partie.
 
-Ces chemins de données sont exposés à la même origine par le proxy; les pages Next.js sont distinctes. `/openapi.json` et `/swagger.json` sont également relayés. L’interface Swagger `/docs` se consulte directement sur le BFF.
+Ces chemins de données sont exposés à la même origine par le proxy; les pages Next.js sont distinctes. Le relais accepte uniquement les opérations déclarées par le contrat BFF consommé. `/openapi.json` et `/swagger.json` ne sont pas déclarés et renvoient404 sans cache ni appel BFF, même avec un cookie de session ou un en-tête Authorization. L’interface Swagger `/docs` se consulte directement sur le BFF.
 
 | Méthode | Chemin | Corps déclaré | Statuts déclarés |
 | --- | --- | --- | --- |
@@ -106,30 +108,30 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 | POST | `/auth/login` | application/json | 2XX, 412 |
 | POST | `/auth/logout` | — | 2XX |
 | POST | `/auth/register` | application/json | 2XX |
-| GET | `/bff/admin/groups` | — | 2XX |
-| POST | `/bff/admin/groups` | application/json | 2XX |
-| DELETE | `/bff/admin/groups/{groupId}` | — | 2XX |
-| GET | `/bff/admin/groups/{groupId}` | — | 2XX |
-| PATCH | `/bff/admin/groups/{groupId}` | application/json | 2XX |
-| GET | `/bff/admin/groups/{groupId}/users` | — | 2XX |
-| POST | `/bff/admin/groups/{groupId}/users` | application/json | 2XX |
-| DELETE | `/bff/admin/groups/{groupId}/users/{userId}` | — | 2XX |
-| GET | `/bff/admin/roles` | — | 2XX |
-| POST | `/bff/admin/roles` | application/json | 2XX |
-| DELETE | `/bff/admin/roles/{roleId}` | — | 2XX |
-| PATCH | `/bff/admin/roles/{roleId}` | application/json | 2XX |
-| PUT | `/bff/admin/roles/{roleId}` | application/json | 2XX |
-| GET | `/bff/admin/sessions` | — | 2XX |
-| GET | `/bff/admin/sessions/history` | — | 2XX |
-| POST | `/bff/admin/sessions/refresh` | application/json | 2XX |
-| POST | `/bff/admin/sessions/revoke` | application/json | 2XX |
-| GET | `/bff/admin/users` | — | 2XX |
-| POST | `/bff/admin/users` | application/json | 2XX |
-| DELETE | `/bff/admin/users/{userId}` | — | 2XX |
-| PATCH | `/bff/admin/users/{userId}` | application/json | 2XX |
-| PATCH | `/bff/admin/users/{userId}/password` | application/json | 2XX |
-| POST | `/bff/admin/users/{userId}/roles` | application/json | 2XX |
-| DELETE | `/bff/admin/users/{userId}/roles/{roleId}` | — | 2XX |
+| GET | `/admin/groups` | — | 2XX |
+| POST | `/admin/groups` | application/json | 2XX |
+| DELETE | `/admin/groups/{groupId}` | — | 2XX |
+| GET | `/admin/groups/{groupId}` | — | 2XX |
+| PATCH | `/admin/groups/{groupId}` | application/json | 2XX |
+| GET | `/admin/groups/{groupId}/users` | — | 2XX |
+| POST | `/admin/groups/{groupId}/users` | application/json | 2XX |
+| DELETE | `/admin/groups/{groupId}/users/{userId}` | — | 2XX |
+| GET | `/admin/roles` | — | 2XX |
+| POST | `/admin/roles` | application/json | 2XX |
+| DELETE | `/admin/roles/{roleId}` | — | 2XX |
+| PATCH | `/admin/roles/{roleId}` | application/json | 2XX |
+| PUT | `/admin/roles/{roleId}` | application/json | 2XX |
+| GET | `/admin/sessions` | — | 2XX |
+| GET | `/admin/sessions/history` | — | 2XX |
+| POST | `/admin/sessions/refresh` | application/json | 2XX |
+| POST | `/admin/sessions/revoke` | application/json | 2XX |
+| GET | `/admin/users` | — | 2XX |
+| POST | `/admin/users` | application/json | 2XX |
+| DELETE | `/admin/users/{userId}` | — | 2XX |
+| PATCH | `/admin/users/{userId}` | application/json | 2XX |
+| PATCH | `/admin/users/{userId}/password` | application/json | 2XX |
+| POST | `/admin/users/{userId}/roles` | application/json | 2XX |
+| DELETE | `/admin/users/{userId}/roles/{roleId}` | — | 2XX |
 | GET | `/check_apis` | — | 2XX |
 | GET | `/health` | — | 2XX |
 | GET | `/me` | — | 2XX |
@@ -147,10 +149,39 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 | POST | `/api/auth/force-change-password` | [src/app/api/auth/force-change-password/route.ts](../../src/app/api/auth/force-change-password/route.ts) |
 | POST | `/api/auth/force_change_password` | [src/app/api/auth/force_change_password/route.ts](../../src/app/api/auth/force_change_password/route.ts) |
 | POST | `/api/auth/login` | [src/app/api/auth/login/route.ts](../../src/app/api/auth/login/route.ts) |
+| GET | `/api/auth/keycloak?redirect=<URL du module>` | [src/app/api/auth/keycloak/route.ts](../../src/app/api/auth/keycloak/route.ts) |
+| GET | `/api/auth/keycloak/callback` | [src/app/api/auth/keycloak/callback/route.ts](../../src/app/api/auth/keycloak/callback/route.ts) |
+
+### Authentification unique Keycloak (MAIR-153)
+
+Flux OpenID Connect « authorization code » avec PKCE (`src/lib/keycloak-login.ts`). `GET /api/auth/keycloak` valide `redirect` comme la connexion par mot de passe (origines de fronts configurées, sinon Dashboard), tire au hasard un `state`, un `nonce` et un vérificateur PKCE, les conserve avec la destination dans le cookie `keycloakLogin` (HttpOnly, SameSite Lax car le retour est une navigation de premier niveau depuis le realm, chemin `/api/auth/keycloak`, 10 min) et répond 303 vers `<KEYCLOAK_REALM_URL>/protocol/openid-connect/auth` (`client_id`, `scope=openid email`, `redirect_uri=<LOGIN_FRONT_URL>/api/auth/keycloak/callback`, `code_challenge_method=S256`).
+
+`GET /api/auth/keycloak/callback` efface toujours ce cookie. Un cookie absent, un `state` différent ou l’absence de `code` arrêtent le parcours avant tout appel au BFF. Sinon, la route envoie `code`, `redirect_uri`, `code_verifier`, `nonce` et le user-agent comme `device_info` à BFF User `POST /auth/keycloak` (délai de 10 s), qui fait échanger le code par Core API. En cas de succès, les cookies partagés `accessToken` / `refreshToken` sont posés exactement comme pour la connexion par mot de passe, puis la route répond 303 vers le module demandé. Chaque échec répond 303 vers `/?keycloakError=<type>&redirect=<module>` et la page affiche le message français correspondant : `cancelled` (`access_denied` de Keycloak), `expired` (autres erreurs Keycloak, `state` différent, 401 du BFF), `account` (403 : pas d’e-mail vérifié ou aucun compte Mairie360 actif), `busy` (429), `unconfigured` (503 ou configuration absente), `unavailable` (`temporarily_unavailable` de Keycloak, autres statuts, cookies de session absents, BFF injoignable). Un `keycloakError` arrête aussi la reprise automatique de session, pour que le message reste affiché.
 
 ## Session, permissions et erreurs
 
-Le cookie `accessToken` est HttpOnly, SameSite strict, limité à `/` et Secure en production. Sa durée ne dépasse jamais l’expiration `exp` du JWT ni 24 heures ; un jeton opaque ou malformé reçoit une durée de repli d’une heure et un JWT expiré est refusé. Il provient uniquement de l’en-tête Bearer de la réponse de connexion. Le `refresh_token` obligatoire du contrat est conservé séparément dans un cookie de session `refreshToken`, HttpOnly, SameSite strict et limité à `/api` sur le même domaine configuré ; il n’est jamais renvoyé au JavaScript du navigateur. Un refresh token absent ou malformé empêche la création d’une session partielle. La déconnexion expire les deux cookies. Ce stockage n’active pas encore le renouvellement transparent et ne prouve pas la révocation côté serveur : il faut pour cela le contrat BFF publié et le proxy partagé prévus séparément. `passwordChangeToken` est HttpOnly, limité à `/api/auth` et expire après 10 minutes. Le succès du changement de mot de passe supprime ce cookie ; il faut ensuite terminer le parcours de connexion. Les adaptateurs dédiés ont un délai de 10 secondes et distinguent 502 et 504.
+`Logout.tsx` lance le `POST /auth/logout` existant uniquement sur une action
+explicite, jamais dans un effet de montage. Une ref synchrone protège toute
+la chaîne amont → `POST /api/auth/logout` local → `location.replace('/')`,
+y compris les clics répétés et le passage à la navigation. HTTP401 suit le
+même nettoyage local qu'un succès ; les autres refus amont et les échecs
+d'expiration libèrent la garde pour une reprise explicite, sans faux succès.
+Aucun route handler, proxy, contrat publié ou règle de cookie ne change.
+
+Les tests HTTP du vrai consommateur chargent `Login.tsx` et `Logout.tsx` avec
+les source maps TSX embarquées : la couverture Node mesure leurs vraies
+lignes source. Les seuils existants de 60 % restent inchangés. Les statuts
+d'erreur mockés sont des exceptions explicites au contrat avec corps
+`ErrorResponse` validé. La recette native loopback utilise des cookies
+jetables, sans certifier une authentification réelle, une révocation globale
+ou un déploiement. Les travaux RGAA restent séparés ; les contrôles déjà
+sur main ne sont ni désactivés ni reconfigurés.
+
+Les mutations d’authentification du navigateur exigent `Sec-Fetch-Site: same-origin`. Un en-tête `Origin` fourni doit correspondre au `LOGIN_FRONT_URL` public, ou à l’origine de la requête si cette URL n’est pas renseignée. Les POST de connexion et de premier changement de mot de passe exigent le type `application/json` (le charset est accepté). Les handlers dédiés, l’alias de changement de mot de passe et les opérations correspondantes du proxy de contrat vérifient ces conditions avant de lire le corps ou de contacter BFF User. Une origine refusée produit un403 sans cache ; un type de formulaire simple produit un415 sans cache. Aucun cookie n’est modifié. Le POST de déconnexion reste sans corps et la page autonome attend toujours l’action explicite existante.
+
+Le cookie `accessToken` est HttpOnly, SameSite strict, limité à `/` et Secure en production. Sa durée ne dépasse jamais l’expiration `exp` du JWT ni 24 heures ; un jeton opaque ou malformé reçoit une durée de repli d’une heure et un JWT expiré est refusé. L’adaptateur de connexion accepte la paire Set-Cookie `accessToken`/`refreshToken` du BFF User actuel, puis applique le domaine partagé et les chemins du frontend. La durée du cookie d’accès reçu limite aussi sa durée locale. Une paire incomplète, effacée, expirée, ambiguë ou malformée est refusée sans repli vers des identifiants legacy contradictoires. En l’absence de cookies de session, l’ancien protocole publié en-tête Bearer/corps `refresh_token` reste accepté. Aucun jeton n’est renvoyé au JavaScript du navigateur ; les autres cookies du BFF ne sont pas copiés.
+
+Le refresh token reste dans un cookie de session `refreshToken`, HttpOnly, SameSite strict, limité à `/api` sur le même domaine configuré, conformément à MAIR-266. La déconnexion expire les deux cookies frontend. Ce stockage n’active pas encore le renouvellement transparent et ne prouve pas la révocation serveur. Depuis MAIR-509, le contrat épinglé est le paquet dev du `main` de BFF User (`0.0.0-dev.<sha>`), qui déclare `/auth/refresh`, `/auth/keycloak` et la connexion par cookies uniquement (`AuthSessionResponse`) ; le protocole en-tête Bearer/corps `refresh_token` de `0.5.0` n’est conservé qu’en repli pour une réponse sans cookies de session. Les stacks de test démarrent l’image `bff-user:dev-<sha7>` correspondante avec les images dev de Core API et de la base. La lecture des en-têtes utilise le protocole cookie réellement publié, sans nouveau DTO ni opération inventée. `passwordChangeToken` est HttpOnly, limité à `/api/auth` et expire après 10 minutes. Le succès du changement de mot de passe supprime ce cookie ; il faut ensuite terminer le parcours de connexion. Les adaptateurs dédiés ont un délai de 10 secondes et distinguent 502 et 504.
 
 Le proxy générique répond 400 pour un chemin invalide, 404 pour un chemin hors contrat, 405 pour une méthode interdite et 502 si le service est injoignable ou dépasse le délai. Les réponses amont sont conservées, y compris les corps vides 204/205/304.
 
@@ -158,10 +189,10 @@ Toutes les réponses portent `X-Frame-Options: DENY`, `X-Content-Type-Options: n
 
 ## Synchronisation et vérifications
 
-Le seul contrat est celui de BFF User **publié** dans `@mairie360/bff-user-openapi`, épinglé à une version exacte `X.Y.Z` (jamais une pré-version `0.0.0-dev`/`staging`, jamais une copie d’un checkout du BFF, qui peut être en avance sur la release). Après une nouvelle release de BFF User :
+Le seul contrat est celui de BFF User **publié** dans `@mairie360/bff-user-openapi`, épinglé à une version exacte : une release `X.Y.Z`, ou, tant qu’aucune release n’est coupée, le paquet `0.0.0-dev.<sha>` publié par la CICD pour le commit courant de son `main` (MAIR-509), ou, une fois ce commit livré en staging, le paquet `0.0.0-staging.<sha40>` du même commit, préféré lors d’une release staging pour la lisibilité (MAIR-600 ; jamais `0.0.0-staging.<sha court>` ni une plage, jamais une copie d’un checkout du BFF, qui peut être en avance sur ce qui est publié). Après une nouvelle release ou un nouveau paquet dev de BFF User :
 
 ```bash
-npm install --save-exact @mairie360/bff-user-openapi@X.Y.Z
+npm install --save-exact @mairie360/bff-user-openapi@<version>
 npm run contracts:sync
 npm run contracts:check
 npm test
@@ -169,21 +200,21 @@ npm run lint
 npm run build
 ```
 
-Le paquet contient du TypeScript orval, pas de `openapi.json` : [scripts/orval-contract.mjs](../../scripts/orval-contract.mjs) en reconstruit le document OpenAPI et `contracts:sync` l’écrit dans `contracts/openapi.json` (lu par le proxy et les tests). `contracts:check` échoue si la version n’est pas exacte, si le paquet installé diffère de `package.json`, si un second paquet `@mairie360/bff-*-openapi` apparaît ou si la copie est périmée. Les route handlers importent leurs types depuis `@mairie360/bff-user-openapi/model`. Aligner aussi le tag de l’image `bff-user` des fichiers `docker-compose*.yml` sur la même version. `npm test` exécute les tests Node et échoue sous 60 % de couverture des lignes, branches ou fonctions de `src/**` (`test:contracts` lance les mêmes tests sans couverture).
+Le paquet contient du TypeScript orval, pas de `openapi.json` : [scripts/orval-contract.mjs](../../scripts/orval-contract.mjs) en reconstruit le document OpenAPI et `contracts:sync` l’écrit dans `contracts/openapi.json` (lu par le proxy et les tests). `contracts:check` échoue si la version n’est pas une version exacte acceptée ([scripts/contract-version.mjs](../../scripts/contract-version.mjs)), si le paquet installé diffère de `package.json`, si un second paquet `@mairie360/bff-*-openapi` apparaît ou si la copie est périmée. Les route handlers importent leurs types depuis `@mairie360/bff-user-openapi/model`. Aligner aussi le tag de l’image `bff-user` des fichiers `docker-compose*.yml` sur l’image construite depuis le même commit : `X.Y.Z` pour une release, `dev-<sha7>` pour un paquet dev, `staging-<sha7>` pour un paquet staging. `npm test` exécute les tests Node et échoue sous 60 % de couverture des lignes, branches ou fonctions de `src/**` (`test:contracts` lance les mêmes tests sans couverture).
 
-Les tests unitaires exécutent les route handlers et le proxy avec le vrai `fetch` contre un faux BFF User servi en HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) et piloté par `contracts/openapi.json` : toute requête hors contrat (chemin, méthode, paramètre, corps), toute réponse mockée non conforme au statut déclaré ou tout appel vers une autre origine fait échouer le test. Les réponses d’erreur, que le paquet ne type pas, sont vérifiées contre son modèle `ApiErrorResponse`. Chaque opération du contrat est exercée à travers le proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventorie tous les appels réseau de `src/` (serveur et navigateur) : chacun doit viser une opération du contrat ou un route handler local, BFF User est le seul BFF et le proxy est le seul appel dynamique autorisé. [tests/package-contract.test.cjs](../../tests/package-contract.test.cjs) vérifie la version exacte, la copie du contrat et les tags d’images Docker. La couverture ne compte que les modules chargés par un test ; les composants React (`.tsx`) ne sont pas mesurés.
+Les tests unitaires exécutent les route handlers et le proxy avec le vrai `fetch` contre un faux BFF User servi en HTTP ([tests/support/contract-mock-server.cjs](../../tests/support/contract-mock-server.cjs)) et piloté par `contracts/openapi.json` : toute requête hors contrat (chemin, méthode, paramètre, corps), toute réponse mockée non conforme au statut déclaré ou tout appel vers une autre origine fait échouer le test. Les réponses d’erreur, que le paquet ne rattache pas aux opérations, sont vérifiées contre son modèle `ErrorResponse` (`{ error: { code, message, details } }`, enveloppe commune à tous les BFFs). Chaque opération du contrat est exercée à travers le proxy. [tests/network-calls.test.cjs](../../tests/network-calls.test.cjs) inventorie tous les appels réseau de `src/` (serveur et navigateur) : chacun doit viser une opération du contrat ou un route handler local, BFF User est le seul BFF et le proxy est le seul appel dynamique autorisé. [tests/package-contract.test.cjs](../../tests/package-contract.test.cjs) vérifie la version exacte, la copie du contrat et les tags d’images Docker. La couverture compte les modules chargés, dont les vraies sources TSX Login et Logout de leurs suites HTTP consommateur ; elle ne certifie pas tous les composants ni une session navigateur déployée.
 
 Pour une modification uniquement documentaire, vérifier les liens, l’exactitude des deux langues et `git diff --check`; ne pas régénérer les contrats sans changer la version du paquet.
 
 ## CI/CD et exécution Docker
 
-Le job `contracts.yml` utilise Node.js 22, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
+Le job `contracts.yml` utilise Node.js 24.21.0 avec checkout et setup-node épinglés par commits immuables. Il s’exécute sur pull request, lancement manuel et push vers `main` uniquement (MAIR-436); il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
 
-`cicd.yml` appelle `mairie360/CICD/.github/workflows/frontend-cicd.yml@v2.0.0`, avec `cicd_version: v2.0.0` et `node_version: "23"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs.
+`cicd.yml` appelle `mairie360/CICD/.github/workflows/frontend-cicd.yml` épinglé sur un commit CICD, avec le même `cicd_version` et `node_version: "24.21.0"`. Il s’exécute sur les pull requests, au déclenchement manuel et sur les push vers `main` uniquement ; son jeton est en lecture seule par défaut et seul le job qui appelle le pipeline de release reçoit les droits d’écriture `contents`, `packages` et `id-token` (MAIR-436, `tests/workflow-permissions.test.cjs`). Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs.
 
-Le workflow additionnel `nextjs.yml` exécute lint puis build sur Node.js 20 avec checkout v7.0.1 et setup-node v7.0.0.
+Le lint et le build sont assurés par la CICD frontend partagée sur Node.js 24.21.0. Le doublon `nextjs.yml` est supprimé pour MAIR-403. Les workflows distincts de cohérence de contrat et de dérogation Dev, les contrôles requis, scanners, environnements et approbations sont conservés.
 
-Le Dockerfile utilise par défaut `NODE_VERSION=23.1.0` et le build Next.js `standalone`; la commande de l’image est `["node", "server.js"]`. Le port de l’image et les mappings Compose peuvent différer du port local proposé plus haut.
+Le Dockerfile épingle `NODE_VERSION=24.21.0` bookworm-slim par digest et le build Next.js `standalone` ; la commande de l’image est `["node", "server.js"]` avec l’utilisateur non-root `nextjs`. Le port de l’image et les mappings Compose peuvent différer du port local proposé plus haut.
 
 Avant un lancement Docker, vérifier les variables de service, les secrets de build et les réseaux dans les fichiers du dépôt. Une CI verte valide ses jobs; elle ne prouve pas la disponibilité des services métier dans un environnement distant.
 
@@ -196,7 +227,7 @@ En cas d’erreur de proxy, comparer la route et la méthode à l’inventaire, 
 ## Repères dans le dépôt
 
 - [src/app/page.tsx](../../src/app/page.tsx)
-- [src/components/Login.tsx](../../src/components/Login.tsx)
+- [src/components/Login/Login.tsx](../../src/components/Login/Login.tsx)
 - [src/app/api/auth/login/route.ts](../../src/app/api/auth/login/route.ts)
 - [src/app/api/auth/force-change-password/route.ts](../../src/app/api/auth/force-change-password/route.ts)
 - [src/lib/bff-proxy.ts](../../src/lib/bff-proxy.ts)
@@ -211,6 +242,13 @@ En cas d’erreur de proxy, comparer la route et la méthode à l’inventaire, 
 - [docker-compose.yml](../../docker-compose.yml)
 
 Compléments historiques: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). Les besoins proposés doivent rester distincts du comportement effectivement implémenté.
+
+
+### Propriétaire de la session partagée
+
+Login porte POST /api/auth/refresh et POST /api/auth/logout via l’entrée serveur optionnelle publiée de lib-components. Les huit origines frontend configurées peuvent déléguer le renouvellement avec le cookie HttpOnly existant. URL User BFF, domaine des cookies et confiance ingress restent configurés comme auparavant. La coordination des rotations est locale à un processus Login ; un déploiement avec chevauchement ou plusieurs processus reste à vérifier.
+
+La page de déconnexion envoie un seul POST JSON après commande explicite. Le reçu session_revoked distingue la fermeture locale des cookies de la révocation Core. Une fermeture serveur non confirmée reste visible jusqu’au retour explicite à Login. Une logout_url Keycloak validée est visitée lorsqu’elle est fournie ; refus et erreurs réseau permettent une reprise explicite. Les tests locaux avec mocks ne certifient pas l’authentification Dev, Core ou l’IdP réels.
 
 ## Pages légales (MAIR-292)
 

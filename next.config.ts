@@ -14,8 +14,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Only the isolated CI measurement build emits maps for the bundle proof.
+  productionBrowserSourceMaps: process.env.GITHUB_ACTIONS === 'true' && process.env.MAIRIE360_BUNDLE_PROVENANCE === '1',
+  // Let Next optimize the published UI barrel; subpath adoption follows its release.
+  experimental: { optimizePackageImports: ['@mairie360/lib-components'] },
   output: 'standalone',
   poweredByHeader: false,
+  // The published OpenAPI package ships TypeScript sources: Next must compile them.
+  transpilePackages: ['@mairie360/bff-user-openapi'],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

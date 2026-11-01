@@ -9,7 +9,7 @@ const { requireTs } = require('./support/load-ts.cjs');
 const config = requireTs('src/lib/legal-config.ts');
 const { default: LegalNoticePage } = requireTs('src/app/mentions-legales/page.tsx');
 const { default: PrivacyPolicyPage } = requireTs('src/app/confidentialite/page.tsx');
-const { default: LegalLinks } = requireTs('src/components/LegalLinks.tsx');
+const { default: LegalLinks } = requireTs('src/components/LegalLinks/LegalLinks.tsx');
 
 const LEGAL = {
   mairie: { name: 'Mairie de Testville', address: '1 place de la Mairie, 00000 Testville', email: 'contact@testville.fr' },

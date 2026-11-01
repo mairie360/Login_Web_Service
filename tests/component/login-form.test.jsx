@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import Login from "@/components/Login";
+import Login from '@/components/Login';
 
 const requestedFront = "https://projects.example.invalid/expected";
 let fetchMock;
@@ -22,7 +22,70 @@ async function enterCredentials(user) {
   await user.type(screen.getByLabelText("Mot de passe", { exact: true }), "initial-test-password");
 }
 
+const deferredResponse = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+};
+
 describe("Login form", () => {
+  it("locks credentials and ignores repeated submissions until a refused login settles", async () => {
+    const gate = deferredResponse();
+    fetchMock.mockReturnValueOnce(gate.promise);
+    const navigate = vi.fn();
+    const user = userEvent.setup();
+    render(<Login redirectUrl={requestedFront} navigate={navigate} />);
+    await enterCredentials(user);
+    const form = document.querySelector("form");
+    act(() => { fireEvent.submit(form); fireEvent.submit(form); });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(form.getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByRole("textbox", { name: "Email professionnel" }).disabled).toBe(true);
+    expect(screen.getByLabelText("Mot de passe", { exact: true }).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Connexion…" }).disabled).toBe(true);
+    await act(async () => gate.resolve(authResponse({ message: "Identifiants refusés." }, 401)));
+    expect(screen.getByRole("alert").textContent).toBe("Identifiants refusés.");
+    expect(form.getAttribute("aria-busy")).toBe("false");
+    expect(screen.getByRole("textbox", { name: "Email professionnel" }).disabled).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+    fetchMock.mockResolvedValueOnce(authResponse({ success: true }));
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith(requestedFront));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps one lock across password confirmation and reconnection, clearing stale pending feedback on transport failure", async () => {
+    const change = deferredResponse();
+    const reconnect = deferredResponse();
+    fetchMock.mockResolvedValueOnce(authResponse({ requiresPasswordChange: true }))
+      .mockReturnValueOnce(change.promise).mockReturnValueOnce(reconnect.promise);
+    const navigate = vi.fn();
+    const user = userEvent.setup();
+    render(<Login redirectUrl={requestedFront} navigate={navigate} />);
+    await enterCredentials(user);
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    await screen.findByRole("heading", { name: "Nouveau mot de passe" });
+    await user.type(screen.getByLabelText("Nouveau mot de passe", { exact: true }), "updated-test-password");
+    await user.type(screen.getByLabelText("Confirmer le mot de passe"), "updated-test-password");
+    const form = document.querySelector("form");
+    act(() => { fireEvent.submit(form); fireEvent.submit(form); });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText("Nouveau mot de passe", { exact: true }).disabled).toBe(true);
+    expect(screen.getByLabelText("Confirmer le mot de passe").disabled).toBe(true);
+    await act(async () => change.resolve(authResponse({ success: true })));
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("status").textContent).toBe("Mot de passe modifié. Connexion en cours…");
+    expect(screen.getByRole("textbox", { name: "Email professionnel" }).disabled).toBe(true);
+    act(() => fireEvent.submit(form));
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await act(async () => reconnect.reject(new Error("transport unavailable")));
+    expect(screen.getByRole("alert").textContent).toBe("Impossible de joindre le service de connexion.");
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Email professionnel" }).disabled).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it("does not send an empty credential payload", () => {
     render(<Login />);
     fireEvent.submit(document.querySelector("form"));
@@ -59,6 +122,23 @@ describe("Login form", () => {
 
     expect((await screen.findByRole("alert")).textContent).toBe("Impossible de joindre le service de connexion.");
     expect(screen.getByRole("textbox", { name: "Email professionnel" }).value).toBe("agent@example.invalid");
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("dismisses a refused login receipt without replaying the request or losing credentials", async () => {
+    fetchMock.mockResolvedValue(authResponse({ message: "Identifiants refusés." }, 401));
+    const navigate = vi.fn();
+    const user = userEvent.setup();
+    render(<Login redirectUrl={requestedFront} navigate={navigate} />);
+    await enterCredentials(user);
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    await screen.findByRole("alert");
+
+    await user.click(screen.getByRole("button", { name: "Fermer le message" }));
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Email professionnel" }).value).toBe("agent@example.invalid");
+    expect(screen.getByLabelText("Mot de passe", { exact: true }).value).toBe("initial-test-password");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -123,4 +203,10 @@ describe("Login form", () => {
     const results = await axe(document.body);
     expect(results.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
   });
+});
+
+it("links to the recovery form while preserving the validated return destination", () => {
+  render(<Login redirectUrl={requestedFront} />);
+  const link = screen.getByRole("link", { name: "Mot de passe oublié ?" });
+  expect(link.getAttribute("href")).toBe("/forgot-password?redirect=" + encodeURIComponent(requestedFront));
 });
