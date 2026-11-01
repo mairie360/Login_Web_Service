@@ -393,6 +393,20 @@ test('missing or invalid default destinations render an unavailable state withou
   }
 });
 
+test('MAIR-318 the unavailable state reflows within 320px under enlarged text spacing', async () => {
+  delete process.env.DASHBOARD_FRONT_URL;
+  await renderLogin();
+  const section = view.html.match(/<section aria-labelledby="connection-unavailable" class="([^"]*)"/);
+  assert.ok(section, 'the unavailable section must render');
+  // Long words such as "temporairement" overflowed a 320px viewport (340px document) once the
+  // letter spacing reached .12em: they must wrap, with the reduced mobile padding.
+  assert.match(section[1], /\[overflow-wrap:anywhere\]/);
+  assert.match(section[1], /(^| )p-6( |$)/);
+  assert.match(section[1], /(^| )sm:p-8( |$)/);
+  view.unmount();
+  view = undefined;
+});
+
 test('an explicitly allowed return destination works even without a default Dashboard URL', async () => {
   const previous = process.env.CALENDAR_FRONT_URL;
   delete process.env.DASHBOARD_FRONT_URL;

@@ -20,8 +20,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
   if (!redirectUrl) {
     return (
-      <div className="flex w-full items-center justify-center p-6">
-        <section aria-labelledby="connection-unavailable" className="max-w-md rounded-md bg-[var(--mairie-surface)] p-8 text-[var(--mairie-text)] shadow-sm">
+      // Narrower padding below `sm` and wrapping long words keep the message within 320px
+      // when users enlarge text spacing (RGAA 10.12, WCAG 1.4.12).
+      <div className="flex w-full items-center justify-center px-4 py-6 sm:p-6">
+        <section aria-labelledby="connection-unavailable" className="min-w-0 max-w-md rounded-md bg-[var(--mairie-surface)] p-6 text-[var(--mairie-text)] shadow-sm [overflow-wrap:anywhere] sm:p-8">
           <h1 id="connection-unavailable" className="text-xl font-semibold">Connexion temporairement indisponible</h1>
           <p className="mt-4">Veuillez contacter votre administrateur pour rétablir l’accès à Mairie360.</p>
         </section>
