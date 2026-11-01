@@ -12,6 +12,11 @@ on:
 permissions:
   contents: read
 
+# One run at a time per pull request, queued, so the last result is the one of the last description.
+concurrency:
+  group: gdpr-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   gdpr:
     uses: mairie360/CICD/.github/workflows/gdpr-pr-cicd.yml@v4.12.2

@@ -29,3 +29,11 @@ test('the GDPR PR checklist pins one mairie360/CICD tag and Renovate bumps both 
   assert.ok(match, `Renovate must track ${input[0].trim()}`);
   assert.equal(match.groups.currentValue, uses[1]);
 });
+
+// An `edited` event starts a new run for the same head SHA with the new description: the runs of a
+// pull request are queued, never run side by side nor cancelled, so the last finished one is the
+// one of the last description.
+test('the GDPR PR checklist runs of a pull request are queued in order (MAIR-295)', () => {
+  const text = read(workflow);
+  assert.match(text, /^concurrency:\n\s+group:\s*gdpr-pr-\$\{\{\s*github\.event\.pull_request\.number\s*\}\}\n\s+cancel-in-progress:\s*false\s*$/m);
+});
