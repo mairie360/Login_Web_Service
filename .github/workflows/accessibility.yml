@@ -28,10 +28,14 @@ jobs:
         with:
           node-version: '24.21.0'
           cache: npm
+      # The registry token only serves the download: lifecycle scripts run in the next
+      # step, without it, so no dependency install script can read it.
       - name: Install locked dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
+      - name: Run install scripts without the registry token
+        run: npm rebuild && npm run postinstall
       - name: Install official Chromium test runtime
         run: npx --no-install playwright install --with-deps chromium
       - name: Build the actual frontend and CSS

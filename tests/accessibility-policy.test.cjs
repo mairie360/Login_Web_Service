@@ -46,7 +46,10 @@ test('browser workflow runs a fresh real build/test with read-only immutable act
   const workflow = read('.github/workflows/accessibility.yml');
   assert.match(workflow, /permissions:\s*\n  contents: read\s*\n  packages: read/);
   assert.match(workflow, /node-version: '24\.21\.0'/);
-  assert.match(workflow, /run: npm ci/);
+  assert.match(workflow, /run: npm ci --ignore-scripts\s*\n        env:\s*\n          NODE_AUTH_TOKEN:/);
+  const scripts = workflow.split('run: npm rebuild && npm run postinstall')[1]?.split('      - name:')[0];
+  assert.ok(scripts !== undefined, 'install scripts run in their own step');
+  assert.doesNotMatch(scripts, /NODE_AUTH_TOKEN/, 'install scripts never see the registry token');
   assert.match(workflow, /run: npm run build/);
   assert.match(workflow, /run: npm run test:accessibility/);
   assert.match(workflow, /playwright install --with-deps chromium/);
