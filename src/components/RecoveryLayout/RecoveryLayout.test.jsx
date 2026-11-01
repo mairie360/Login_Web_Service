@@ -9,4 +9,9 @@ describe('RecoveryLayout', () => {
     expect(screen.getByText('Contenu')).toBeTruthy();
     expect([recoveryInputClass, recoveryButtonClass, recoveryLinkClass].every(value => value.includes('mairie'))).toBe(true);
   });
+
+  it('MAIR-318 draws the recovery submit text with the on-action token, not white on the accent (2.1:1)', () => {
+    expect(recoveryButtonClass).toContain('text-[var(--mairie-on-action)]');
+    expect(recoveryButtonClass).not.toMatch(/\btext-white\b/);
+  });
 });
