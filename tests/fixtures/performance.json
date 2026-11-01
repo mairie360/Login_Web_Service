@@ -1,0 +1,5 @@
+{
+  "module": "Login",
+  "readySelector": "input[type=\"email\"]",
+  "routes": {}
+}

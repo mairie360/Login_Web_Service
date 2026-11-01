@@ -1,14 +1,16 @@
 name: Login Web Service CICD
 
 on:
+  # MAIR-436: branch pushes are covered by their pull_request run; only main
+  # (which releases) runs on push, so a PR branch no longer runs the pipeline twice.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
+# MAIR-436: read-only token by default; write scopes are granted to the release job only.
 permissions:
-  contents: write
-  packages: write
-  id-token: write
+  contents: read
 
 jobs:
   # #139: preserve the required legacy name with BOTH real blocking scanners.
@@ -29,29 +31,35 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: mairie360/CICD
-          ref: 539847726d4058a9565c4f682c2d1d8302874b06 # published v4.0.1
+          ref: e314bc0c41ed45157cdd928c25358fee82b0c4f6 # v5.1.0
           path: cicd-repo
           persist-credentials: false
       - name: Run blocking Semgrep scan
-        uses: ./cicd-repo/actions/semgrep
+        uses: ./cicd-repo/actions/security/semgrep-pypi
         with:
           config: p/typescript p/react p/owasp-top-ten p/secrets p/dockerfile p/github-actions
           fail_on_findings: "true"
           artifact_name: semgrep-required-check-sarif
       - name: Run blocking redacted Gitleaks scan
-        uses: ./cicd-repo/actions/gitleaks
+        uses: ./cicd-repo/actions/security/gitleaks-binary
         with:
           fail_on_findings: "true"
 
   CICD:
-    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@mair-320-rgaa-ai-preaudit  # TEMPORARY (MAIR-316): RGAA CI test, back to the release before merging
+    # A reusable workflow cannot exceed its caller job's scopes: release-dev
+    # (packages, id-token for cosign) and release-prod (contents for the tag) need them.
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    uses: mairie360/CICD/.github/workflows/frontend-cicd.yml@e314bc0c41ed45157cdd928c25358fee82b0c4f6 # v5.1.0
     with:
       package_name: "login-front"
-      node_version: "24.21.0"
-      cicd_version: "mair-320-rgaa-ai-preaudit"
-      # TEMPORARY (MAIR-316): RGAA check of the CICD branch on a published image, removed before merging.
-      rgaa_preview_image: "ghcr.io/mairie360/login-front:dev"
+      node_version: "24.22.1"
+      cicd_version: "e314bc0c41ed45157cdd928c25358fee82b0c4f6" # v5.1.0
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
+      RELEASE_APP_PK: ${{ secrets.RELEASE_APP_PK }}

@@ -1,12 +1,10 @@
-# Accessibility (RGAA) test stack of the login front (MAIR-316 / MAIR-317).
+# RGAA accessibility stack of the Login front (MAIR-316), run by accessibility_test.sh and by the
+# rgaa job of mairie360/CICD promote-prod.yml (IMAGE_REF=<image>@<staging digest>).
 #
-#   ./accessibility_test.sh        (local: builds the front when IMAGE_REF is empty)
-#
-# Same stack as docker-compose-security.yml (database + seed, core-api, bff-user), with the front
-# on ${IMAGE_REF} (staging-<sha> in the CI, release-prod job) and, instead of ZAP, the runner of
-# the RGAA engine of mairie360/CICD (cicd-repo/tests/a11y), which plays the states of rgaa.yaml and
-# writes rgaa-report/. Exit codes: 0 ok, 1 state unreachable / undeclared criterion, 2 invalid
-# rgaa.yaml, 3 rate below RGAA_MIN_RATE.
+# Same upstream chain as docker-compose-security.yml (database + init-test.sql, Redis, Core API,
+# BFF User), the front on ${IMAGE_REF} and the RGAA runner of mairie360/CICD (cicd-repo/tests/a11y)
+# instead of ZAP. It plays the states of rgaa.yaml (anonymous: Login is the sign-in page) and
+# writes rgaa-report/.
 
 volumes:
   postgres-data:
@@ -34,7 +32,7 @@ x-api-env: &api-env
 
 services:
   postgres:
-    image: ${DB_IMAGE:-ghcr.io/mairie360/database:1.3.0}
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.3.0}
     container_name: login-front-a11y-db
     environment:
       POSTGRES_USER: postgres
@@ -53,7 +51,7 @@ services:
       retries: 10
 
   liquibase:
-    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:1.3.0}
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:3.3.0}
     container_name: login-front-a11y-liquibase
     depends_on:
       postgres:
@@ -63,9 +61,12 @@ services:
       LIQUIBASE_COMMAND_USERNAME: postgres
       LIQUIBASE_COMMAND_PASSWORD: password
       LIQUIBASE_SEARCH_PATH: /migrations
+    # Database >= MAIR-413 only seeds the template admin (users.id = 1) with -Dallow_template_admin=true;
+    # without it the migration fails on a fresh database. Test / dev stacks only.
     command: >
       --changelog-file=changelog.xml
       update
+      -Dallow_template_admin=true
     networks:
       - backend
 
@@ -100,7 +101,7 @@ services:
       retries: 5
 
   core-api:
-    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:1.2.0}
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:2.2.0}
     container_name: login-front-a11y-core-api
     depends_on:
       liquibase:
@@ -111,6 +112,15 @@ services:
       <<: *api-env
       PORT: 3000
       PUBLIC_URL: http://core-api:3000
+      # Core refuses to start without its Resend configuration (MAIR-522). No page of this front sends an
+      # e-mail through these stacks, so the key is fake and the URL never called.
+      RESEND_API_KEY: "re_fake_local"
+      RESEND_BASE_URL: "http://fake-resend.invalid"
+      EMAIL_DOMAIN: "mairie360.local"
+      # Core API >= 2.0 refuses the weak shared test secret unless this flag is set (MAIR-428),
+      # and rate-limits each account (MAIR-425): the scan / load test hammer it as one user.
+      JWT_ALLOW_WEAK_SECRET: "true"
+      RATE_LIMIT_ENABLED: "false"
     expose:
       - "3000"
     networks:
@@ -131,7 +141,7 @@ services:
       - backend
 
   bff-user:
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:0.5.0}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
     container_name: login-front-a11y-bff-user
     depends_on:
       seeder:
@@ -145,6 +155,9 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: 'b"secret"'
       CORE_API_URL: http://core-api:3000
+      # The scanners replay the auth routes from one IP with invalid credentials on purpose: the
+      # auth rate limits of BFF User (MAIR-226) would answer 429 and hide the real responses.
+      AUTH_RATE_LIMIT_ENABLED: "false"
     expose:
       - "4000"
     networks:
@@ -163,8 +176,9 @@ services:
       - backend
 
   login-front:
-    # Published image (staging-<sha> in the CI); accessibility_test.sh builds one locally.
-    image: ${IMAGE_REF:?IMAGE_REF must name the front image to test}
+    # The image under test: <image>@<staging digest> from promote-prod.yml, or the image
+    # accessibility_test.sh built locally. Never rebuilt here.
+    image: ${IMAGE_REF:?IMAGE_REF is set by accessibility_test.sh}
     container_name: login-front-a11y-front
     depends_on:
       bff-user-ready:
@@ -173,11 +187,10 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: 5000
       BFF_USER_API_URL: http://bff-user:4000
-      # Default post-login destination: without it the page only shows "Connexion temporairement
-      # indisponible" (src/app/page.tsx). Not served by this stack, only used as a redirect target.
-      DASHBOARD_FRONT_URL: http://localhost:5008/
-      # Required in production mode, otherwise every login answers 503 before calling bff-user.
+      # The production image refuses to issue the session cookie without a domain (503), and the
+      # authentication routes only accept requests whose Origin is this front (403 otherwise).
       COOKIE_DOMAIN: login-front
+      LOGIN_FRONT_URL: http://login-front:5000
     expose:
       - "5000"
     networks:

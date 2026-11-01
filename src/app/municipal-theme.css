@@ -1,0 +1,4 @@
+/* Municipal colors and compatibility rules are loaded from the published
+ * @mairie360/lib-components/styles.css import in globals.css.
+ * Keep front-specific geometry in its own stylesheet.
+ */

@@ -8,7 +8,18 @@ const ts = require('typescript');
 function requireTs(file) {
   const previous = { ts: require.extensions['.ts'], tsx: require.extensions['.tsx'] };
   const compile = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true, resolveJsonModule: true, jsx: ts.JsxEmit.ReactJSX },
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2020,
+      esModuleInterop: true,
+      resolveJsonModule: true,
+      jsx: ts.JsxEmit.ReactJSX,
+      // JSX compilation changes offsets. Node coverage needs the actual TSX source map,
+      // otherwise generated interop/JSX branches are incorrectly assigned to source imports.
+      // Server routes also require mappings: emitted import helpers shift their offsets.
+      inlineSourceMap: true,
+      inlineSources: true,
+    },
     fileName: filename,
   }).outputText, filename);
   require.extensions['.ts'] = compile;

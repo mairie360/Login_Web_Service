@@ -1,0 +1,13 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+const [baseFile, candidateFile, outputFile] = process.argv.slice(2);
+if (!baseFile || !candidateFile || !outputFile) throw new Error('Usage: compare-performance baseline.json candidate.json comparison.json');
+const baseline = JSON.parse(readFileSync(baseFile));
+const candidate = JSON.parse(readFileSync(candidateFile));
+const comparable = baseline.module === candidate.module && JSON.stringify(baseline.environment) === JSON.stringify(candidate.environment) && baseline.scenario === candidate.scenario;
+if (!comparable) throw new Error('Different fixture, collector, browser, hardware or profile: these reports cannot establish a regression.');
+const values = report => ({ totalJsRawBytes: report.totalJsRawBytes, totalJsGzipBytes: report.totalJsGzipBytes, ...report.median });
+const before = values(baseline), after = values(candidate);
+const comparison = Object.fromEntries(Object.keys(before).map(key => [key, { baseline: before[key], candidate: after[key], delta: after[key] - before[key], percent: before[key] === 0 ? null : 100 * (after[key] - before[key]) / before[key] }]));
+const proposedBudgets = { initialJsRawBytes: Math.ceil(before.initialJsRawBytes * 1.1 / 1024) * 1024, initialJsGzipBytes: Math.ceil(before.initialJsGzipBytes * 1.1 / 1024) * 1024, LCP: 2500, INP: 200, CLS: 0.1 };
+writeFileSync(outputFile, JSON.stringify({ module: baseline.module, baselineCommit: baseline.commit, candidateCommit: candidate.commit, comparable, comparison, proposedBudgets, budgetStatus: 'proposed', blockingBudgetsEnabled: false }, null, 2) + '\n');
+console.log('Comparable reports saved. Proposed budgets are observational until retained in the ticket.');

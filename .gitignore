@@ -7,6 +7,11 @@ dist
 # testing
 /coverage
 
+# Reproducible local performance artefacts and temporary baseline checkout.
+/performance/
+/.performance-base/
+/performance-server.log
+
 # RGAA engine (mairie360/CICD tests/a11y): local clone, report and AI verdict cache
 /cicd-repo/
 /rgaa-report/

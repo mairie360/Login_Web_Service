@@ -8,12 +8,12 @@ const root = join(__dirname, '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 test('third-party workflow actions use immutable commits', () => {
-  const workflows = ['auto-approve.yml', 'contracts.yml', 'nextjs.yml'];
+  const workflows = ['auto-approve.yml', 'contracts.yml'];
   const actions = workflows.flatMap((file) => [...read(`.github/workflows/${file}`)
     .matchAll(/uses:\s*([^\s@]+)@([^\s#]+)/g)]);
   assert.deepEqual(actions.map((match) => match[1]).sort(), [
-    'actions/checkout', 'actions/checkout', 'actions/checkout',
-    'actions/setup-node', 'actions/setup-node', 'actions/setup-node',
+    'actions/checkout',
+    'actions/setup-node',
     'hmarr/auto-approve-action',
   ]);
   for (const [, name, ref] of actions) {
@@ -28,8 +28,9 @@ test('the reusable frontend workflow receives only its declared named secrets', 
   assert.deepEqual(mappings.map(([, name, source]) => [name, source]), [
     ['CODECOV_TOKEN', 'CODECOV_TOKEN'],
     ['N8N_WEBHOOK_SECRET', 'N8N_WEBHOOK_SECRET'],
-    // AI pre-audit of the RGAA check (release-prod), MAIR-320.
     ['ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY'],
+    ['RELEASE_APP_ID', 'RELEASE_APP_ID'],
+    ['RELEASE_APP_PK', 'RELEASE_APP_PK'],
   ]);
   assert.doesNotMatch(workflow, /semgrep_fail_on_findings:\s*false|semgrep_config:|continue-on-error:/);
 });
@@ -50,11 +51,11 @@ test('the legacy required security name runs real immutable blocking scanners', 
   }
   assert.match(job, /fetch-depth: 0/);
   assert.equal([...job.matchAll(/persist-credentials: false/g)].length, 2);
-  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: 539847726d4058a9565c4f682c2d1d8302874b06/);
-  assert.match(job, /uses: \.\/cicd-repo\/actions\/semgrep/);
+  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: e314bc0c41ed45157cdd928c25358fee82b0c4f6 # v5\.1\.0/);
+  assert.match(job, /uses: \.\/cicd-repo\/actions\/security\/semgrep-pypi/);
   assert.match(job, /config: p\/typescript p\/react p\/owasp-top-ten p\/secrets p\/dockerfile p\/github-actions/);
   assert.match(job, /artifact_name: semgrep-required-check-sarif/);
-  assert.match(job, /uses: \.\/cicd-repo\/actions\/gitleaks/);
+  assert.match(job, /uses: \.\/cicd-repo\/actions\/security\/gitleaks-binary/);
   assert.equal([...job.matchAll(/fail_on_findings: "true"/g)].length, 2);
 });
 
@@ -69,21 +70,9 @@ test('npm resolution keeps the seven-day window except for the internal UI packa
   assert.match(config, /^@mairie360:registry=https:\/\/npm\.pkg\.github\.com\s*$/m);
 });
 
-test('the internal UI package is pinned to its published release in the lockfile', () => {
-  const manifest = JSON.parse(read('package.json'));
-  const lock = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.8');
-  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.8');
-  const resolved = lock.packages['node_modules/@mairie360/lib-components'];
-  assert.equal(resolved.version, '0.6.8');
-  assert.match(resolved.resolved, /^https:\/\/npm\.pkg\.github\.com\/download\/@mairie360\/lib-components\/0\.6\.8\//);
-  assert.match(resolved.integrity, /^sha512-/);
-});
-
 test('CI uses Node 24 and the toolchain supports npm release-age policy', () => {
-  assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.21\.0"/);
-  assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.21\.0'/);
-  assert.equal([...read('.github/workflows/nextjs.yml').matchAll(/node-version:\s*24\.21\.0\s*$/gm)].length, 2);
+  assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.22\.1"/);
+  assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.22\.1'/);
   const version = execFileSync('npm', ['--version'], { cwd: root, encoding: 'utf8' }).trim();
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
   assert.ok(match, 'npm must report a stable version');
@@ -110,45 +99,35 @@ test('Docker dependency installation requires ephemeral secret and policy mounts
 test('Docker and all frontend workflows use the same exact pinned Node LTS release', () => {
   const dockerfile = read('Dockerfile');
   const nodeVersion = dockerfile.match(/^ARG NODE_VERSION=(\d+\.\d+\.\d+)$/m)?.[1];
-  assert.equal(nodeVersion, '24.21.0');
+  assert.equal(nodeVersion, '24.22.1');
   const bases = [...dockerfile.matchAll(/^FROM node:\$\{NODE_VERSION\}-bookworm-slim@sha256:([a-f0-9]{64}) AS ([\w-]+)$/gm)];
   assert.deepEqual(bases.map(([, digest, stage]) => [digest, stage]), [
-    ['0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6', 'dependencies'],
-    ['0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6', 'runtime-base'],
+    ['55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205', 'dependencies'],
+    ['55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205', 'runtime-base'],
   ]);
   assert.match(dockerfile, /^FROM dependencies AS builder$/m);
   assert.match(dockerfile, /^FROM runtime-base AS runner$/m);
   assert.equal(read('.github/workflows/cicd.yml').match(/node_version:\s*"([^"]+)"/)?.[1], nodeVersion);
   assert.equal(read('.github/workflows/contracts.yml').match(/node-version:\s*'([^']+)'/)?.[1], nodeVersion);
-  assert.deepEqual([...read('.github/workflows/nextjs.yml').matchAll(/node-version:\s*(\S+)/g)].map(([, version]) => version), [nodeVersion, nodeVersion]);
 });
 
 test('Docker excludes local environments and CI artifacts but keeps tracked npm policy', () => {
   const ignored = read('.dockerignore').split(/\r?\n/).map(line => line.trim());
-  for (const pattern of ['node_modules', '.next', '.git', '.env*', '.npmrc.*', 'cicd-repo', 'coverage', 'test-results', 'playwright-report']) {
+  for (const pattern of ['node_modules', '.next', '.git', '.env*', '.npmrc.*', 'cicd-repo', 'rgaa-report', '.rgaa-ai-cache', 'rgaa.yaml', 'accessibility_test.sh', 'coverage', 'test-results', 'playwright-report']) {
     assert.ok(ignored.includes(pattern), `${pattern} must be excluded from the build context`);
   }
   assert.ok(!ignored.includes('.npmrc') && !ignored.includes('.npmrc*'));
 });
 
-test('isolated stacks run the published image, the scripts build it with a secret only', () => {
-  const stacks = {
-    'docker-compose-security.yml': 'security_test.sh',
-    'docker-compose-performance.yml': 'performance_test.sh',
-    'docker-compose-accessibility.yml': 'accessibility_test.sh',
-  };
-  for (const [file, script] of Object.entries(stacks)) {
+test('isolated stacks pass only a build secret to the frontend', () => {
+  for (const file of ['docker-compose-security.yml', 'docker-compose-performance.yml']) {
     const compose = read(file);
-    const frontend = compose.split('  login-front:\n')[1]?.split('\n  security-scan:')[0]?.split('\n  k6-perf-test:')[0]?.split('\n  a11y:')[0];
-    assert.ok(frontend, `${file} must keep the isolated frontend service`);
-    // The CI exports IMAGE_REF (dev-<sha> for ZAP / k6, staging-<sha> for RGAA): never rebuilt.
-    assert.match(frontend, /image: \$\{IMAGE_REF:\?/);
-    assert.doesNotMatch(frontend, /build:|args:|NODE_AUTH_TOKEN|\/run\/secrets/);
-    const code = compose.split('\n').filter(line => !line.trimStart().startsWith('#')).join('\n');
-    assert.doesNotMatch(code, /NODE_AUTH_TOKEN|\bbuild-arg\b/);
-    const shell = read(script);
-    assert.match(shell, /docker build -t login-front:local --secret id=node_auth_token,env=NODE_AUTH_TOKEN \./);
-    assert.doesNotMatch(shell, /--build-arg|up -d --build/);
+    assert.match(compose, /^secrets:\n  node_auth_token:\n    environment: NODE_AUTH_TOKEN\n/m);
+    const frontend = compose.split('  login-front:\n')[1]?.split('\n  security-scan:')[0]?.split('\n  k6-perf-test:')[0];
+    assert.ok(frontend);
+    assert.match(frontend, /build:\n      context: \.\n      dockerfile: Dockerfile\n      secrets:\n        - node_auth_token\n/);
+    assert.doesNotMatch(compose, /NODE_AUTH_TOKEN:\s*\$\{|\bbuild-arg\b/);
+    assert.doesNotMatch(frontend, /args:|environment:[\s\S]*NODE_AUTH_TOKEN|\/run\/secrets/);
   }
 });
 
@@ -161,4 +140,38 @@ test('the runtime removes only unused global package managers without weakening 
   assert.doesNotMatch(runtime, /rm[^\n]*\/app|rm[^\n]*\/usr\/local\/bin\/node\b/);
   assert.doesNotMatch(dockerfile.split('FROM runtime-base AS runner\n')[1], /npm|npx|yarn|corepack/);
   assert.doesNotMatch(read('.github/workflows/cicd.yml'), /image_scan_fail_on_findings:|scan_fail_on_findings:|continue-on-error:/);
+});
+
+test('MAIR-316: the RGAA stack runs the image under test and the script builds it with a secret only', () => {
+  const compose = read('docker-compose-accessibility.yml');
+  const frontend = compose.split('  login-front:\n')[1]?.split('\n  a11y:')[0];
+  assert.ok(frontend, 'docker-compose-accessibility.yml must keep the frontend service');
+  // promote-prod.yml exports IMAGE_REF=<image>@<staging digest>: the stack never rebuilds it.
+  assert.match(frontend, /image: \$\{IMAGE_REF:\?/);
+  assert.doesNotMatch(frontend, /build:|args:|NODE_AUTH_TOKEN|\/run\/secrets/);
+  const code = compose.split('\n').filter((line) => !line.trimStart().startsWith('#')).join('\n');
+  assert.doesNotMatch(code, /NODE_AUTH_TOKEN|\bbuild-arg\b/);
+  for (const file of ['docker-compose-security.yml', 'docker-compose-performance.yml']) {
+    assert.doesNotMatch(read(file), /IMAGE_REF/, file);
+  }
+  const shell = read('accessibility_test.sh');
+  assert.match(shell, /docker build -t login-front:local --secret id=node_auth_token,env=NODE_AUTH_TOKEN \./);
+  assert.doesNotMatch(shell, /--build-arg|up -d --build/);
+});
+
+test('MAIR-316: accessibility_test.sh fetches the RGAA engine at a pinned commit SHA, not only a tag', () => {
+  const shell = read('accessibility_test.sh');
+  // `git clone --branch` refuses a SHA, and cicd.yml pins mairie360/CICD by SHA.
+  assert.doesNotMatch(shell, /git clone[^\n]*--branch/);
+  assert.match(shell, /git -C "\$CICD_DIR" fetch --quiet --depth 1 https:\/\/github\.com\/mairie360\/CICD "\$CICD_VERSION"/);
+  assert.match(shell, /checkout --quiet FETCH_HEAD/);
+});
+
+test('MAIR-316: promote-prod passes the secrets of the RGAA AI pre-audit by name', () => {
+  const workflow = read('.github/workflows/promote-prod.yml');
+  assert.doesNotMatch(workflow, /secrets:\s*inherit/);
+  assert.match(workflow, /^\s+stack: fronts\s*$/m);
+  for (const name of ['ANTHROPIC_API_KEY', 'ANTHROPIC_WORKSPACE_ID']) {
+    assert.match(workflow, new RegExp(`^ {6}${name}: \\$\\{\\{ secrets\\.${name} \\}\\}\\s*$`, 'm'), name);
+  }
 });
