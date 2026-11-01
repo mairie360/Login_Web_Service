@@ -12,6 +12,7 @@ const ROUTES = {
   '/api/auth/login': 'src/app/api/auth/login/route.ts',
   '/api/auth/force-change-password': 'src/app/api/auth/force-change-password/route.ts',
   '/api/auth/force_change_password': 'src/app/api/auth/force_change_password/route.ts',
+  '/api/auth/refresh': 'src/app/api/auth/refresh/route.ts',
 };
 
 class BrowserFront {
@@ -60,6 +61,8 @@ class BrowserFront {
 
     const headers = new Headers(init.headers);
     headers.set('user-agent', USER_AGENT);
+    headers.set('sec-fetch-site', 'same-origin');
+    headers.set('origin', ORIGIN);
     if (this.cookies.size) headers.set('cookie', [...this.cookies].map(([name, value]) => `${name}=${value}`).join('; '));
     const response = await handler(new NextRequest(url, { method, headers, body: init.body }));
     for (const header of response.headers.getSetCookie()) {

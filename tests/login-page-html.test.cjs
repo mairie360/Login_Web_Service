@@ -4,7 +4,7 @@ const { after, afterEach, before, beforeEach, test } = require('node:test');
 const { requireTs } = require('./support/load-ts.cjs');
 const { installReactRuntime, mount, stubModule } = require('./support/server-view.cjs');
 
-// HTML of the sign-in page (src/app/page.tsx → src/components/Login.tsx) rendered with react-dom/server
+// HTML of the sign-in page (src/app/page.tsx → src/components/Login/Login.tsx) rendered with react-dom/server
 // against the mocked BFF User: the real component is rendered, the hook state is kept between render passes
 // (tests/support/server-view.cjs), the form submissions go through the real route handlers of src/app/api/auth
 // (tests/support/browser-front.cjs) and the markup reflects what BFF User answered.
@@ -26,6 +26,7 @@ let RootLayout;
 let resolveLoginRedirect;
 let view;
 let window;
+const fontRequests = [];
 const savedDashboardUrl = process.env.DASHBOARD_FRONT_URL;
 const savedProjectUrl = process.env.PROJECT_FRONT_URL;
 
@@ -33,6 +34,9 @@ before(async () => {
   await bff.start();
   front.install();
   stubModule(path.join(__dirname, '..', 'src/app/globals.css'), {});
+  stubModule(path.join(__dirname, '..', 'src/app/municipal-theme.css'), {});
+  stubModule('next/font/google', { Geist: (options) => { fontRequests.push(options); return { variable: 'font-geist' }; } });
+  stubModule('next/headers', { cookies: async () => ({ get: () => undefined }) });
   RootLayout = requireTs('src/app/layout.tsx').default;
   Home = requireTs('src/app/page.tsx').default;
   resolveLoginRedirect = requireTs('src/lib/login-redirect.ts').resolveLoginRedirect;
@@ -61,18 +65,315 @@ afterEach(() => {
   assert.deepEqual([...bff.violations, ...front.violations], []);
 });
 
-const apiError = (status, message) => ({ status, body: { code: 'UPSTREAM_ERROR', message }, outOfContract: true });
+const ERROR_CODES = { 400: 'BAD_REQUEST', 401: 'UNAUTHORIZED', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT', 429: 'TOO_MANY_REQUESTS', 500: 'INTERNAL_ERROR', 502: 'BAD_GATEWAY', 503: 'SERVICE_UNAVAILABLE', 504: 'GATEWAY_TIMEOUT' };
+const apiError = (status, message) => ({ status, body: { error: { code: ERROR_CODES[status] ?? 'INTERNAL_ERROR', message, details: [] } }, outOfContract: true });
+
+/**
+ * Connexion réussie selon le contrat courant de BFF User : le corps est AuthSessionResponse et les jetons
+ * n'arrivent que par les cookies HttpOnly accessToken / refreshToken (lus par readBffCookieSession).
+ */
+const sessionReply = (accessToken, extra = {}) => ({
+  body: { message: 'Logged in successfully' },
+  headers: { 'Set-Cookie': [`accessToken=${accessToken}; Path=/; HttpOnly; SameSite=Strict`, 'refreshToken=refresh-token; Path=/auth; HttpOnly; SameSite=Strict'] },
+  ...extra,
+});
 const upstream = () => bff.requests.map((request) => `${request.method} ${request.template} ${request.headers.cookie ? 'cookie' : 'no-cookie'}`);
 const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange', { target: { value } });
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
+const assertErrorMessage = (html, expected) => {
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM(html);
+  try {
+    const errors = [...dom.window.document.querySelectorAll('[role="alert"]')];
+    assert.equal(errors.length, 1, 'The form announces its error once');
+    assert.equal(errors[0].textContent, expected);
+  } finally { dom.window.close(); }
+};
 const assertStandalone = (html) => {
   assert.match(html, /<main[^>]*min-h-dvh/);
   assert.doesNotMatch(html, /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
   assert.doesNotMatch(html, /© 2026 Mairie360/);
 };
 const renderLogin = async (searchParams = {}) => {
-  view = mount(React.createElement(RootLayout, null, await Home({ searchParams: Promise.resolve(searchParams) })));
+  view = mount(await RootLayout({ children: await Home({ searchParams: Promise.resolve(searchParams) }) }));
 };
+
+test('the standalone document exposes a skip target before the real login form and shares the font configuration', async () => {
+  await renderLogin();
+  const { JSDOM } = require('jsdom');
+  const document = new JSDOM(view.html).window.document;
+  const main = document.querySelector('main');
+  const skip = document.querySelector('a');
+  assert.equal(document.documentElement.lang, 'fr');
+  assert.equal(document.querySelectorAll('main').length, 1);
+  assert.equal(skip.textContent, 'Aller au contenu');
+  assert.equal(document.querySelector(skip.getAttribute('href')), main);
+  assert.equal(main.tabIndex, -1);
+  assert.equal(main.querySelector('h1').textContent, 'Connexion');
+  assert.ok(main.querySelector('label[for="email"]'));
+  assert.ok(main.querySelector('label[for="password"]'));
+  assert.equal(document.body.classList.contains('mairie-ui'), true);
+  assert.equal(document.body.classList.contains('font-geist'), true);
+  assert.deepEqual(fontRequests, [{ variable: '--font-geist-sans', subsets: ['latin'] }]);
+});
+
+const assertPending = (ids) => {
+  assert.match(view.html, /<form[^>]*aria-busy="true"/);
+  for (const id of ids) {
+    const [input] = view.hostElements((props, _text, tag) => tag === 'input' && props.id === id);
+    assert.equal(input?.props.disabled, true, `${id} must be locked while a request is pending`);
+  }
+  const [button] = view.hostElements((props, _text, tag) => tag === 'button' && props.type === 'submit');
+  assert.equal(button?.props.disabled, true);
+};
+
+const validatedError = (status, message) => {
+  const reply = apiError(status, message);
+  assert.deepEqual(contract.validate(contract.document.components.schemas.ErrorResponse, reply.body), []);
+  return reply;
+};
+
+// Hold a validated HTTP mock reply without racing a timer; never alter a product/BFF handler.
+const holdMockReply = (pathname) => {
+  const previousReply = bff.reply;
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  bff.reply = async function (req, res, method, reply) {
+    if (new URL(req.url, this.url).pathname === pathname) await gate;
+    return previousReply.call(this, req, res, method, reply);
+  };
+  return { release, restore() { release(); bff.reply = previousReply; } };
+};
+
+test('pending sign-in locks credentials, ignores repeated submissions and allows only an explicit retry', async () => {
+  const gate = holdMockReply('/auth/login');
+  bff.on('POST', '/auth/login', validatedError(401, 'Refused disposable login'));
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'wrong');
+  const first = submit();
+  try {
+    await view.waitFor((html) => html.includes('aria-busy="true"'));
+    assertPending(['email', 'password']);
+    await submit();
+    assert.equal(front.browserCalls.length, 1);
+  } finally {
+    gate.release();
+    try { await first; } finally { gate.restore(); }
+  }
+  assert.match(view.html, /Email ou mot de passe incorrect/);
+  assert.match(view.html, /aria-busy="false"/);
+  assert.equal(view.hostElements((props) => props.id === 'email')[0].props.disabled, false);
+  assert.equal(bff.requests.length, 1);
+  assert.deepEqual(window.location.assigned, []);
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
+  await submit();
+  assert.equal(front.browserCalls.length, 2);
+  assert.equal(bff.requests.length, 2);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('a browser transport failure releases sign-in and supports a subsequent explicit attempt', async () => {
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login') {
+      this.browserCalls.push({ method: init.method, path: input });
+      throw new TypeError('Disposable browser transport failure before reaching the frontend handler');
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    assert.match(view.html, /Impossible de joindre le service de connexion/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(front.browserCalls.length, 1);
+    assert.deepEqual(bff.requests, []);
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
+  await submit();
+  assert.equal(front.browserCalls.length, 2);
+  assert.equal(bff.requests.length, 1);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('an empty first-password submission is rejected without locking or sending a mutation', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await submit();
+  assert.match(view.html, /Veuillez renseigner votre nouveau mot de passe/);
+  assert.match(view.html, /aria-busy="false"/);
+  assert.equal(front.browserCalls.length, 1);
+  assert.equal(bff.requests.length, 1);
+  assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.disabled, false);
+});
+
+// Defensive browser-response tests, not BFF fixtures: real frontend handlers always supply a message.
+test('sign-in without an error message keeps generic feedback and unlocks the form', async () => {
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login') {
+      this.browserCalls.push({ method: init.method, path: input });
+      return Response.json({}, { status: 400 });
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    assert.match(view.text(), /La connexion a échoué\./);
+    assert.match(view.html, /role="alert"/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(view.hostElements((props) => props.id === 'password')[0].props.disabled, false);
+    assert.equal(front.browserCalls.length, 1);
+    assert.deepEqual(bff.requests, []);
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+});
+
+test('first-password refusal without a message keeps the draft for an explicit retry', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  const originalFetch = front.fetch;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/force_change_password') {
+      this.browserCalls.push({ method: init.method, path: input });
+      return Response.json({}, { status: 400 });
+    }
+    return originalFetch.call(this, input, init);
+  };
+  try {
+    await submit();
+    assert.match(view.text(), /Le mot de passe n’a pas pu être modifié\./);
+    assert.match(view.html, /role="alert"/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    for (const id of ['new-password', 'new-password-confirmation']) {
+      const [input] = view.hostElements((props) => props.id === id);
+      assert.equal(input.props.value, 'N3w-secret');
+      assert.equal(input.props.disabled, false);
+    }
+    assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
+    assert.equal(front.browserCalls.length, 2);
+    assert.equal(bff.requests.length, 1, 'the faulty browser response never reached the handler');
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    front.fetch = originalFetch;
+  }
+  bff.on('POST', '/auth/force_change_password', { status: 204 });
+  bff.on('POST', '/auth/login', sessionReply('fresh-access-token'));
+  await submit();
+  assert.equal(front.browserCalls.length, 4);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.equal(front.cookies.get('passwordChangeToken'), undefined);
+  assert.match(view.text(), /Connexion réussie\./);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('a refused first-password mutation keeps the draft, and an expired token returns to standalone sign-in', async () => {
+  bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+  bff.on('POST', '/auth/force_change_password', validatedError(400, 'Disposable refusal'));
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'temporary');
+  await submit();
+  await typeInto('new-password', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret');
+  await submit();
+  assert.match(view.text(), /Le nouveau mot de passe est invalide\./);
+  assert.match(view.html, /role="alert"/);
+  assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.value, 'N3w-secret');
+  assert.equal(view.hostElements((props) => props.id === 'new-password-confirmation')[0].props.value, 'N3w-secret');
+  assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
+  assert.equal(front.browserCalls.length, 2);
+  assert.deepEqual(window.location.assigned, []);
+  bff.on('POST', '/auth/force_change_password', validatedError(403, 'Disposable expired token'));
+  await submit();
+  assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
+  assert.match(view.html, /role="alert"/);
+  assert.match(view.text(), /Le lien de changement de mot de passe est invalide ou expiré\. Reconnectez-vous\./);
+  assert.doesNotMatch(view.html, /id="new-password"|N3w-secret/);
+  assert.equal(front.cookies.get('passwordChangeToken'), undefined);
+  assert.equal(front.browserCalls.length, 3);
+  assert.equal(bff.requests.length, 3);
+  assert.deepEqual(window.location.assigned, []);
+});
+
+test('one lock spans first-password confirmation and lost reconnection without stale success feedback or replay', async () => {
+  const confirmation = holdMockReply('/auth/force_change_password');
+  const originalFetch = front.fetch;
+  let release;
+  const reconnect = new Promise((resolve) => { release = resolve; });
+  let logins = 0;
+  front.fetch = async function (input, init) {
+    if (input === '/api/auth/login' && ++logins === 2) {
+      this.browserCalls.push({ method: init.method, path: input });
+      await reconnect;
+      throw new TypeError('Disposable browser transport failure on dependent reconnection');
+    }
+    return originalFetch.call(this, input, init);
+  };
+  let pending;
+  try {
+    bff.on('POST', '/auth/login', { status: 412, body: { token: 'first-connection-token' } });
+    bff.on('POST', '/auth/force_change_password', { status: 204 });
+    await renderLogin();
+    await typeInto('email', 'alice@mairie.test');
+    await typeInto('password', 'temporary');
+    await submit();
+    await typeInto('new-password', 'N3w-secret');
+    await typeInto('new-password-confirmation', 'N3w-secret');
+    pending = submit();
+    await view.waitFor((html) => html.includes('Modification…'));
+    assertPending(['new-password', 'new-password-confirmation']);
+    await submit();
+    assert.equal(front.browserCalls.length, 2);
+    confirmation.release();
+    await view.waitFor((html) => html.includes('Mot de passe modifié. Connexion en cours…'));
+    assertPending(['email', 'password']);
+    await submit();
+    assert.equal(front.browserCalls.length, 3);
+    release();
+    await pending;
+    assert.match(view.html, /Impossible de joindre le service de connexion/);
+    assert.doesNotMatch(view.html, /role="status"/);
+    assert.match(view.html, /aria-busy="false"/);
+    assert.equal(bff.requests.length, 2, 'lost browser transport never reached the BFF mock');
+    assert.deepEqual(window.location.assigned, []);
+  } finally {
+    confirmation.release();
+    release();
+    try { await pending; } finally {
+      confirmation.restore();
+      front.fetch = originalFetch;
+    }
+  }
+  bff.on('POST', '/auth/login', sessionReply('fresh-access-token'));
+  await submit();
+  assert.equal(front.browserCalls.length, 4);
+  assert.equal(bff.requests.length, 3);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
 
 test('missing or invalid default destinations render an unavailable state without a sign-in form', async () => {
   for (const value of [undefined, '', '  ', 'http://%', 'ftp://dashboard.mairie.test/', 'https://user:password@dashboard.mairie.test/']) {
@@ -116,7 +417,7 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
   assert.match(view.html, /<input id="email" type="email"[^>]*placeholder="exemple@domaine\.com" required=""[^>]*name="email" value=""/);
   assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
-  assert.match(view.html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
+  assert.match(view.html, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
 });
 
@@ -187,7 +488,7 @@ test('a successful sign-in returns to the requested page', async () => {
   const previous = process.env.CALENDAR_FRONT_URL;
   process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
   try {
-    bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+    bff.on('POST', '/auth/login', sessionReply('access-token'));
     await renderLogin({ redirect: 'https://calendar.mairie.test/events?id=42' });
     await typeInto('email', 'alice@mairie.test');
     await typeInto('password', 'S3cret!');
@@ -200,18 +501,45 @@ test('a successful sign-in returns to the requested page', async () => {
   }
 });
 
+for (const { name, params, destination } of [
+  { name: 'the Calendar returnUrl keeps its path and query', params: { returnUrl: 'https://calendar.mairie.test/events?id=42' }, destination: 'https://calendar.mairie.test/events?id=42' },
+  { name: 'the Projects returnUrl keeps its path and query', params: { returnUrl: 'https://projects.mairie.test/projects?view=board' }, destination: 'https://projects.mairie.test/projects?view=board' },
+  { name: 'redirect takes precedence over returnUrl', params: { redirect: 'https://projects.mairie.test/projects', returnUrl: 'https://calendar.mairie.test/events' }, destination: 'https://projects.mairie.test/projects' },
+  { name: 'a foreign returnUrl uses Dashboard', params: { returnUrl: 'https://outside.mairie.test/events' }, destination: 'https://dashboard.mairie.test/' },
+  { name: 'a malformed returnUrl uses Dashboard', params: { returnUrl: '//calendar.mairie.test/events' }, destination: 'https://dashboard.mairie.test/' },
+  { name: 'repeated returnUrl parameters use Dashboard', params: { returnUrl: ['https://calendar.mairie.test/events', 'https://projects.mairie.test/projects'] }, destination: 'https://dashboard.mairie.test/' },
+  { name: 'an invalid explicit redirect cannot fall through to returnUrl', params: { redirect: 'https://outside.mairie.test/', returnUrl: 'https://calendar.mairie.test/events' }, destination: 'https://dashboard.mairie.test/' },
+]) {
+  test(`a successful sign-in handles ${name}`, async () => {
+    const previous = process.env.CALENDAR_FRONT_URL;
+    process.env.CALENDAR_FRONT_URL = 'https://calendar.mairie.test/';
+    try {
+      bff.on('POST', '/auth/login', sessionReply('access-token'));
+      await renderLogin(params);
+      await typeInto('email', 'alice@mairie.test');
+      await typeInto('password', 'S3cret!');
+      await submit();
+      await view.waitFor((current) => current.includes('Connexion réussie.'));
+      assert.deepEqual(window.location.assigned, [destination]);
+    } finally {
+      if (previous === undefined) delete process.env.CALENDAR_FRONT_URL;
+      else process.env.CALENDAR_FRONT_URL = previous;
+    }
+  });
+}
+
 test('an empty submission is refused in the page without any network call', async () => {
   await renderLogin();
 
   await submit();
 
-  assert.match(view.html, /<p role="alert"[^>]*>Veuillez renseigner votre email et votre mot de passe\.<\/p>/);
+  assertErrorMessage(view.html, 'Veuillez renseigner votre email et votre mot de passe.');
   assert.deepEqual(front.browserCalls, []);
   assert.deepEqual(bff.requests, []);
 });
 
 test('valid credentials sign the user in: the cookie is set, the success is rendered and the browser leaves', async () => {
-  bff.on('POST', '/auth/login', { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer access-token' } });
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
   await renderLogin();
 
   await typeInto('email', '  alice@mairie.test ');
@@ -224,7 +552,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
 
   assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
   assert.match(html, /<input id="password"[^>]*value=""/, 'the password is cleared once sent');
-  assert.match(html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
+  assert.match(html, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
   assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
@@ -241,17 +569,17 @@ test('refused credentials are rendered as the page message, without a session', 
   await submit();
   const html = await view.waitFor((current) => current.includes('role="alert"'));
 
-  assert.match(html, /<p role="alert"[^>]*>Email ou mot de passe incorrect\.<\/p>/);
+  assertErrorMessage(html, 'Email ou mot de passe incorrect.');
   assert.equal(front.cookies.get('accessToken'), undefined);
   assert.deepEqual(window.location.assigned, []);
-  assert.match(html, /<button type="submit" class="btn btn-md btn-primary !text-white">Se connecter<\/button>/);
+  assert.match(html, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
 });
 
 test('a first connection switches to the password change form, then signs in with the new password', async () => {
   let logins = 0;
   bff.on('POST', '/auth/login', () => (logins++ === 0
     ? { status: 412, body: { token: 'first-connection-token' } }
-    : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
+    : sessionReply('fresh-access-token')));
   bff.on('POST', '/auth/force_change_password', { status: 204 });
   await renderLogin({ redirect: 'https://projects.mairie.test/projects?view=board' });
 
@@ -265,7 +593,7 @@ test('a first connection switches to the password change form, then signs in wit
   assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
   assert.match(change, /<input id="new-password"[^>]*type="password"/);
   assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
-  assert.match(change, /<button type="submit" class="btn btn-md btn-primary !text-white">Modifier le mot de passe<\/button>/);
+  assert.match(change, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Modifier le mot de passe(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(change, /id="email"/);
   assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token', 'the one-time token stays in an HttpOnly cookie');
   assert.equal(front.cookies.get('accessToken'), undefined);
@@ -273,7 +601,7 @@ test('a first connection switches to the password change form, then signs in wit
   await typeInto('new-password', 'N3w-secret');
   await typeInto('new-password-confirmation', 'other');
   await submit();
-  assert.match(view.html, /<p role="alert"[^>]*>Les mots de passe ne correspondent pas\.<\/p>/);
+  assertErrorMessage(view.html, 'Les mots de passe ne correspondent pas.');
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
 
   await typeInto('new-password-confirmation', 'N3w-secret');
@@ -293,7 +621,7 @@ test('a first connection without a requested page ends on Dashboard', async () =
   let logins = 0;
   bff.on('POST', '/auth/login', () => (logins++ === 0
     ? { status: 412, body: { token: 'first-connection-token' } }
-    : { body: { refresh_token: 'refresh-token' }, headers: { Authorization: 'Bearer fresh-access-token' } }));
+    : sessionReply('fresh-access-token')));
   bff.on('POST', '/auth/force_change_password', { status: 204 });
   await renderLogin();
   await typeInto('email', 'alice@mairie.test');
@@ -316,6 +644,62 @@ test('an unreachable BFF is rendered as the unavailable-service message', async 
   await submit();
   const html = await view.waitFor((current) => current.includes('role="alert"'));
 
-  assert.match(html, /<p role="alert"[^>]*>Le service de connexion est indisponible\.<\/p>/);
+  assertErrorMessage(html, 'Le service de connexion est indisponible.');
   assert.equal(front.cookies.get('accessToken'), undefined);
+});
+
+// MAIR-153: Keycloak sign-in next to the password form.
+const withKeycloak = async (run) => {
+  const keys = ['KEYCLOAK_REALM_URL', 'KEYCLOAK_CLIENT_ID', 'LOGIN_FRONT_URL'];
+  const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  Object.assign(process.env, { KEYCLOAK_REALM_URL: 'https://auth.mairie.test/realms/mairie360', KEYCLOAK_CLIENT_ID: 'core-api', LOGIN_FRONT_URL: 'https://login.mairie.test/' });
+  try { await run(); } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+};
+
+test('MAIR-153: a configured instance offers the Keycloak sign-in towards the requested page, password sign-in kept', async () => {
+  await withKeycloak(async () => {
+    await renderLogin({ redirect: 'https://projects.mairie.test/projects' });
+    assert.match(view.html, /<a href="\/api\/auth\/keycloak\?redirect=https%3A%2F%2Fprojects\.mairie\.test%2Fprojects"[^>]*>Se connecter avec le compte unique<\/a>/);
+    assert.match(view.html, /<input id="password" type="password"/);
+    assert.match(view.html, /<button type="submit"[^>]*>Se connecter<\/button>/);
+    assert.doesNotMatch(view.html, /role="(alert|status)"/);
+  });
+});
+
+test('MAIR-153: without Keycloak settings the page shows the password sign-in only', async () => {
+  await renderLogin();
+  assert.doesNotMatch(view.html, /\/api\/auth\/keycloak/);
+  assert.doesNotMatch(view.html, /compte unique/);
+});
+
+test('MAIR-153: a Keycloak sign-in that came back without a session explains why, other values are ignored', async () => {
+  await withKeycloak(async () => {
+    await renderLogin({ keycloakError: 'account', redirect: 'https://projects.mairie.test/' });
+    assert.match(view.text(), /Aucun compte Mairie360 actif n’est associé à ce compte unique\. Contactez votre administrateur\./);
+    view.unmount();
+    await renderLogin({ keycloakError: 'cancelled' });
+    assert.match(view.text(), /La connexion avec le compte unique a été annulée\./);
+    view.unmount();
+    await renderLogin({ keycloakError: '<script>alert(1)</script>' });
+    assert.doesNotMatch(view.html, /role="alert"|script>alert/);
+  });
+});
+
+test('MAIR-153: a Keycloak error stops the automatic session resume so the message stays visible', async () => {
+  const previous = process.env.LOGIN_FRONT_URL;
+  process.env.LOGIN_FRONT_URL = 'https://login.mairie.test/';
+  try {
+    await renderLogin({ redirect: 'https://projects.mairie.test/', resumeSession: '1', keycloakError: 'expired' });
+    assert.match(view.text(), /a expiré ou a été interrompue/);
+    assert.doesNotMatch(view.text(), /Reprise de votre session/);
+    assert.deepEqual(upstream(), []);
+  } finally {
+    if (previous === undefined) delete process.env.LOGIN_FRONT_URL;
+    else process.env.LOGIN_FRONT_URL = previous;
+  }
 });

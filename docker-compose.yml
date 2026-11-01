@@ -1,3 +1,6 @@
+# Local development only: development image, source mounts and test database.
+# Supply a unique strong JWT_SECRET through the environment or an untracked .env.
+# Public authentication fixtures belong to the isolated security/performance labs.
 volumes:
   postgres-data:
   redis-data:
@@ -37,7 +40,7 @@ x-service: &service-template
 
 services:
   postgres:
-    image: ghcr.io/mairie360/database:1.3.0
+    image: ghcr.io/mairie360/database:3.3.0
     restart: always
     container_name: mairie360-db-login-front #change front name
     environment:
@@ -57,7 +60,7 @@ services:
       retries: 5
 
   liquibase:
-    image: ghcr.io/mairie360/liquibase-migrations:1.3.0
+    image: ghcr.io/mairie360/liquibase-migrations:3.3.0
     container_name: mairie360-liquibase-login-front #change front name
     depends_on:
       postgres:
@@ -68,9 +71,12 @@ services:
       LIQUIBASE_COMMAND_USERNAME: ${DB_USER:-postgres}
       LIQUIBASE_COMMAND_PASSWORD: ${DB_PASSWORD:-password}
       LIQUIBASE_SEARCH_PATH: /liquibase/changelog
+    # Database >= MAIR-413 only seeds the template admin (users.id = 1) with -Dallow_template_admin=true;
+    # without it the migration fails on a fresh database. Test / dev stacks only.
     command: >
       --changelog-file=changelog.xml
       update
+      -Dallow_template_admin=true
     networks:
       - backend
 
@@ -92,9 +98,9 @@ services:
 
   core:
     container_name: core-login-front-developpement
-    image: ghcr.io/mairie360/core-api:1.2.0
+    image: ghcr.io/mairie360/core-api:2.2.0
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - backend
     dns:
@@ -111,7 +117,14 @@ services:
       DB_PASSWORD: password
       DB_PORT: 5432
       PUBLIC_URL: http://core.development.mairie360.fr
-      JWT_SECRET: b"secret"
+      # Core refuses to start without its Resend configuration (MAIR-522). No page of this front sends an
+      # e-mail through these stacks, so the key is fake and the URL never called.
+      RESEND_API_KEY: "re_fake_local"
+      RESEND_BASE_URL: "http://fake-resend.invalid"
+      EMAIL_DOMAIN: "mairie360.local"
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET to a unique strong local signing key}"
+      # Keep Core signing-key validation enabled for the local development stack.
+      JWT_ALLOW_WEAK_SECRET: "false"
       JWT_TIMEOUT: 3600
     depends_on:
       liquibase:
@@ -125,18 +138,21 @@ services:
       retries: 3
       start_period: 10s
   
-  # Seul BFF de ce front : même version que le contrat @mairie360/bff-user-openapi de package.json.
+  # Seul BFF de ce front : image construite depuis le même commit que le contrat @mairie360/bff-user-openapi
+  # de package.json (release X.Y.Z, ou dev-<sha7> pour un paquet 0.0.0-dev.<sha>).
   bff-user:
     container_name: bff-user-login-front
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:0.5.0}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     networks:
       - backend
       - frontend
     environment:
-      CORE_API_URL: "core" 
+      CORE_API_URL: "core"
       CORE_API_PORT: 3000
+      # Same secret as Core: BFF User refuses to start without it (admin session check).
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET to a unique strong local signing key}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
       interval: 10s
@@ -148,10 +164,11 @@ services:
     build:
       context: .
       dockerfile: development.Dockerfile
+      # MAIR-436: build-time secret only, never mounted in the running container.
       secrets:
-        - NODE_AUTH_TOKEN
+        - node_auth_token
     ports:
-      - "3001:3000" # On map le 3000 interne sur 3001 pour éviter le conflit avec 'core'
+      - "127.0.0.1:3001:3000" # On map le 3000 interne sur 3001 pour éviter le conflit avec 'core'
     develop:
       watch:
         - action: sync
@@ -159,8 +176,6 @@ services:
           target: /app/src
         - action: rebuild
           path: package.json
-    secrets:
-      - NODE_AUTH_TOKEN
     environment:
       <<: *common-env
       PORT: 3000
@@ -178,5 +193,5 @@ services:
       retries: 3
         
 secrets:
-  NODE_AUTH_TOKEN:
+  node_auth_token:
     environment: NODE_AUTH_TOKEN

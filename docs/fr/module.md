@@ -13,8 +13,11 @@ Domaine fonctionnel: Identité et administration.
 ## Fonctions disponibles
 
 - Formulaire de connexion avec remontée des erreurs serveur.
+- Les champs de connexion et de changement obligatoire de mot de passe sont figés pendant une requête ; les doubles soumissions sont bloquées immédiatement et un échec efface les anciens messages de succès.
+- Ouvrir `/logout` ne lance aucune requête. Choisir **Se déconnecter**, ou **Réessayer** après un refus ; le retour à Login n'arrive qu'après le succès de l'expiration locale existante. Une reprise après HTTP401 nettoie la session locale sans prouver la révocation amont.
 - Écrans de connexion, de premier changement de mot de passe, de configuration indisponible et de déconnexion autonomes : aucun AppShell, header, sidebar ou footer applicatif avant le retour vers un module authentifié.
 - Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
+- Authentification unique (MAIR-153) : quand l’instance configure Keycloak, **Se connecter avec le compte unique** envoie l’agent vers le realm Keycloak puis le ramène connecté sur le module demandé. La connexion par mot de passe reste disponible. Une connexion annulée, un retour expiré ou interrompu, une identité sans compte Mairie360 actif, trop de tentatives ou un service indisponible affichent chacun leur message sur la page de connexion.
 - Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le tableau de bord configuré.
 
 ## Parcours type
@@ -42,3 +45,8 @@ Le portail ne gère pas les utilisateurs ni les habilitations. La présence de r
 ## Pour développer ou exploiter ce module
 
 Le [guide technique](technical.md) détaille architecture, configuration, routes, session, persistance, tests et CI/CD. Il décrit les sources de vérité et les étapes de synchronisation des contrats avec les dépôts associés.
+
+
+## Direction visuelle commune — MAIR-547
+
+DA claire option 1 : tokens et police communs, navigation accessible et contenu métier conservé. Voir la [recette visuelle](../qa/design-qa.md) pour les preuves, vérifications et limites RGAA.
