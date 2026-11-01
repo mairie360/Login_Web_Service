@@ -249,3 +249,13 @@ Compléments historiques: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md)
 Login porte POST /api/auth/refresh et POST /api/auth/logout via l’entrée serveur optionnelle publiée de lib-components. Les huit origines frontend configurées peuvent déléguer le renouvellement avec le cookie HttpOnly existant. URL User BFF, domaine des cookies et confiance ingress restent configurés comme auparavant. La coordination des rotations est locale à un processus Login ; un déploiement avec chevauchement ou plusieurs processus reste à vérifier.
 
 La page de déconnexion envoie un seul POST JSON après commande explicite. Le reçu session_revoked distingue la fermeture locale des cookies de la révocation Core. Une fermeture serveur non confirmée reste visible jusqu’au retour explicite à Login. Une logout_url Keycloak validée est visitée lorsqu’elle est fournie ; refus et erreurs réseau permettent une reprise explicite. Les tests locaux avec mocks ne certifient pas l’authentification Dev, Core ou l’IdP réels.
+
+## Pages légales (MAIR-292)
+
+`/mentions-legales` et `/confidentialite` sont des pages publiques de ce front, rendues à la demande
+à partir de `LEGAL_CONFIG` : le JSON de `global.legal` de l'instance, transmis par le chart de
+Devops/Deploiment (identité de la mairie, directeur de la publication, DPO, hébergeur, durées de
+conservation et sous-traitants décidés dans `compliance/<org>/`). Une seule image sert toutes les
+mairies ; une valeur absente s'affiche « À compléter par la mairie », jamais inventée. Chaque page
+de ce front renvoie vers les deux (pied de page du layout) ; les autres fronts y renvoient via
+`LOGIN_FRONT_URL`.
