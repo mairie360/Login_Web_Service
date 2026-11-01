@@ -1,7 +1,10 @@
-import type { AuthTokenResponse, LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
+import type { LoginView, PostAuthLogin412 } from '@mairie360/bff-user-openapi/model';
 import { NextRequest, NextResponse } from "next/server";
-import { bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
+import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
+import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
+import { createAuthSessionResponse } from "../../../../lib/auth-session";
+import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
 
 type LoginBody = {
   email?: unknown;
@@ -10,8 +13,6 @@ type LoginBody = {
 
 type FirstConnectionResponse = Partial<PostAuthLogin412>;
 
-const ACCESS_TOKEN_MAX_AGE = 24 * 60 * 60;
-const UNKNOWN_ACCESS_TOKEN_MAX_AGE = 60 * 60;
 const PASSWORD_CHANGE_TOKEN_MAX_AGE = 10 * 60;
 
 // Même règle que `z.email()` du LoginViewSchema de BFF User (le format email n'est pas conservé par la
@@ -67,25 +68,6 @@ function getAuthorizationToken(response: Response) {
   return match?.[1] ?? null;
 }
 
-function getAccessTokenMaxAge(token: string) {
-  const payload = token.split(".")[1];
-  if (!payload) return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-
-  try {
-    const claims: unknown = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (typeof claims !== "object" || claims === null || !("exp" in claims)) {
-      return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-    }
-    const exp = claims.exp;
-    if (typeof exp !== "number" || !Number.isSafeInteger(exp)) {
-      return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-    }
-    return Math.min(ACCESS_TOKEN_MAX_AGE, Math.floor(exp - Date.now() / 1000));
-  } catch {
-    // Keep opaque or malformed tokens short-lived without exposing their content.
-    return UNKNOWN_ACCESS_TOKEN_MAX_AGE;
-  }
-}
 
 function getPasswordChangeToken(body: unknown) {
   if (typeof body !== "object" || body === null) {
@@ -97,13 +79,21 @@ function getPasswordChangeToken(body: unknown) {
   return typeof token === "string" && token ? token : null;
 }
 
+// Protocole publié jusqu'à bff-user-openapi 0.5.0 (AuthTokenResponse) : le refresh token était dans le corps
+// et le JWT dans l'en-tête Authorization. Le contrat courant ne livre plus les jetons que par cookies
+// (readBffCookieSession) ; cette lecture ne sert qu'aux réponses sans cookie de session.
+type LegacyAuthTokenResponse = { refresh_token?: unknown };
+
 function getRefreshToken(body: unknown) {
   if (typeof body !== "object" || body === null) return null;
-  const { refresh_token: token } = body as Partial<AuthTokenResponse>;
+  const { refresh_token: token } = body as LegacyAuthTokenResponse;
   return typeof token === "string" && token.length > 0 && token.trim() === token ? token : null;
 }
 
 export async function POST(request: NextRequest) {
+  const rejected = rejectUnsafeAuthRequest(request, true);
+  if (rejected) return rejected;
+
   let body: LoginBody;
 
   try {
@@ -148,7 +138,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const upstreamResponse = await fetch(bffUserUrl("/auth/login"), {
+    const upstreamResponse = await fetch(bffUserUrl(bffUserOperations.getPostAuthLoginUrl()), {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -194,8 +184,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessToken =
-      getAuthorizationToken(upstreamResponse);
+    const cookieSession = readBffCookieSession(upstreamResponse);
+    if (cookieSession && (typeof upstreamBody !== "object" || upstreamBody === null || !("message" in upstreamBody) || typeof upstreamBody.message !== "string")) {
+      return NextResponse.json(
+        { message: "Le service de connexion a renvoyé une réponse invalide." },
+        { status: 502, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const accessToken = cookieSession === undefined
+      ? getAuthorizationToken(upstreamResponse)
+      : cookieSession?.accessToken;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -204,7 +202,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const refreshToken = getRefreshToken(upstreamBody);
+    const refreshToken = cookieSession === undefined
+      ? getRefreshToken(upstreamBody)
+      : cookieSession?.refreshToken;
     if (!refreshToken) {
       return NextResponse.json(
         { message: "Le service de connexion a renvoyé une réponse invalide." },
@@ -212,34 +212,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessTokenMaxAge = getAccessTokenMaxAge(accessToken);
-    if (accessTokenMaxAge <= 0) {
-      return NextResponse.json(
-        { message: "Le service de connexion a renvoyé une session expirée." },
-        { status: 502 },
-      );
-    }
-
-    const response = NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } });
-
-    response.cookies.set("accessToken", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: accessTokenMaxAge,
-      ...(cookieDomain ? { domain: cookieDomain } : {}),
-    });
-
-    response.cookies.set("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/api",
-      ...(cookieDomain ? { domain: cookieDomain } : {}),
-    });
-
-    return response;
+    return createAuthSessionResponse(accessToken, refreshToken, cookieSession?.maxAge);
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "TimeoutError";
 

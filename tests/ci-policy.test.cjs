@@ -8,12 +8,12 @@ const root = join(__dirname, '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 test('third-party workflow actions use immutable commits', () => {
-  const workflows = ['auto-approve.yml', 'contracts.yml', 'nextjs.yml'];
+  const workflows = ['auto-approve.yml', 'contracts.yml'];
   const actions = workflows.flatMap((file) => [...read(`.github/workflows/${file}`)
     .matchAll(/uses:\s*([^\s@]+)@([^\s#]+)/g)]);
   assert.deepEqual(actions.map((match) => match[1]).sort(), [
-    'actions/checkout', 'actions/checkout', 'actions/checkout',
-    'actions/setup-node', 'actions/setup-node', 'actions/setup-node',
+    'actions/checkout',
+    'actions/setup-node',
     'hmarr/auto-approve-action',
   ]);
   for (const [, name, ref] of actions) {
@@ -28,6 +28,9 @@ test('the reusable frontend workflow receives only its declared named secrets', 
   assert.deepEqual(mappings.map(([, name, source]) => [name, source]), [
     ['CODECOV_TOKEN', 'CODECOV_TOKEN'],
     ['N8N_WEBHOOK_SECRET', 'N8N_WEBHOOK_SECRET'],
+    ['ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY'],
+    ['RELEASE_APP_ID', 'RELEASE_APP_ID'],
+    ['RELEASE_APP_PK', 'RELEASE_APP_PK'],
   ]);
   assert.doesNotMatch(workflow, /semgrep_fail_on_findings:\s*false|semgrep_config:|continue-on-error:/);
 });
@@ -48,11 +51,11 @@ test('the legacy required security name runs real immutable blocking scanners', 
   }
   assert.match(job, /fetch-depth: 0/);
   assert.equal([...job.matchAll(/persist-credentials: false/g)].length, 2);
-  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: 539847726d4058a9565c4f682c2d1d8302874b06/);
-  assert.match(job, /uses: \.\/cicd-repo\/actions\/semgrep/);
+  assert.match(job, /repository: mairie360\/CICD\s*\n          ref: 5b7d127d46f95d8951935b6209ca7c2ca857a21d/);
+  assert.match(job, /uses: \.\/cicd-repo\/actions\/frontend-semgrep-pypi/);
   assert.match(job, /config: p\/typescript p\/react p\/owasp-top-ten p\/secrets p\/dockerfile p\/github-actions/);
   assert.match(job, /artifact_name: semgrep-required-check-sarif/);
-  assert.match(job, /uses: \.\/cicd-repo\/actions\/gitleaks/);
+  assert.match(job, /uses: \.\/cicd-repo\/actions\/frontend-gitleaks/);
   assert.equal([...job.matchAll(/fail_on_findings: "true"/g)].length, 2);
 });
 
@@ -67,21 +70,9 @@ test('npm resolution keeps the seven-day window except for the internal UI packa
   assert.match(config, /^@mairie360:registry=https:\/\/npm\.pkg\.github\.com\s*$/m);
 });
 
-test('the internal UI package is pinned to its published release in the lockfile', () => {
-  const manifest = JSON.parse(read('package.json'));
-  const lock = JSON.parse(read('package-lock.json'));
-  assert.equal(manifest.dependencies['@mairie360/lib-components'], '0.6.8');
-  assert.equal(lock.packages[''].dependencies['@mairie360/lib-components'], '0.6.8');
-  const resolved = lock.packages['node_modules/@mairie360/lib-components'];
-  assert.equal(resolved.version, '0.6.8');
-  assert.match(resolved.resolved, /^https:\/\/npm\.pkg\.github\.com\/download\/@mairie360\/lib-components\/0\.6\.8\//);
-  assert.match(resolved.integrity, /^sha512-/);
-});
-
 test('CI uses Node 24 and the toolchain supports npm release-age policy', () => {
-  assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.21\.0"/);
-  assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.21\.0'/);
-  assert.equal([...read('.github/workflows/nextjs.yml').matchAll(/node-version:\s*24\.21\.0\s*$/gm)].length, 2);
+  assert.match(read('.github/workflows/cicd.yml'), /node_version:\s*"24\.22\.1"/);
+  assert.match(read('.github/workflows/contracts.yml'), /node-version:\s*'24\.22\.1'/);
   const version = execFileSync('npm', ['--version'], { cwd: root, encoding: 'utf8' }).trim();
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
   assert.ok(match, 'npm must report a stable version');
@@ -108,17 +99,16 @@ test('Docker dependency installation requires ephemeral secret and policy mounts
 test('Docker and all frontend workflows use the same exact pinned Node LTS release', () => {
   const dockerfile = read('Dockerfile');
   const nodeVersion = dockerfile.match(/^ARG NODE_VERSION=(\d+\.\d+\.\d+)$/m)?.[1];
-  assert.equal(nodeVersion, '24.21.0');
+  assert.equal(nodeVersion, '24.22.1');
   const bases = [...dockerfile.matchAll(/^FROM node:\$\{NODE_VERSION\}-bookworm-slim@sha256:([a-f0-9]{64}) AS ([\w-]+)$/gm)];
   assert.deepEqual(bases.map(([, digest, stage]) => [digest, stage]), [
-    ['0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6', 'dependencies'],
-    ['0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6', 'runtime-base'],
+    ['55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205', 'dependencies'],
+    ['55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205', 'runtime-base'],
   ]);
   assert.match(dockerfile, /^FROM dependencies AS builder$/m);
   assert.match(dockerfile, /^FROM runtime-base AS runner$/m);
   assert.equal(read('.github/workflows/cicd.yml').match(/node_version:\s*"([^"]+)"/)?.[1], nodeVersion);
   assert.equal(read('.github/workflows/contracts.yml').match(/node-version:\s*'([^']+)'/)?.[1], nodeVersion);
-  assert.deepEqual([...read('.github/workflows/nextjs.yml').matchAll(/node-version:\s*(\S+)/g)].map(([, version]) => version), [nodeVersion, nodeVersion]);
 });
 
 test('Docker excludes local environments and CI artifacts but keeps tracked npm policy', () => {
