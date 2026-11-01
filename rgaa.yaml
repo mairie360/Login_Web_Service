@@ -1,8 +1,10 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mairie360/CICD/main/tests/a11y/rgaa.schema.json
-# RGAA 4.1.2 scope of the login front (MAIR-316), checked by the RGAA job of mairie360/CICD
-# frontend-cicd.yml in release-prod, on the staging-<sha> image (format: CICD README, "RGAA scope").
+# RGAA 4.1.2 scope of the login front (MAIR-316), checked by the rgaa job of mairie360/CICD
+# promote-prod.yml on the staging image (format: CICD README, "RGAA scope").
 version: 1
-target: http://login-front:5000
+# localhost: the runner shares the front's network (docker-compose-accessibility.yml), so the
+# origin is trustworthy and Chromium sends the Sec-Fetch-Site header the sign-in routes require.
+target: http://localhost:5000
 
 # Same JWT_SECRET as the services of docker-compose-accessibility.yml. The login page is public:
 # no state logs in, the session is only needed by the other fronts.
@@ -18,8 +20,9 @@ criteria:
   - "3.1"
   - "3.2"
   - "3.3"
-  # 6.1, 6.2, 10.6: no link yet; they come with the legal pages (MAIR-292). The run fails if a link
-  # appears before they are declared.
+  # Links: the skip link, "Mot de passe oublié ?" and the legal pages of the footer (MAIR-292).
+  - "6.1"
+  - "6.2"
   - "7.1"
   - "7.3"
   - "7.5"
@@ -40,6 +43,7 @@ criteria:
   - "10.3"
   - "10.4"
   - "10.5"
+  - "10.6"
   - "10.7"
   - "10.8"
   - "10.9"
@@ -87,10 +91,10 @@ states:
       # meanwhile); the error region (role="alert") exists, empty, from the start.
       - wait_for: { role: button, name: Se connecter, exact: true }
   - id: login-password-change
-    description: Forced password change (bff-user answers 412 for the seed user 2)
+    description: Forced password change (first-connection user 4 of init-accessibility.sql, Core answers 412)
     route: /
     steps:
-      - fill: { label: Email professionnel, value: perf-tester@mairie360.fr }
-      - fill: { label: Mot de passe, value: any-password }
+      - fill: { label: Email professionnel, value: rgaa-first@mairie360.fr }
+      - fill: { label: Mot de passe, value: password_template }
       - click: { role: button, name: Se connecter }
       - wait_for: { label: Nouveau mot de passe }

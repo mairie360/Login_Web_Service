@@ -2,7 +2,7 @@
 # rgaa job of mairie360/CICD promote-prod.yml (IMAGE_REF=<image>@<staging digest>).
 #
 # Same upstream chain as docker-compose-security.yml (database + init-test.sql, Redis, Core API,
-# BFF User), the front on ${IMAGE_REF} and the RGAA runner of mairie360/CICD (cicd-repo/tests/a11y)
+# BFF User) plus init-accessibility.sql (a first-connection user), the front on ${IMAGE_REF} and the RGAA runner of mairie360/CICD (cicd-repo/tests/a11y)
 # instead of ZAP. It plays the states of rgaa.yaml (anonymous: Login is the sign-in page) and
 # writes rgaa-report/.
 
@@ -85,6 +85,20 @@ services:
     networks:
       - backend
 
+  seeder-a11y:
+    image: postgres:18-alpine
+    container_name: login-front-a11y-seeder-a11y
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+    volumes:
+      - ./init-accessibility.sql:/init-accessibility.sql:ro
+    environment:
+      PGPASSWORD: password
+    command: ["psql", "-v", "ON_ERROR_STOP=1", "-h", "postgres", "-U", "postgres", "-d", "mairie_360_database", "-f", "/init-accessibility.sql"]
+    networks:
+      - backend
+
   redis:
     image: redis:8.4.0-bookworm
     container_name: login-front-a11y-redis
@@ -144,6 +158,8 @@ services:
     image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
     container_name: login-front-a11y-bff-user
     depends_on:
+      seeder-a11y:
+        condition: service_completed_successfully
       seeder:
         condition: service_completed_successfully
       core-api-ready:
@@ -189,8 +205,14 @@ services:
       BFF_USER_API_URL: http://bff-user:4000
       # The production image refuses to issue the session cookie without a domain (503), and the
       # authentication routes only accept requests whose Origin is this front (403 otherwise).
-      COOKIE_DOMAIN: login-front
-      LOGIN_FRONT_URL: http://login-front:5000
+      # The runner shares this container's network (network_mode below) and opens the front as
+      # http://localhost:5000: Chromium only sends Sec-Fetch-Site on a trustworthy origin, and the
+      # authentication routes refuse a request without "same-origin" (src/lib/auth-request.ts).
+      COOKIE_DOMAIN: localhost
+      LOGIN_FRONT_URL: http://localhost:5000
+      # Post-login destination: without it the page only shows "Connexion temporairement
+      # indisponible" (src/lib/login-redirect.ts). Never reached by the RGAA states.
+      DASHBOARD_FRONT_URL: http://dashboard.invalid/
     expose:
       - "5000"
     networks:
@@ -213,6 +235,8 @@ services:
       login-front:
         condition: service_healthy
     command: ["sh", "/engine/run.sh"]
+    # Same network namespace as the front, so that rgaa.yaml can target http://localhost:5000.
+    network_mode: "service:login-front"
     environment:
       RGAA_MIN_RATE: ${RGAA_MIN_RATE:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -223,5 +247,3 @@ services:
       - ./rgaa.yaml:/scope/rgaa.yaml:ro
       - ./rgaa-report:/report
       - ./.rgaa-ai-cache:/ai-cache
-    networks:
-      - backend

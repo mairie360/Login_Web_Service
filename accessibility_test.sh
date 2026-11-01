@@ -14,12 +14,14 @@ if [ -z "${IMAGE_REF:-}" ]; then
 fi
 echo "==> Front under test: $IMAGE_REF"
 
-# RGAA engine at the cicd_version pinned in .github/workflows/cicd.yml (the CI checks it out
-# itself; override with CICD_VERSION). The pin is a commit SHA (a clone by branch name cannot take
-# one), a tag or a branch: fetch that one ref, shallow.
+# RGAA engine at the cicd_version pinned in .github/workflows/cicd.yml (override with CICD_VERSION).
+# The pin is a commit SHA (a clone by branch name cannot take one), a tag or a branch: fetch that
+# one ref, shallow. A copy fetched here records its ref in .rgaa-ref and is fetched again when the
+# pin changes; a cicd-repo/ without that file is the CI's own checkout and is used as is.
 CICD_DIR="cicd-repo"
-if [ ! -f "$CICD_DIR/tests/a11y/run.sh" ]; then
-  CICD_VERSION="${CICD_VERSION:-$(sed -n 's/^[[:space:]]*cicd_version:[[:space:]]*"\{0,1\}\([^"[:space:]#]*\).*/\1/p' .github/workflows/cicd.yml | head -n 1)}"
+CICD_VERSION="${CICD_VERSION:-$(sed -n 's/^[[:space:]]*cicd_version:[[:space:]]*"\{0,1\}\([^"[:space:]#]*\).*/\1/p' .github/workflows/cicd.yml | head -n 1)}"
+if [ ! -f "$CICD_DIR/tests/a11y/run.sh" ] ||
+  { [ -f "$CICD_DIR/.rgaa-ref" ] && [ "$(cat "$CICD_DIR/.rgaa-ref")" != "$CICD_VERSION" ]; }; then
   if [ -z "$CICD_VERSION" ]; then
     echo "No cicd_version found in .github/workflows/cicd.yml (set CICD_VERSION)." >&2
     exit 1
@@ -29,6 +31,7 @@ if [ ! -f "$CICD_DIR/tests/a11y/run.sh" ]; then
   git init --quiet "$CICD_DIR" &&
     git -C "$CICD_DIR" fetch --quiet --depth 1 https://github.com/mairie360/CICD "$CICD_VERSION" &&
     git -C "$CICD_DIR" -c advice.detachedHead=false checkout --quiet FETCH_HEAD || exit 1
+  printf '%s\n' "$CICD_VERSION" > "$CICD_DIR/.rgaa-ref"
 fi
 A11Y_RUNNER_IMAGE="$(cat "$CICD_DIR/tests/a11y/runner-image")"
 export A11Y_RUNNER_IMAGE
