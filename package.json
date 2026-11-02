@@ -18,7 +18,8 @@
     "performance:report": "node scripts/frontend-performance.mjs",
     "test:node:native": "mkdir -p coverage && node --enable-source-maps --test --test-concurrency=1 --experimental-test-coverage --test-coverage-branches=60 --test-coverage-functions=60 --test-coverage-lines=60 --test-coverage-include='src/**' --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/*.test.cjs",
     "test:bundle": "node --test tests/bundle/*.test.cjs",
-    "postinstall": "node vendor/verify-security-backports.mjs --installed --audit-upstream",
+    "postinstall": "node vendor/verify-security-backports.mjs --installed",
+    "audit:upstream": "node vendor/verify-security-backports.mjs --audit-upstream",
     "prebuild": "node vendor/verify-security-backports.mjs --installed",
     "pretest": "node vendor/verify-security-backports.mjs --installed"
   },
