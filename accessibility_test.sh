@@ -7,6 +7,16 @@
 COMPOSE_FILE="docker-compose-accessibility.yml"
 SERVICE_NAME="a11y"
 
+# One run at a time per checkout: a second run would empty rgaa-report/ under the first one.
+if command -v flock >/dev/null 2>&1; then
+  exec 9>".rgaa-run.lock"
+  flock -n 9 || { echo "Another accessibility run is using this checkout." >&2; exit 1; }
+fi
+
+# A fresh report before anything can fail: an early failure must not leave the previous run's
+# summary.md behind, nor files of states since removed from rgaa.yaml.
+{ rm -rf rgaa-report && mkdir -p rgaa-report .rgaa-ai-cache; } || { echo "Cannot reset rgaa-report/." >&2; exit 1; }
+
 if [ -z "${IMAGE_REF:-}" ]; then
   echo "==> [0/4] Building login-front:local from the Dockerfile..."
   docker build -t login-front:local --secret id=node_auth_token,env=NODE_AUTH_TOKEN . || exit 1
@@ -17,9 +27,15 @@ echo "==> Front under test: $IMAGE_REF"
 # RGAA engine at the cicd_version pinned in .github/workflows/cicd.yml (override with CICD_VERSION).
 # The pin is a commit SHA (a clone by branch name cannot take one), a tag or a branch: fetch that
 # one ref, shallow. A copy fetched here records its ref in .rgaa-ref and is fetched again when the
-# pin changes; a cicd-repo/ without that file is the CI's own checkout and is used as is.
+# pin changes. Without that file, a cicd-repo/ is used as is only in GitHub Actions (the CI checks
+# the engine out itself); locally the script stops instead of deleting it, since it may be a
+# clone holding local work.
 CICD_DIR="cicd-repo"
 CICD_VERSION="${CICD_VERSION:-$(sed -n 's/^[[:space:]]*cicd_version:[[:space:]]*"\{0,1\}\([^"[:space:]#]*\).*/\1/p' .github/workflows/cicd.yml | head -n 1)}"
+if [ -d "$CICD_DIR" ] && [ ! -f "$CICD_DIR/.rgaa-ref" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  echo "$CICD_DIR/ was not fetched by this script (no .rgaa-ref) and may hold local work: move or delete it, then run again." >&2
+  exit 1
+fi
 if [ ! -f "$CICD_DIR/tests/a11y/run.sh" ] ||
   { [ -f "$CICD_DIR/.rgaa-ref" ] && [ "$(cat "$CICD_DIR/.rgaa-ref")" != "$CICD_VERSION" ]; }; then
   if [ -z "$CICD_VERSION" ]; then
@@ -38,8 +54,6 @@ export A11Y_RUNNER_IMAGE
 RGAA_UID="$(id -u)"
 RGAA_GID="$(id -g)"
 export RGAA_UID RGAA_GID
-
-mkdir -p rgaa-report .rgaa-ai-cache
 
 echo "==> [1/4] Starting the stack and the RGAA run..."
 docker compose -f "$COMPOSE_FILE" up -d --pull missing

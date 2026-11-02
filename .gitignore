@@ -16,3 +16,4 @@ dist
 /cicd-repo/
 /rgaa-report/
 /.rgaa-ai-cache/
+/.rgaa-run.lock
