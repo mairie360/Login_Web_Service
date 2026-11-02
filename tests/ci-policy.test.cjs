@@ -291,3 +291,16 @@ test('MAIR-768: every readiness probe of the RGAA stack is bounded in time', () 
   for (const loop of loops) assert.match(loop, /if \[ \$\$i -ge \d+ \]; then echo "[^"]+"; exit 1; fi;/);
   for (const args of probes) assert.match(args, /--max-time \d+/, args);
 });
+
+test('GHSA-mrwp-f3q8-3g9p: the lock resolves follow-redirects to a patched release', () => {
+  // follow-redirects 1.16.0 - 1.16.1 (through axios) let custom credentials follow cross-origin
+  // redirects; npm audit --omit=dev fails on it.
+  const { packages } = JSON.parse(read('package-lock.json'));
+  const copies = Object.entries(packages).filter(([path]) => path.endsWith('node_modules/follow-redirects'));
+  assert.ok(copies.length > 0, 'follow-redirects is in the lock');
+  for (const [path, { version }] of copies) {
+    const [major, minor, patch] = version.split('.').map(Number);
+    assert.ok(major > 1 || (major === 1 && (minor > 16 || (minor === 16 && patch >= 2))), `${path} ${version}`);
+  }
+});
+
