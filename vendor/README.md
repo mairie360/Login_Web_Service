@@ -46,8 +46,9 @@ See `zod/SECURITY-PATCH.md`, its exact patch, upstream MIT license and
 Native npm audit omits local file links. `verify-security-backports.mjs` therefore
 verifies the complete Zod tree, lockfile links and actual installed peer/ordinary
 consumers. `postinstall` (including the Docker dependency stage), `prebuild` and
-`pretest` run that local gate only: installing, building and testing never
-depend on the network beyond the package registry (MAIR-744).
+`pretest` run that local gate only, which never queries the npm advisory
+service: an outage of that service or a new advisory cannot fail an install, a
+build or a test run (MAIR-744).
 
 `npm run audit:upstream` separately queries the official npm advisory service
 for the original 3.25.76 version. Only the exact reviewed GHSA metadata is
