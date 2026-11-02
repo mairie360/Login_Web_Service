@@ -17,11 +17,13 @@ echo "==> Front under test: $IMAGE_REF"
 # RGAA engine at the cicd_version pinned in .github/workflows/cicd.yml (override with CICD_VERSION).
 # The pin is a commit SHA (a clone by branch name cannot take one), a tag or a branch: fetch that
 # one ref, shallow. A copy fetched here records its ref in .rgaa-ref and is fetched again when the
-# pin changes; a cicd-repo/ without that file is the CI's own checkout and is used as is.
+# pin changes. Without that file, a cicd-repo/ is used as is only in GitHub Actions (the CI checks
+# the engine out itself); locally it is fetched again, since nothing says which engine it holds.
 CICD_DIR="cicd-repo"
 CICD_VERSION="${CICD_VERSION:-$(sed -n 's/^[[:space:]]*cicd_version:[[:space:]]*"\{0,1\}\([^"[:space:]#]*\).*/\1/p' .github/workflows/cicd.yml | head -n 1)}"
 if [ ! -f "$CICD_DIR/tests/a11y/run.sh" ] ||
-  { [ -f "$CICD_DIR/.rgaa-ref" ] && [ "$(cat "$CICD_DIR/.rgaa-ref")" != "$CICD_VERSION" ]; }; then
+  { [ -f "$CICD_DIR/.rgaa-ref" ] && [ "$(cat "$CICD_DIR/.rgaa-ref")" != "$CICD_VERSION" ]; } ||
+  { [ ! -f "$CICD_DIR/.rgaa-ref" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; }; then
   if [ -z "$CICD_VERSION" ]; then
     echo "No cicd_version found in .github/workflows/cicd.yml (set CICD_VERSION)." >&2
     exit 1
@@ -39,6 +41,9 @@ RGAA_UID="$(id -u)"
 RGAA_GID="$(id -g)"
 export RGAA_UID RGAA_GID
 
+# A fresh report: an early failure must not leave the previous run's summary.md behind, nor files
+# of states since removed from rgaa.yaml.
+rm -rf rgaa-report
 mkdir -p rgaa-report .rgaa-ai-cache
 
 echo "==> [1/4] Starting the stack and the RGAA run..."

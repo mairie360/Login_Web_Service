@@ -190,13 +190,13 @@ test('MAIR-316: the RGAA seed users have no plaintext password and the stack loa
     assert.doesNotMatch(read(file), /init-accessibility\.sql/, file);
   }
 });
-test('MAIR-316: a local engine copy is fetched again when the cicd_version pin changes', () => {
+test('MAIR-316 / MAIR-768: a local engine copy is fetched again when the cicd_version pin changes', () => {
   const { mkdtempSync, mkdirSync, writeFileSync, readFileSync: readAbs, existsSync, rmSync } = require('node:fs');
   const { execFileSync } = require('node:child_process');
   const { tmpdir } = require('node:os');
   const shell = read('accessibility_test.sh');
   const block = shell.slice(shell.indexOf('CICD_DIR="cicd-repo"'), shell.indexOf('A11Y_RUNNER_IMAGE="$(cat'));
-  const run = (setup) => {
+  const run = (setup, githubActions = '') => {
     const dir = mkdtempSync(join(tmpdir(), 'rgaa-ref-'));
     try {
       mkdirSync(join(dir, '.github/workflows'), { recursive: true });
@@ -205,7 +205,7 @@ test('MAIR-316: a local engine copy is fetched again when the cicd_version pin c
       // Fake git: records the calls; `checkout` lays out the engine like a real fetch would.
       writeFileSync(join(dir, 'bin/git'), '#!/bin/sh\necho "$*" >> "$LOG"\ncase "$*" in *checkout*) mkdir -p cicd-repo/tests/a11y && touch cicd-repo/tests/a11y/run.sh;; esac\n', { mode: 0o755 });
       setup(dir);
-      execFileSync('bash', ['-c', block], { cwd: dir, env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, LOG: join(dir, 'git.log'), CICD_VERSION: '' } });
+      execFileSync('bash', ['-c', block], { cwd: dir, env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, LOG: join(dir, 'git.log'), CICD_VERSION: '', GITHUB_ACTIONS: githubActions } });
       const log = existsSync(join(dir, 'git.log')) ? readAbs(join(dir, 'git.log'), 'utf8') : '';
       const ref = existsSync(join(dir, 'cicd-repo/.rgaa-ref')) ? readAbs(join(dir, 'cicd-repo/.rgaa-ref'), 'utf8').trim() : null;
       return { log, ref };
@@ -224,9 +224,11 @@ test('MAIR-316: a local engine copy is fetched again when the cicd_version pin c
   const stale = run((dir) => engine(dir, 'old-sha'));
   assert.match(stale.log, /fetch --quiet --depth 1 https:\/\/github\.com\/mairie360\/CICD new-sha/);
   assert.equal(stale.ref, 'new-sha');
-  // Same pin: reused. The CI's own checkout (no marker): reused.
+  // Same pin: reused.
   assert.equal(run((dir) => engine(dir, 'new-sha')).log, '');
-  assert.equal(run((dir) => engine(dir, null)).log, '');
+  // No marker: the CI's own checkout is reused in GitHub Actions; locally it is fetched again.
+  assert.equal(run((dir) => engine(dir, null), 'true').log, '');
+  assert.equal(run((dir) => engine(dir, null)).ref, 'new-sha');
 });
 
 test('MAIR-316: the RGAA runner opens the front on a trustworthy origin, so sign-in sends Sec-Fetch-Site', () => {
@@ -237,4 +239,23 @@ test('MAIR-316: the RGAA runner opens the front on a trustworthy origin, so sign
   assert.match(runner, /network_mode: "service:login-front"/);
   assert.match(compose, /LOGIN_FRONT_URL: http:\/\/localhost:5000/);
   assert.match(read('rgaa.yaml'), /^target: http:\/\/localhost:5000$/m);
+});
+
+test('MAIR-768: the RGAA stack has its own project name and bounded readiness loops', () => {
+  const compose = read('docker-compose-accessibility.yml');
+  // The default project name (the folder) is shared with docker-compose.yml: `down -v` would
+  // delete the dev stack's postgres-data / redis-data volumes.
+  assert.match(compose, /^name: login-front-a11y$/m);
+  // An upstream that never starts must fail `up`, not hang it.
+  assert.doesNotMatch(compose, /sh -c 'until curl/);
+  for (const [, loop] of compose.matchAll(/sh -c '(i=0; until curl[\s\S]*?)'\n/g)) {
+    assert.match(loop, /if \[ \$\$i -ge \d+ \]; then echo "[^"]+"; exit 1; fi;/);
+  }
+});
+
+test('MAIR-768: each accessibility run starts from an empty report', () => {
+  const shell = read('accessibility_test.sh');
+  const clear = shell.indexOf('rm -rf rgaa-report\n');
+  assert.ok(clear >= 0, 'accessibility_test.sh clears rgaa-report/');
+  assert.ok(clear < shell.indexOf('docker compose -f "$COMPOSE_FILE" up'), 'before the stack starts');
 });

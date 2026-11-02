@@ -30,6 +30,10 @@ x-api-env: &api-env
   JWT_SECRET: b"secret"
   JWT_TIMEOUT: 3600
 
+# Own project name: the default one (the folder) is shared with docker-compose.yml, whose
+# postgres-data / redis-data volumes `down -v` would otherwise delete.
+name: login-front-a11y
+
 services:
   postgres:
     image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.3.0}
@@ -149,7 +153,8 @@ services:
       core-api:
         condition: service_started
     command: >
-      sh -c 'until curl -fsS http://core-api:3000/health >/dev/null; do
+      sh -c 'i=0; until curl -fsS http://core-api:3000/health >/dev/null; do
+      i=$$((i+1)); if [ $$i -ge 90 ]; then echo "core-api not ready after 3 min"; exit 1; fi;
       echo "waiting for core-api..."; sleep 2; done; echo "core-api ready"'
     networks:
       - backend
@@ -186,7 +191,8 @@ services:
       bff-user:
         condition: service_started
     command: >
-      sh -c 'until curl -fsS http://bff-user:4000/health >/dev/null; do
+      sh -c 'i=0; until curl -fsS http://bff-user:4000/health >/dev/null; do
+      i=$$((i+1)); if [ $$i -ge 90 ]; then echo "bff-user not ready after 3 min"; exit 1; fi;
       echo "waiting for bff-user..."; sleep 2; done; echo "bff-user ready"'
     networks:
       - backend
