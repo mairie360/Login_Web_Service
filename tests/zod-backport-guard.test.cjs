@@ -20,6 +20,24 @@ const reviewed = {
 
 const response = payload => async () => ({ ok: true, json: async () => payload });
 
+// MAIR-744: the install, build and test hooks used to query the npm advisory
+// service, so `npm ci` failed offline, on an outage or on an edited advisory.
+test('MAIR-744: install, build and test hooks pass without the npm advisory service', () => {
+  const temp = mkdtempSync(join(tmpdir(), 'mairie360-offline-'));
+  try {
+    const offline = join(temp, 'offline.mjs');
+    writeFileSync(offline, "globalThis.fetch = async () => { throw new Error('MAIR-744 offline'); };");
+    const command = process.env.npm_execpath ? process.execPath : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
+    for (const hook of ['postinstall', 'prebuild', 'pretest']) {
+      const args = process.env.npm_execpath ? [process.env.npm_execpath, 'run', hook] : ['run', hook];
+      const run = spawnSync(command, args, { cwd: root, encoding: 'utf8', timeout: 20000,
+        env: { ...process.env, NODE_OPTIONS: `--import=${pathToFileURL(offline).href}` } });
+      assert.equal(run.status, 0, `${hook}: ${run.stdout}${run.stderr}`);
+      assert.doesNotMatch(run.stdout + run.stderr, /MAIR-744 offline|upstream advisories/, hook);
+    }
+  } finally { rmSync(temp, { recursive: true, force: true }); }
+});
+
 test('the reviewed local package and locked resolutions pass the integrity gate', async () => {
   const { verifySecurityBackports } = await guard;
   assert.deepEqual(verifySecurityBackports(root), ['zod']);
@@ -111,12 +129,14 @@ test('an installed peer consumer cannot bypass the root backport with a nested p
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });
 
-test('the actual postinstall lifecycle blocks an unreviewed advisory', () => {
+test('MAIR-744: an unreviewed advisory blocks audit:upstream, never the install', () => {
   const temp = mkdtempSync(join(tmpdir(), 'mairie360-zod-lifecycle-'));
   try {
     cpSync(join(root, 'vendor'), join(temp, 'vendor'), { recursive: true });
     const originalPackage = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-    const pkg = { name: 'lifecycle-probe', private: true, scripts: { postinstall: originalPackage.scripts.postinstall },
+    const { postinstall } = originalPackage.scripts;
+    const pkg = { name: 'lifecycle-probe', private: true,
+      scripts: { postinstall, 'audit:upstream': originalPackage.scripts['audit:upstream'] },
       devDependencies: { zod: 'file:vendor/zod' }, overrides: { zod: '$zod' } };
     writeFileSync(join(temp, 'package.json'), JSON.stringify(pkg));
     const original = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
@@ -125,20 +145,23 @@ test('the actual postinstall lifecycle blocks an unreviewed advisory', () => {
     mkdirSync(join(temp, 'node_modules'));
     symlinkSync(join(temp, 'vendor/zod'), join(temp, 'node_modules/zod'));
     const stub = join(temp, 'advisory-service.mjs');
-    const run = advisory => {
+    const run = (script, advisory) => {
       writeFileSync(stub, `globalThis.fetch = async () => ({ ok: true, json: async () => (${JSON.stringify({ zod: [advisory] })}) });`);
       const command = process.env.npm_execpath ? process.execPath : (process.platform === 'win32' ? 'npm.cmd' : 'npm');
-      const args = process.env.npm_execpath ? [process.env.npm_execpath, 'run', 'postinstall'] : ['run', 'postinstall'];
+      const args = process.env.npm_execpath ? [process.env.npm_execpath, 'run', script] : ['run', script];
       const child = spawnSync(command, args, { cwd: temp, encoding: 'utf8', timeout: 10000,
         env: { ...process.env, NODE_OPTIONS: `--import=${pathToFileURL(stub).href}` } });
       assert.equal(child.error, undefined, child.error?.message);
       assert.equal(child.signal, null);
       return child;
     };
-    const accepted = run(reviewed);
+    const unreviewed = { ...reviewed, vulnerable_versions: '*' };
+    const accepted = run('audit:upstream', reviewed);
     assert.equal(accepted.status, 0, accepted.stderr);
-    const blocked = run({ ...reviewed, vulnerable_versions: '*' });
+    const blocked = run('audit:upstream', unreviewed);
     assert.notEqual(blocked.status, 0);
     assert.match(blocked.stderr, /advisory.*review/i);
+    const installed = run('postinstall', unreviewed);
+    assert.equal(installed.status, 0, installed.stderr);
   } finally { rmSync(temp, { recursive: true, force: true }); }
 });

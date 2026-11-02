@@ -1,0 +1,24 @@
+# MAIR-744: the upstream advisory check of the vendored zod backport runs here,
+# every day and on demand, instead of in `postinstall`: an install must not
+# depend on the npm advisory service (outage, rate limit, edited advisory).
+# A failure means a new or revised zod advisory to review (vendor/README.md).
+name: Upstream advisories of vendored packages
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upstream-advisories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+      # No install: the check reads the manifest, the lockfile and vendor/ only.
+      - run: npm run audit:upstream
