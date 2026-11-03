@@ -86,7 +86,7 @@ services:
     environment:
       PGPASSWORD: password
     command: >
-      sh -c "psql -h postgres -U postgres -d mairie_360_database -f /init-test.sql"
+      sh -c "psql -v ON_ERROR_STOP=1 -h postgres -U postgres -d mairie_360_database -f /init-test.sql"
     networks:
       - backend
 

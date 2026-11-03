@@ -51,7 +51,10 @@ export ADMIN_JWT="$jwt_header.$jwt_payload.$jwt_signature"
 
 # Engine at the cicd_version pinned in .github/workflows/cicd.yml (override with CICD_VERSION), fetched
 # like accessibility_test.sh does (a SHA, a tag or a branch; .rgaa-ref records the ref of a copy
-# fetched here). The simulation of the fronts needs tests/gdpr/simulation/browse.mjs.
+# fetched here). The simulation of the fronts needs tests/gdpr/simulation/browse.mjs: until the pin
+# names a CICD release that has it, set CICD_VERSION. Without .rgaa-ref, a cicd-repo/ is used as is
+# only in GitHub Actions (the CI checks the engine out itself); locally the script stops instead of
+# deleting it, since it may be a clone holding local work.
 CICD_DIR="cicd-repo"
 CICD_VERSION="${CICD_VERSION:-$(sed -n 's/^[[:space:]]*cicd_version:[[:space:]]*"\{0,1\}\([^"[:space:]#]*\).*/\1/p' .github/workflows/cicd.yml | head -n 1)}"
 engine_complete() {
@@ -59,9 +62,12 @@ engine_complete() {
         [ -f "$CICD_DIR/tests/gdpr/$f" ] || return 1
     done
 }
+if [ -d "$CICD_DIR" ] && [ ! -f "$CICD_DIR/.rgaa-ref" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+    echo "$CICD_DIR/ was not fetched by this script (no .rgaa-ref) and may hold local work: move or delete it, then run again." >&2
+    exit 1
+fi
 if ! engine_complete ||
-    { [ -f "$CICD_DIR/.rgaa-ref" ] && [ "$(cat "$CICD_DIR/.rgaa-ref")" != "$CICD_VERSION" ]; } ||
-    { [ ! -f "$CICD_DIR/.rgaa-ref" ] && [ "${GITHUB_ACTIONS:-}" != "true" ]; }; then
+    { [ -f "$CICD_DIR/.rgaa-ref" ] && [ "$(cat "$CICD_DIR/.rgaa-ref")" != "$CICD_VERSION" ]; }; then
     if [ -z "$CICD_VERSION" ]; then
         echo "No cicd_version found in .github/workflows/cicd.yml (set CICD_VERSION)." >&2
         exit 1
@@ -95,7 +101,10 @@ psql_stack() {
 
 echo "==> [1/5] Starting the stack, the personas' journeys and their pages..."
 # Fresh volumes on every run: a volume left by a previous run would hand the stack its rows.
-docker compose -f "$COMPOSE_FILE" down -v --remove-orphans > /dev/null 2>&1
+if ! docker compose -f "$COMPOSE_FILE" down -v --remove-orphans > /dev/null 2>&1; then
+    echo "Could not remove the previous stack and its volumes: its rows would reach this run."
+    exit 1
+fi
 # A failed dependency (seeder, migration, upstream readiness) leaves the runner created but never
 # started, and `docker compose wait` would then report 0: fail here instead.
 if ! docker compose -f "$COMPOSE_FILE" up -d --pull missing; then
@@ -109,15 +118,26 @@ docker compose -f "$COMPOSE_FILE" logs --no-color --tail 60 gdpr-simulation
 
 echo "==> [2/5] Back-dating the rows of the run past their retention, then the purge..."
 # Sessions and connection logs are the tables a retention policy purges today; the rows the
-# journey wrote elsewhere are checked as they are.
+# journey wrote elsewhere are checked as they are. The run's session is a signed JWT with no
+# sessions row, so a probe session is written first: the purge must remove it once back-dated,
+# otherwise the back-dating touched nothing and the retention check would pass on an empty table.
 # ON_ERROR_STOP: a failed statement stops psql, and the run with it (the checks would read a
 # database that was never purged).
 psql_stack <<'SQL' || { echo "The back-dating or the purge failed."; exit 1; }
+INSERT INTO sessions (user_id, token_hash, device_info, created_at, expires_at)
+VALUES (1, 'gdpr-simulation-retention-probe', 'gdpr simulation', now(), now() + interval '1 hour');
 UPDATE sessions SET created_at = created_at - interval '7 months', expires_at = expires_at - interval '7 months'
  WHERE created_at > now() - interval '1 day';
 UPDATE connection_logs SET timestamp = timestamp - interval '13 months'
  WHERE timestamp > now() - interval '1 day';
 SELECT * FROM fn_apply_retention_policies();
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM sessions WHERE token_hash = 'gdpr-simulation-retention-probe') THEN
+        RAISE EXCEPTION 'the purge kept the back-dated probe session';
+    END IF;
+END
+$$;
 SQL
 
 echo "==> [3/5] Database checks..."
@@ -135,7 +155,9 @@ echo "==> [4/5] Saving the Redis keys and the logs of every container..."
 docker compose -f "$COMPOSE_FILE" exec -T redis sh -c \
     'set -e; keys="$(redis-cli --scan)"; for k in $keys; do ttl="$(redis-cli TTL "$k")"; [ -n "$ttl" ]; printf "%s\t%s\n" "$k" "$ttl"; done' \
     > "$RUN_DIR/redis/keys.tsv" || { echo "Could not read the Redis keys: the analysis would not be reliable."; exit 1; }
-# Missing or truncated logs would let the analysis pass as clean: stop instead.
+# The services are stopped first, so that the file holds every line they wrote. Missing or
+# truncated logs would let the analysis pass as clean: stop instead.
+docker compose -f "$COMPOSE_FILE" stop >/dev/null 2>&1 || { echo "Could not stop the stack before saving its logs."; exit 1; }
 if ! docker compose -f "$COMPOSE_FILE" logs --no-color > "$RUN_DIR/containers.log" \
     || [ ! -s "$RUN_DIR/containers.log" ]; then
     echo "Could not save the container logs: the analysis would not be reliable."

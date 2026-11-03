@@ -16,7 +16,7 @@ erased: 1
 erase:
   - name: archive the persona's account (admin)
     request: {method: DELETE, path: "/admin/users/{{user_id}}", headers: {Cookie: "accessToken={{env.ADMIN_JWT}}", Origin: "http://localhost:5000"}}
-    expect: [204, 404]
+    expect: [204]
 browser:
   target: http://localhost:5000
   # Public pages: no session.
