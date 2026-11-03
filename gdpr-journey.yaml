@@ -1,0 +1,73 @@
+# GDPR usage simulation journey of the login front (MAIR-497), played by mairie360/CICD
+# tests/gdpr/simulation for every persona of gdpr-simulation.yaml (gdpr-marker.yaml format of
+# MAIR-290).
+#
+# The account and sign-in part of BFF_user's log marker journey, sent to the front's own origin: an
+# administrator creates the persona's account through the same-origin proxy (src/lib/bff-proxy.ts),
+# then the persona signs in through the front's own routes (src/app/api/auth/*), wrong password,
+# invalid e-mail and first-connection password change included. The logs of the front see the
+# persona's e-mail and passwords in the bodies and the errors. The login routes only accept
+# same-origin requests (Origin and Sec-Fetch-Site), the proxy turns the accessToken cookie into a
+# Bearer token.
+version: 1
+target: http://localhost:5000
+wait: /
+# Session of the administrator of the run (the seeded admin), signed by gdpr_simulation_test.sh.
+env: [ADMIN_JWT]
+steps:
+  # There is no public sign-up: an administrator creates the account.
+  - name: create the persona's account (admin)
+    request:
+      method: POST
+      path: /admin/users
+      headers: &admin {Cookie: "accessToken={{env.ADMIN_JWT}}", Origin: "http://localhost:5000"}
+      json: {first_name: "{{marker.first_name}}", last_name: "{{marker.last_name}}", email: "{{marker.email}}", password: "{{marker.password}}", phone_number: "{{marker.phone}}", phone_country: "FR"}
+    expect: [201]
+  - name: search the persona in the admin list (query string)
+    request: {method: GET, path: "/admin/users?search={{marker.email}}", headers: *admin}
+    capture:
+      user_id: body.users.0.id
+  - name: sign in with a wrong password (deliberate error)
+    request:
+      method: POST
+      path: /api/auth/login
+      headers: &signin {Origin: "http://localhost:5000", Sec-Fetch-Site: same-origin}
+      json: {email: "{{marker.email}}", password: "x{{marker.password}}"}
+    expect: [401]
+  - name: sign in with an unknown e-mail (deliberate error)
+    request: {method: POST, path: /api/auth/login, headers: *signin, json: {email: "x{{marker.email}}", password: "{{marker.password}}"}}
+    expect: [401]
+  - name: sign in with an invalid e-mail (deliberate error)
+    request: {method: POST, path: /api/auth/login, headers: *signin, json: {email: "{{marker.last_name}} {{marker.phone}}", password: "{{marker.password}}"}}
+    expect: [400]
+  # Core answers 412: the front answers 200 {requiresPasswordChange} and sets the passwordChangeToken
+  # cookie (path /api/auth) that the password change reads.
+  - name: first sign-in, password change required
+    request: {method: POST, path: /api/auth/login, headers: *signin, json: {email: "{{marker.email}}", password: "{{marker.password}}"}}
+    expect: [200]
+    capture:
+      password_change_token: {from: cookie.passwordChangeToken, sensitive: true}
+  - name: change the password with a too short one (deliberate error)
+    request:
+      method: POST
+      path: /api/auth/force-change-password
+      headers: {Origin: "http://localhost:5000", Sec-Fetch-Site: same-origin, Cookie: "passwordChangeToken={{password_change_token}}"}
+      json: {newPassword: "Mk1!"}
+    expect: [400]
+  - name: change the password at first connection
+    request:
+      method: POST
+      path: /api/auth/force-change-password
+      headers: {Origin: "http://localhost:5000", Sec-Fetch-Site: same-origin, Cookie: "passwordChangeToken={{password_change_token}}"}
+      json: {newPassword: "{{marker.password}}2"}
+  - name: sign in
+    request: {method: POST, path: /api/auth/login, headers: *signin, json: {email: "{{marker.email}}", password: "{{marker.password}}2"}}
+    capture:
+      access_token: {from: cookie.accessToken, sensitive: true}
+  - name: sign out
+    request:
+      method: POST
+      path: /api/auth/logout
+      headers: {Origin: "http://localhost:5000", Sec-Fetch-Site: same-origin, Cookie: "accessToken={{access_token}}"}
+      # The auth routes only take JSON bodies (415 otherwise).
+      json: {}

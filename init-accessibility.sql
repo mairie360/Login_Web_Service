@@ -15,3 +15,8 @@ SELECT 4, r.id FROM roles r WHERE lower(r.name) = 'user'
 ON CONFLICT DO NOTHING;
 
 COMMIT;
+
+-- The seeds insert explicit ids (users 2 and 4) without advancing the sequence: the next account an
+-- administrator creates would draw id 2, then 4, and fail on uq_users_identity (Core answers 500).
+-- The GDPR simulation creates accounts (MAIR-497).
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT max(id) FROM users));
