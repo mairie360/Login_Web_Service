@@ -117,10 +117,13 @@ RUNNER_EXIT=$?
 docker compose -f "$COMPOSE_FILE" logs --no-color --tail 60 gdpr-simulation
 
 echo "==> [2/5] Back-dating the rows of the run past their retention, then the purge..."
-# Sessions and connection logs are the tables a retention policy purges today; the rows the
+# Sessions and connection logs are the tables with a retention policy today; the rows the
 # journey wrote elsewhere are checked as they are. The run's session is a signed JWT with no
 # sessions row, so a probe session is written first: the purge must remove it once back-dated,
 # otherwise the back-dating touched nothing and the retention check would pass on an empty table.
+# The probe also writes a LOGIN connection log (trigger_log_login): connection logs are kept by the
+# purge today (COLD_STORAGE, reported by the retention check until MAIR-289), so the run checks that
+# this log was back-dated past its one-year retention, which the retention check then reports.
 # ON_ERROR_STOP: a failed statement stops psql, and the run with it (the checks would read a
 # database that was never purged).
 psql_stack <<'SQL' || { echo "The back-dating or the purge failed."; exit 1; }
@@ -135,6 +138,10 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM sessions WHERE token_hash = 'gdpr-simulation-retention-probe') THEN
         RAISE EXCEPTION 'the purge kept the back-dated probe session';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM connection_logs WHERE device_info = 'gdpr simulation'
+                    AND timestamp < now() - interval '1 year') THEN
+        RAISE EXCEPTION 'no connection log was back-dated past its retention';
     END IF;
 END
 $$;
