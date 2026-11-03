@@ -51,8 +51,8 @@ export ADMIN_JWT="$jwt_header.$jwt_payload.$jwt_signature"
 
 # Engine at the cicd_version pinned in .github/workflows/cicd.yml (override with CICD_VERSION), fetched
 # like accessibility_test.sh does (a SHA, a tag or a branch; .rgaa-ref records the ref of a copy
-# fetched here). The simulation of the fronts needs tests/gdpr/simulation/browse.mjs: until the pin
-# names a CICD release that has it, set CICD_VERSION. Without .rgaa-ref, a cicd-repo/ is used as is
+# fetched here). The simulation of the fronts needs tests/gdpr/simulation/browse.mjs (mairie360/CICD
+# v5.3.0 or later). Without .rgaa-ref, a cicd-repo/ is used as is
 # only in GitHub Actions (the CI checks the engine out itself); locally the script stops instead of
 # deleting it, since it may be a clone holding local work.
 CICD_DIR="cicd-repo"
