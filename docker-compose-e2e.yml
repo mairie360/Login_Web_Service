@@ -206,8 +206,9 @@ services:
       PORT: 5000
       BFF_USER_API_URL: http://bff-user:4000
       # The production image refuses to issue the session cookie without a domain (503), and the
-      # authentication routes only accept requests whose Origin is this front (403 otherwise).
-      COOKIE_DOMAIN: login-front
+      # authentication routes only accept requests whose Origin is this front (403 otherwise). The
+      # domain is the browser's origin host (localhost, see the header), so Chromium keeps the cookie.
+      COOKIE_DOMAIN: localhost
       # Default destination after sign-in (MAIR-603): no Dashboard runs in this stack, the journeys
       # intercept this origin in the browser and only check that the sign-in navigates to it.
       DASHBOARD_FRONT_URL: http://dashboard.e2e.invalid/

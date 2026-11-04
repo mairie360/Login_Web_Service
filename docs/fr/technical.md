@@ -221,7 +221,7 @@ Avant un lancement Docker, vérifier les variables de service, les secrets de bu
 ### Parcours de bout en bout (MAIR-603)
 
 `./e2e_test.sh` démarre `docker-compose-e2e.yml` (la stack de performance avec un exécuteur
-Playwright à la place de k6) et lance les parcours de `e2e/` : connexion d'un agent et redirection vers le front demandé, première connexion qui demande un nouveau mot de passe, refus d'identifiants erronés et d'une connexion envoyée depuis un autre site. La promotion prod lance
+Playwright à la place de k6) et lance les parcours de `e2e/` : connexion d'un agent et redirection vers le front demandé, première connexion qui demande un nouveau mot de passe, refus d'identifiants erronés et d'une connexion envoyée depuis un autre site, et refus des routes d'administration (`GET /admin/roles` via le proxy) à un agent sans le rôle admin. La promotion prod lance
 le même script sur l'image `staging-<sha>` vérifiée (job `e2e_tests`, action `actions/e2e/fronts`
 de mairie360/CICD, MAIR-602) et bloque la release si un parcours échoue ou si le dossier manque.
 Le rapport (HTML, traces et vidéos des parcours en échec) est conservé dans `e2e-report/`. Pour

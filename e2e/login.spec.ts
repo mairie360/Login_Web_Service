@@ -35,6 +35,10 @@ test('a returning agent signs in and is sent to the requested front', async ({ p
   const setCookie = (await response.headerValue('set-cookie')) ?? '';
   expect(setCookie).toMatch(/accessToken=[^;]+/);
   expect(setCookie).toMatch(/HttpOnly/i);
+  // ...and the browser actually keeps it for the fronts' origin (COOKIE_DOMAIN matches it).
+  const stored = (await page.context().cookies()).find((cookie) => cookie.name === 'accessToken');
+  expect(stored?.httpOnly).toBe(true);
+  expect(stored?.domain.replace(/^\./, '')).toBe(new URL(page.url()).hostname);
 
   await page.waitForURL(DESTINATION);
   await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible();
@@ -67,4 +71,22 @@ test('a sign-in posted from another site is refused', async ({ request }) => {
   });
   expect(response.status()).toBe(403);
   expect(response.headers()['set-cookie'] ?? '').not.toMatch(/accessToken=/);
+});
+
+test('the session of an agent without the admin role is refused on the admin routes', async ({ page, request }) => {
+  const response = await signIn(page, RETURNING_AGENT, PASSWORD);
+  expect(response.status()).toBe(200);
+  // The token Login issued, sent explicitly: the check does not depend on the browser cookie jar.
+  const token = /accessToken=([^;]+)/.exec((await response.headerValue('set-cookie')) ?? '')?.[1];
+  expect(token).toBeTruthy();
+
+  // The proxy relays the session as a Bearer token: BFF User refuses a plain agent the roles admin.
+  const denied = await request.get('/admin/roles', {
+    headers: { Cookie: `accessToken=${token}`, Accept: 'application/json' },
+    maxRedirects: 0,
+  });
+  expect(denied.status()).toBe(403);
+  // Without any session the same route is refused as unauthenticated.
+  const anonymous = await request.get('/admin/roles', { headers: { Accept: 'application/json' }, maxRedirects: 0 });
+  expect(anonymous.status()).toBe(401);
 });

@@ -50,6 +50,11 @@ test('docker-compose-e2e.yml runs the journeys with the browser image of the pin
   // The front's public URL is the origin its guards accept on writes: the one the browser uses.
   assert.equal(compose.services['login-front'].environment.LOGIN_FRONT_URL, 'http://localhost:5000');
   assert.ok(compose.services['login-front'].ports.includes('127.0.0.1:${E2E_FRONT_PORT:-5000}:5000'));
+  // MAIR-603 review: the session cookie must be kept by the browser of the journeys, so its
+  // domain is the host of the origin that browser opens.
+  const frontHost = new URL(compose.services['login-front'].environment.LOGIN_FRONT_URL).hostname;
+  assert.equal(compose.services['login-front'].environment.COOKIE_DOMAIN, frontHost);
+  assert.equal(new URL(runner.environment.E2E_BASE_URL).hostname, frontHost);
 });
 
 test('the seeded users cover a returning agent and a first sign-in', () => {
