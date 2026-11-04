@@ -259,3 +259,12 @@ Historical supplements: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). 
 Login now owns POST /api/auth/refresh and POST /api/auth/logout through the published optional server entry of lib-components. The configured eight frontend origins may delegate renewal using the existing HttpOnly refresh cookie. The User BFF URL, cookie domain and ingress IP trust policy retain their existing configuration. One Login process coordinates concurrent rotations and a short handover; cross-process coordination during a rolling update or scaling is not certified.
 
 The logout page sends one JSON POST to the owner after an explicit command. Successful local cookie expiry is distinguished from Core revocation by session_revoked. An unconfirmed receipt remains visible until the user explicitly returns to Login. A validated Keycloak logout_url is visited when present; refusals and network errors retain an explicit retry. Unit/React/HTTP-mock evidence does not certify real Dev authentication, Core revocation or the identity provider.
+
+## Legal pages (MAIR-292)
+
+`/mentions-legales` (legal notice) and `/confidentialite` (privacy policy) are public pages of this
+front, rendered at request time from `LEGAL_CONFIG`: the JSON of the instance's `global.legal`,
+passed by the Devops/Deploiment chart (mairie's identity, publication director, DPO, host, retention
+periods and subprocessors decided in `compliance/<org>/`). One image serves every mairie; a missing
+value is shown as "À compléter par la mairie", never invented. Every page of this front links to
+both (layout footer); the other fronts link to them through `LOGIN_FRONT_URL`.

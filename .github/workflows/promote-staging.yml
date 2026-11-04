@@ -24,11 +24,11 @@ jobs:
       contents: read
       packages: write
       actions: read
-    uses: mairie360/CICD/.github/workflows/promote-staging.yml@6d1599e9a521bc9d91d63e3e9df46e911feea26c # v4.4.3
+    uses: mairie360/CICD/.github/workflows/promote-staging.yml@34889930cf42b20020d2e2f702a566ef7ebca1ec # v5.3.1
     with:
       stack: fronts
       package_name: login-front
-      cicd_version: "6d1599e9a521bc9d91d63e3e9df46e911feea26c" # v4.4.3
+      cicd_version: "34889930cf42b20020d2e2f702a566ef7ebca1ec" # v5.3.1
       sha: ${{ inputs.sha }}
     secrets:
       N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}

@@ -12,6 +12,14 @@ dist
 /.performance-base/
 /performance-server.log
 
+# RGAA engine (mairie360/CICD tests/a11y): local clone, report and AI verdict cache
+/cicd-repo/
+/rgaa-report/
+/.rgaa-ai-cache/
+# GDPR usage simulation run (gdpr_simulation_test.sh, MAIR-497): raw logs, never committed.
+/gdpr-simulation/
+/.gdpr-ai-cache/
+/.rgaa-run.lock
 # end-to-end journeys (MAIR-603)
 /e2e/node_modules
 /e2e-report

@@ -24,14 +24,16 @@ jobs:
       contents: write
       packages: write
       actions: read
-    uses: mairie360/CICD/.github/workflows/promote-prod.yml@6d1599e9a521bc9d91d63e3e9df46e911feea26c # v4.4.3
+    uses: mairie360/CICD/.github/workflows/promote-prod.yml@34889930cf42b20020d2e2f702a566ef7ebca1ec # v5.3.1
     with:
       stack: fronts
       package_name: login-front
-      cicd_version: "6d1599e9a521bc9d91d63e3e9df46e911feea26c" # v4.4.3
+      cicd_version: "34889930cf42b20020d2e2f702a566ef7ebca1ec" # v5.3.1
       sha: ${{ inputs.sha }}
     secrets:
       N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # AI pre-audit of the RGAA check (rgaa job, MAIR-320); the workspace only when the key is not scoped to one.
+      ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
       RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
       RELEASE_APP_PK: ${{ secrets.RELEASE_APP_PK }}

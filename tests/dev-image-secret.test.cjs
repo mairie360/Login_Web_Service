@@ -7,12 +7,12 @@ const { test } = require('node:test');
 const yaml = require('js-yaml');
 
 const read = (file) => readFileSync(join(__dirname, '..', file), 'utf8');
-const digest = '0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6';
+const digest = '55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205';
 
 test('MAIR-436: development.Dockerfile uses the production Node LTS pinned by digest', () => {
   const dockerfile = read('development.Dockerfile');
   assert.equal(dockerfile.match(/^ARG NODE_VERSION=(.+)$/m)?.[1], read('Dockerfile').match(/^ARG NODE_VERSION=(.+)$/m)?.[1]);
-  assert.match(dockerfile, /^ARG NODE_VERSION=24\.21\.0$/m);
+  assert.match(dockerfile, /^ARG NODE_VERSION=24\.22\.1$/m);
   const bases = [...dockerfile.matchAll(/^FROM (\S+)/gm)].map(([, image]) => image);
   assert.deepEqual(bases, ['node:${NODE_VERSION}-bookworm-slim@sha256:' + digest]);
 });

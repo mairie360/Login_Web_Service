@@ -5,6 +5,7 @@ import { InstanceProvider } from '@mairie360/lib-components/react';
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import LegalLinks from "../components/LegalLinks";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -39,6 +40,8 @@ export default async function RootLayout({
         <main id="login-content" tabIndex={-1} className="login-page flex min-h-dvh items-center justify-center bg-[var(--mairie-background)]">
           <InstanceProvider role="Guest" timeZone={timeZone} appearance={appearance} appearanceCookieDomain={process.env.COOKIE_DOMAIN}>{children}</InstanceProvider>
         </main>
+        {/* Every page links to the legal notice and the privacy policy (MAIR-292). */}
+        <LegalLinks />
       </body>
     </html>
   );

@@ -1,0 +1,31 @@
+# GDPR usage simulation of the login front (MAIR-497), played by mairie360/CICD
+# tests/gdpr/simulation on the test stack only (docker-compose-gdpr-simulation.yml,
+# gdpr_simulation_test.sh; format: CICD README, "GDPR simulation").
+#
+# Fictitious personas with unique values get an account and sign in through the front
+# (gdpr-journey.yaml): wrong password, invalid e-mail, first-connection password change, sign-in and
+# sign-out. The public pages are then opened in the browser (sign-in, forgotten password, legal
+# notice, privacy policy): the browser console and storage, the requests and cookies of the pages, the
+# logs of every container, the Redis keys and the database after the purge are then checked and
+# reviewed (CICD analyze.mjs). The erased persona's account is archived after its pages, until the
+# anonymization of MAIR-289.
+version: 1
+journey: gdpr-journey.yaml
+personas: 4
+erased: 1
+erase:
+  - name: archive the persona's account (admin)
+    request: {method: DELETE, path: "/admin/users/{{user_id}}", headers: {Cookie: "accessToken={{env.ADMIN_JWT}}", Origin: "http://localhost:5000"}}
+    expect: [204]
+browser:
+  target: http://localhost:5000
+  # Public pages: no session.
+  pages:
+    - name: sign-in
+      path: /
+    - name: forgotten password
+      path: /forgot-password
+    - name: legal notice
+      path: /mentions-legales
+    - name: privacy policy
+      path: /confidentialite
