@@ -108,3 +108,11 @@ test('e2e_test.sh starts from a clean stack and always tears it down', () => {
   assert.match(script, /trap 'teardown' EXIT/);
   assert.match(script, /if ! teardown; then[\s\S]*EXIT_CODE=1/, 'a failed teardown fails the run');
 });
+
+test('the e2e stack is its own Compose project and starts from a successful reset', () => {
+  const compose = yaml.load(read('docker-compose-e2e.yml'));
+  assert.equal(compose.name, 'login-e2e', 'down -v must never reach the dev stack of the same folder');
+  const script = read('e2e_test.sh');
+  assert.match(script, /if ! docker compose -f "\$COMPOSE_FILE" down -v --remove-orphans; then[\s\S]*?exit 1\nfi/,
+    'a failed initial reset stops the run');
+});

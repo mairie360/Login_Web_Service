@@ -27,7 +27,7 @@ async function signIn(page: import('@playwright/test').Page, email: string, pass
   return response;
 }
 
-test('a returning agent signs in and is sent to the requested front', async ({ page }) => {
+test('a returning agent signs in and is sent to the requested front', async ({ page, baseURL }) => {
   const response = await signIn(page, RETURNING_AGENT, PASSWORD);
   expect(response.status()).toBe(200);
   // The shared session cookie the other fronts read, out of reach of scripts. Browser responses
@@ -38,7 +38,8 @@ test('a returning agent signs in and is sent to the requested front', async ({ p
   // ...and the browser actually keeps it for the fronts' origin (COOKIE_DOMAIN matches it).
   const stored = (await page.context().cookies()).find((cookie) => cookie.name === 'accessToken');
   expect(stored?.httpOnly).toBe(true);
-  expect(stored?.domain.replace(/^\./, '')).toBe(new URL(page.url()).hostname);
+  // Compared with the Login origin, not page.url(): the page may already be on the destination front.
+  expect(stored?.domain.replace(/^\./, '')).toBe(new URL(baseURL!).hostname);
 
   await page.waitForURL(DESTINATION);
   await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible();

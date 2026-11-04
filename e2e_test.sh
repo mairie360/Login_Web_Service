@@ -18,7 +18,10 @@ export E2E_UID="$(id -u)" E2E_GID="$(id -g)"
 
 # The journeys expect a fresh seed: drop what an interrupted run may have left behind, and tear
 # the stack down whatever happens next (Ctrl-C, CI cancellation, a step that fails).
-docker compose -f "$COMPOSE_FILE" down -v --remove-orphans >/dev/null 2>&1
+if ! docker compose -f "$COMPOSE_FILE" down -v --remove-orphans; then
+  echo "Could not remove the previous e2e stack: the journeys would not start from a fresh seed."
+  exit 1
+fi
 TORN_DOWN=0
 teardown() {
   [ "$TORN_DOWN" = 1 ] && return 0

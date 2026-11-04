@@ -42,6 +42,10 @@ x-api-env: &api-env
   JWT_SECRET: b"secret"
   JWT_TIMEOUT: 3600
 
+# Dedicated Compose project (MAIR-603 review): the `down -v` of e2e_test.sh only removes this stack,
+# never the containers or volumes of docker-compose.yml started from the same folder.
+name: login-e2e
+
 services:
   postgres:
     image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.3.0}
