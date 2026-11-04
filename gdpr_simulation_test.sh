@@ -22,6 +22,9 @@
 # IMAGE_REF at a published image, e.g. IMAGE_REF=ghcr.io/mairie360/login-front:dev.
 
 COMPOSE_FILE="docker-compose-gdpr-simulation.yml"
+# COMPOSE_PROJECT_NAME wins over the file's `name:`: a value inherited from the caller could point the
+# `down -v` of this script at another stack and delete its volumes.
+export COMPOSE_PROJECT_NAME="login-front-gdpr-sim"
 RUN_DIR="gdpr-simulation"
 DB="mairie_360_database"
 INVENTORY_REF="${GDPR_INVENTORY_REF:-main}"
@@ -58,7 +61,7 @@ export ADMIN_JWT="$jwt_header.$jwt_payload.$jwt_signature"
 CICD_DIR="cicd-repo"
 CICD_VERSION="${CICD_VERSION:-$(sed -n 's/^[[:space:]]*cicd_version:[[:space:]]*"\{0,1\}\([^"[:space:]#]*\).*/\1/p' .github/workflows/cicd.yml | head -n 1)}"
 engine_complete() {
-    for f in simulation/simulate.mjs simulation/browse.mjs simulation/sql.mjs privacy/privacy.mjs privacy/runner-image schema.sql package-lock.json; do
+    for f in simulation/simulate.mjs marker/journey.mjs simulation/browse.mjs simulation/sql.mjs simulation/guard.mjs simulation/personas.mjs simulation/db.mjs marker/marker.mjs inventory.mjs privacy/privacy.mjs privacy/runner-image schema.sql package.json package-lock.json; do
         [ -f "$CICD_DIR/tests/gdpr/$f" ] || return 1
     done
 }
@@ -91,9 +94,27 @@ curl -fsSL "https://raw.githubusercontent.com/mairie360/Database/$INVENTORY_REF/
 # The stack is always removed, even when the script is interrupted (CI bounds it with `timeout`).
 # The logs are saved first when the run stops before step 4, so a failure can still be read.
 cleanup() {
-    [ -s "$RUN_DIR/containers.log" ] || docker compose -f "$COMPOSE_FILE" logs --no-color > "$RUN_DIR/containers.log" 2>/dev/null
-    docker compose -f "$COMPOSE_FILE" down -v >/dev/null 2>&1
+    local status=$?
+    if [ ! -s "$RUN_DIR/containers.log" ]; then
+        # The services are stopped first, so that the file holds every line they wrote.
+        docker compose -f "$COMPOSE_FILE" stop >/dev/null 2>&1
+        docker compose -f "$COMPOSE_FILE" logs --no-color > "$RUN_DIR/containers.log" 2>/dev/null
+    fi
+    # Whichever path saved the logs (this trap, or step 4 stopping before its own check), the JWT
+    # of the run must not be in them.
+    if [ -n "${ADMIN_JWT:-}" ] && [ -s "$RUN_DIR/containers.log" ] \
+        && grep -qF -- "${ADMIN_JWT##*.}" "$RUN_DIR/containers.log"; then
+        echo "The JWT of the run appears in the container logs."
+        status=1
+    fi
+    # Step 5 already removed the stack on a complete run: a second teardown must not fail it.
+    if [ -z "${STACK_REMOVED:-}" ] && ! docker compose -f "$COMPOSE_FILE" down -v --remove-orphans >/dev/null 2>&1; then
+        echo "Could not remove the stack and its volumes."
+        status=1
+    fi
+    exit "$status"
 }
+STACK_REMOVED=
 trap cleanup EXIT
 psql_stack() {
     docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -At "$@"
@@ -158,9 +179,12 @@ done
 
 echo "==> [4/5] Saving the Redis keys and the logs of every container..."
 # Key and TTL of every Redis key (MAIR-499: a key without TTL or outside the inventory's prefixes fails).
-# A failed scan or TTL read stops the run: an empty or partial keys.tsv would pass as clean.
+# A failed scan or TTL read (an error reply, or a TTL that is not an integer) stops the run: an empty,
+# partial or malformed keys.tsv would pass as clean. A key
+# that expired between the scan and its TTL read (TTL -2) is skipped; a key without expiry (-1) is
+# kept for the analysis, which fails on it. An empty scan is valid: some stacks write no key.
 docker compose -f "$COMPOSE_FILE" exec -T redis sh -c \
-    'set -e; keys="$(redis-cli --scan)"; for k in $keys; do ttl="$(redis-cli TTL "$k")"; [ -n "$ttl" ]; printf "%s\t%s\n" "$k" "$ttl"; done' \
+    'set -e; keys="$(redis-cli --scan)"; printf "%s\n" "$keys" | while IFS= read -r k; do [ -n "$k" ] || continue; ttl="$(redis-cli -e TTL "$k")"; [ "$ttl" -ge -2 ] 2>/dev/null || exit 1; [ "$ttl" != -2 ] || continue; printf "%s\t%s\n" "$k" "$ttl"; done' \
     > "$RUN_DIR/redis/keys.tsv" || { echo "Could not read the Redis keys: the analysis would not be reliable."; exit 1; }
 # The services are stopped first, so that the file holds every line they wrote. Missing or
 # truncated logs would let the analysis pass as clean: stop instead.
@@ -178,7 +202,11 @@ if grep -qF -- "${ADMIN_JWT##*.}" "$RUN_DIR/containers.log"; then
 fi
 
 echo "==> [5/5] Removing the stack..."
-docker compose -f "$COMPOSE_FILE" down -v
+if ! docker compose -f "$COMPOSE_FILE" down -v --remove-orphans; then
+    echo "Could not remove the stack and its volumes."
+    exit 1
+fi
+STACK_REMOVED=1
 
 echo "Runner exit code: $RUNNER_EXIT"
 [ "$RUNNER_EXIT" -eq 0 ] || exit 1
