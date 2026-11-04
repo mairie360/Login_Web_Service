@@ -3,6 +3,12 @@ title = "Mairie 360 front Gitleaks configuration"
 [extend]
 useDefault = true
 
-[allowlist]
-description = "Reviewed SHA256 file-integrity manifest of the vendored Zod backport (MAIR-743, MAIR-770)"
-paths = ['^vendor/security-patches\.json$']
+# The SHA-256 digests of the Zod integrity manifest read as generic-api-key. Only that rule, in that file, for a bare
+# 64-character hex digest is skipped: any other rule or value, in any revision of the file, is still reported.
+[[allowlists]]
+description = "Reviewed SHA-256 digests of the vendored Zod backport manifest (MAIR-743, MAIR-770)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^vendor/security-patches\.json$''']
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{64}$''']
