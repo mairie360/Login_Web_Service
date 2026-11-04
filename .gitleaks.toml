@@ -1,0 +1,8 @@
+title = "Mairie 360 front Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed SHA256 file-integrity manifest of the vendored Zod backport (MAIR-743, MAIR-770)"
+paths = ['^vendor/security-patches\.json$']
