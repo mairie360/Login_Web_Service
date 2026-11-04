@@ -1,69 +1,49 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "0e4ca843beb4ccadbd0d7696e31f0ee510c2585a", "prod": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "prod_tag": "v0.4.0", "staging": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "updated": {"dev": "2026-11-04 18:29 UTC", "prod": "2026-10-21 11:08 UTC", "staging": "2026-10-21 10:57 UTC"}} -->
+<!-- release-journal-state {"dev": "5061df072afd5f31b11484512bd7dd38fab54cc2", "prod": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "prod_tag": "v0.4.0", "staging": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "updated": {"dev": "2026-11-04 21:13 UTC", "prod": "2026-10-21 11:08 UTC", "staging": "2026-10-21 10:57 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v0.4.0 | `c9d6a7f` | 2026-10-21 11:08 UTC |
 | staging | — | `c9d6a7f` | 2026-10-21 10:57 UTC |
-| dev | — | `0e4ca84` | 2026-11-04 18:29 UTC |
+| dev | — | `5061df0` | 2026-11-04 21:13 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v0.4.0)
 
 #### Nouveautés
-
-- Nouvelles pages publiques `/mentions-legales` et `/confidentialite`, rendues à chaque requête à partir de `LEGAL_CONFIG` (JSON de `global.legal` de l’instance). Une valeur absente s’affiche « À compléter par la mairie ». (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
-- Pied de page sur toutes les pages du front, avec des liens vers les mentions légales et la politique de confidentialité. (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
+- Nouvelles pages publiques `/mentions-legales` (mentions légales) et `/confidentialite` (politique de confidentialité), rendues à la demande depuis `LEGAL_CONFIG` : identité de la mairie, directeur de publication, DPO, hébergeur, durées de conservation et sous-traitants. Une valeur absente s'affiche « À compléter par la mairie ». (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
+- Le pied de page du layout affiche les liens « Mentions légales » et « Politique de confidentialité » sur chaque page du front. (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
 
 #### Changements de comportement
-
-- Le message d’erreur de connexion est maintenant l’alerte de la bibliothèque (`ErrorAlert`), annoncée aux lecteurs d’écran et fermable avec « Fermer le message ». Avant, il s’affichait dans un `Toast` autonome non annoncé. Le bouton de connexion utilise `fullWidth` et `loading` ; les boutons de déconnexion reprennent le style plein par défaut. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
-- Démarrage local de `docker-compose.yml` : `JWT_SECRET` doit venir de l’environnement ou d’un `.env` non versionné, sinon `docker compose` échoue. `JWT_ALLOW_WEAK_SECRET` passe à `false` pour Core API. Les ports 3000, 3001 et 4000 ne sont plus publiés que sur 127.0.0.1. ([#232](https://github.com/mairie360/Login_Web_Service/pull/232))
-- `postinstall`, `prebuild` et `pretest` ne interrogent plus le service d’avis npm : une panne ne bloque plus `npm ci`. La vérification amont passe dans `npm run audit:upstream`, lancée chaque jour par un workflow dédié. (MAIR-744, [#246](https://github.com/mairie360/Login_Web_Service/pull/246))
+- L'erreur de connexion s'affiche dans l'alerte de la lib (`ErrorAlert`), annoncée aux lecteurs d'écran et fermable par « Fermer le message ». Avant : un Toast autonome, non annoncé hors `ToastProvider`. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
+- Le bouton de connexion occupe toute la largeur et affiche l'état de chargement de la lib ; les surcharges de texte blanc et d'ombre bleue sont retirées. Les boutons de la page de déconnexion prennent le style plein par défaut de la lib. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
+- Pour les développeurs : `docker-compose.yml` exige désormais `JWT_SECRET` (environnement ou `.env` non suivi) et refuse le secret faible (`JWT_ALLOW_WEAK_SECRET: "false"`) ; les ports 3000, 3001 et 4000 ne sont publiés que sur 127.0.0.1. Sans `JWT_SECRET`, la stack locale ne démarre pas. (PR [#232](https://github.com/mairie360/Login_Web_Service/pull/232))
 
 #### Corrections
-
-- Message « Connexion temporairement indisponible » : avant, la carte pouvait déborder à 320 px avec un espacement de texte augmenté. Maintenant, le rembourrage est réduit sous `sm` et les mots longs sont coupés. (MAIR-318, [#141](https://github.com/mairie360/Login_Web_Service/pull/141))
+- Page « Connexion temporairement indisponible » à 320px avec espacement de texte augmenté : avant, le message débordait ; maintenant le padding est réduit sous `sm` et les mots longs passent à la ligne. (MAIR-318, [#141](https://github.com/mairie360/Login_Web_Service/pull/141))
 
 #### Technique
-
-- Vendoring de Zod 3 avec rétro-portage de la validation bornée, contrôle d’intégrité et `overrides` vers `vendor/zod` ; réparation des lockfiles. ([#232](https://github.com/mairie360/Login_Web_Service/pull/232))
-- Politique Gitleaks (`.gitleaks.toml`) et test de manifeste Zod ; corrections de `.gitleaksignore`. (MAIR-743, [#251](https://github.com/mairie360/Login_Web_Service/pull/251))
-- Stacks de tests RGAA (`accessibility_test.sh`, `docker-compose-accessibility.yml`) et tests Playwright d’accessibilité ; durcissement des scripts. (MAIR-316, [#150](https://github.com/mairie360/Login_Web_Service/pull/150) ; MAIR-318, [#141](https://github.com/mairie360/Login_Web_Service/pull/141) ; MAIR-768, [#241](https://github.com/mairie360/Login_Web_Service/pull/241))
-- Stack de simulation RGPD et script `gdpr_simulation_test.sh`, puis corrections de ce script. (MAIR-497, [#248](https://github.com/mairie360/Login_Web_Service/pull/248), [#249](https://github.com/mairie360/Login_Web_Service/pull/249))
-- Workflow de checklist RGPD sur les PR. (MAIR-295, [#160](https://github.com/mairie360/Login_Web_Service/pull/160))
-- Mises à jour des dépendances : `follow-redirects` 1.16.2 ([#243](https://github.com/mairie360/Login_Web_Service/pull/243)), TypeScript et outils ([#230](https://github.com/mairie360/Login_Web_Service/pull/230)), Node 24.22.1, Next.js 16.4.2 et digests Docker ([#231](https://github.com/mairie360/Login_Web_Service/pull/231)).
-- Réorganisation des composants `Login/` et `ForgotPassword/` en dossiers, sans changement de rendu hors message d’erreur. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
-- Montée de version de mairie360/CICD (v4.5.0 à v5.3.1) par Renovate et manuellement. ([#222](https://github.com/mairie360/Login_Web_Service/pull/222), [#235](https://github.com/mairie360/Login_Web_Service/pull/235), [#247](https://github.com/mairie360/Login_Web_Service/pull/247))
+- CI/CD : l'épingle de mairie360/CICD passe de v4.12.0 à v5.5.0 (workflows cicd, promotions, dev-exception) ; ajout de la checklist RGPD des PR (`gdpr-pr.yml`), des stacks de test isolés (E2E Playwright, accessibilité RGAA et axe, simulation RGPD), de la politique Gitleaks (`.gitleaks.toml`) et d'un workflow de veille des advisories (`upstream-advisories.yml`). Les tests des stacks ne changent pas le comportement en production.
+- Dépendances : Node 24.22.1 (Dockerfile et digest, correctif de sécurité), Next.js et eslint-config-next 16.4.2, follow-redirects 1.16.2, mises à jour TypeScript et Vitest ; Zod 3 est backporté dans `vendor/zod` avec validation bornée des collections, `postinstall` ne consulte plus le service d'avis npm (MAIR-744), et `Login.tsx` est découpé en composants `Login/` (MAIR-608).
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
 #### Nouveautés
-
-- Nouvelles pages publiques `/mentions-legales` et `/confidentialite`, rendues à chaque requête à partir de `LEGAL_CONFIG` (JSON de `global.legal` de l’instance). Une valeur absente s’affiche « À compléter par la mairie ». (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
-- Pied de page sur toutes les pages du front, avec des liens vers les mentions légales et la politique de confidentialité. (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
+- Nouvelles pages publiques `/mentions-legales` (mentions légales) et `/confidentialite` (politique de confidentialité), rendues à la demande depuis `LEGAL_CONFIG` : identité de la mairie, directeur de publication, DPO, hébergeur, durées de conservation et sous-traitants. Une valeur absente s'affiche « À compléter par la mairie ». (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
+- Le pied de page du layout affiche les liens « Mentions légales » et « Politique de confidentialité » sur chaque page du front. (MAIR-292, [#159](https://github.com/mairie360/Login_Web_Service/pull/159))
 
 #### Changements de comportement
-
-- Le message d’erreur de connexion est maintenant l’alerte de la bibliothèque (`ErrorAlert`), annoncée aux lecteurs d’écran et fermable avec « Fermer le message ». Avant, il s’affichait dans un `Toast` autonome non annoncé. Le bouton de connexion utilise `fullWidth` et `loading` ; les boutons de déconnexion reprennent le style plein par défaut. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
-- Démarrage local de `docker-compose.yml` : `JWT_SECRET` doit venir de l’environnement ou d’un `.env` non versionné, sinon `docker compose` échoue. `JWT_ALLOW_WEAK_SECRET` passe à `false` pour Core API. Les ports 3000, 3001 et 4000 ne sont plus publiés que sur 127.0.0.1. ([#232](https://github.com/mairie360/Login_Web_Service/pull/232))
-- `postinstall`, `prebuild` et `pretest` ne interrogent plus le service d’avis npm : une panne ne bloque plus `npm ci`. La vérification amont passe dans `npm run audit:upstream`, lancée chaque jour par un workflow dédié. (MAIR-744, [#246](https://github.com/mairie360/Login_Web_Service/pull/246))
+- L'erreur de connexion s'affiche dans l'alerte de la lib (`ErrorAlert`), annoncée aux lecteurs d'écran et fermable par « Fermer le message ». Avant : un Toast autonome, non annoncé hors `ToastProvider`. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
+- Le bouton de connexion occupe toute la largeur et affiche l'état de chargement de la lib ; les surcharges de texte blanc et d'ombre bleue sont retirées. Les boutons de la page de déconnexion prennent le style plein par défaut de la lib. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
+- Pour les développeurs : `docker-compose.yml` exige désormais `JWT_SECRET` (environnement ou `.env` non suivi) et refuse le secret faible (`JWT_ALLOW_WEAK_SECRET: "false"`) ; les ports 3000, 3001 et 4000 ne sont publiés que sur 127.0.0.1. Sans `JWT_SECRET`, la stack locale ne démarre pas. (PR [#232](https://github.com/mairie360/Login_Web_Service/pull/232))
 
 #### Corrections
-
-- Message « Connexion temporairement indisponible » : avant, la carte pouvait déborder à 320 px avec un espacement de texte augmenté. Maintenant, le rembourrage est réduit sous `sm` et les mots longs sont coupés. (MAIR-318, [#141](https://github.com/mairie360/Login_Web_Service/pull/141))
+- Page « Connexion temporairement indisponible » à 320px avec espacement de texte augmenté : avant, le message débordait ; maintenant le padding est réduit sous `sm` et les mots longs passent à la ligne. (MAIR-318, [#141](https://github.com/mairie360/Login_Web_Service/pull/141))
 
 #### Technique
-
-- Vendoring de Zod 3 avec rétro-portage de la validation bornée, contrôle d’intégrité et `overrides` vers `vendor/zod` ; réparation des lockfiles. ([#232](https://github.com/mairie360/Login_Web_Service/pull/232))
-- Politique Gitleaks (`.gitleaks.toml`) et test de manifeste Zod ; corrections de `.gitleaksignore`. (MAIR-743, [#251](https://github.com/mairie360/Login_Web_Service/pull/251))
-- Stacks de tests RGAA (`accessibility_test.sh`, `docker-compose-accessibility.yml`) et tests Playwright d’accessibilité ; durcissement des scripts. (MAIR-316, [#150](https://github.com/mairie360/Login_Web_Service/pull/150) ; MAIR-318, [#141](https://github.com/mairie360/Login_Web_Service/pull/141) ; MAIR-768, [#241](https://github.com/mairie360/Login_Web_Service/pull/241))
-- Stack de simulation RGPD et script `gdpr_simulation_test.sh`, puis corrections de ce script. (MAIR-497, [#248](https://github.com/mairie360/Login_Web_Service/pull/248), [#249](https://github.com/mairie360/Login_Web_Service/pull/249))
-- Workflow de checklist RGPD sur les PR. (MAIR-295, [#160](https://github.com/mairie360/Login_Web_Service/pull/160))
-- Mises à jour des dépendances : `follow-redirects` 1.16.2 ([#243](https://github.com/mairie360/Login_Web_Service/pull/243)), TypeScript et outils ([#230](https://github.com/mairie360/Login_Web_Service/pull/230)), Node 24.22.1, Next.js 16.4.2 et digests Docker ([#231](https://github.com/mairie360/Login_Web_Service/pull/231)).
-- Réorganisation des composants `Login/` et `ForgotPassword/` en dossiers, sans changement de rendu hors message d’erreur. (MAIR-608, [#227](https://github.com/mairie360/Login_Web_Service/pull/227))
-- Montée de version de mairie360/CICD (v4.5.0 à v5.3.1) par Renovate et manuellement. ([#222](https://github.com/mairie360/Login_Web_Service/pull/222), [#235](https://github.com/mairie360/Login_Web_Service/pull/235), [#247](https://github.com/mairie360/Login_Web_Service/pull/247))
+- CI/CD : l'épingle de mairie360/CICD passe de v4.12.0 à v5.5.0 (workflows cicd, promotions, dev-exception) ; ajout de la checklist RGPD des PR (`gdpr-pr.yml`), des stacks de test isolés (E2E Playwright, accessibilité RGAA et axe, simulation RGPD), de la politique Gitleaks (`.gitleaks.toml`) et d'un workflow de veille des advisories (`upstream-advisories.yml`). Les tests des stacks ne changent pas le comportement en production.
+- Dépendances : Node 24.22.1 (Dockerfile et digest, correctif de sécurité), Next.js et eslint-config-next 16.4.2, follow-redirects 1.16.2, mises à jour TypeScript et Vitest ; Zod 3 est backporté dans `vendor/zod` avec validation bornée des collections, `postinstall` ne consulte plus le service d'avis npm (MAIR-744), et `Login.tsx` est découpé en composants `Login/` (MAIR-608).
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
@@ -74,6 +54,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-04 21:13 UTC | dev | — | `5061df0` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41912443351) |
 | 2026-11-04 18:29 UTC | dev | — | `0e4ca84` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41884151391) |
 | 2026-11-04 18:11 UTC | dev | — | `0d89bbe` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41882753076) |
 | 2026-11-03 14:57 UTC | dev | — | `4fd3fb6` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41656784311) |
