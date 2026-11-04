@@ -16,6 +16,19 @@ mkdir -p e2e-report
 # The Playwright service runs as the caller, so the report stays theirs (and the CI runner's).
 export E2E_UID="$(id -u)" E2E_GID="$(id -g)"
 
+# The journeys expect a fresh seed: drop what an interrupted run may have left behind, and tear
+# the stack down whatever happens next (Ctrl-C, CI cancellation, a step that fails).
+docker compose -f "$COMPOSE_FILE" down -v --remove-orphans >/dev/null 2>&1
+TORN_DOWN=0
+teardown() {
+  [ "$TORN_DOWN" = 1 ] && return 0
+  TORN_DOWN=1
+  echo "==> [4/4] Tearing the containers down..."
+  docker compose -f "$COMPOSE_FILE" down -v --remove-orphans
+}
+trap 'teardown; exit 130' INT TERM
+trap 'teardown' EXIT
+
 echo "==> [1/4] Starting the stack and the Playwright journeys..."
 if [ -n "${TARGET_IMAGE:-}" ]; then
   echo "Image under test: $TARGET_IMAGE (no local build)."
@@ -39,8 +52,11 @@ fi
 echo "==> [3/4] Journey results (logs)..."
 docker compose -f "$COMPOSE_FILE" logs --no-color "$SERVICE_NAME"
 
-echo "==> [4/4] Tearing the containers down..."
-docker compose -f "$COMPOSE_FILE" down -v
+# A teardown that fails leaves seeded volumes for the next run: the run fails too.
+if ! teardown; then
+  echo "Teardown failed: containers or volumes of $COMPOSE_FILE may remain."
+  [ "$EXIT_CODE" -eq 0 ] && EXIT_CODE=1
+fi
 
 echo "----------------------------------------"
 echo "Final exit code: $EXIT_CODE (report in e2e-report/)"

@@ -49,7 +49,7 @@ test('docker-compose-e2e.yml runs the journeys with the browser image of the pin
   assert.ok(!runner.build && !runner.secrets, 'the runner is a published image without secrets');
   // The front's public URL is the origin its guards accept on writes: the one the browser uses.
   assert.equal(compose.services['login-front'].environment.LOGIN_FRONT_URL, 'http://localhost:5000');
-  assert.ok(compose.services['login-front'].ports.includes('${E2E_FRONT_PORT:-5000}:5000'));
+  assert.ok(compose.services['login-front'].ports.includes('127.0.0.1:${E2E_FRONT_PORT:-5000}:5000'));
 });
 
 test('the seeded users cover a returning agent and a first sign-in', () => {
@@ -78,4 +78,28 @@ test('the journeys stay out of the production image and of the Next.js type chec
   const scripts = readJson('package.json').scripts;
   assert.equal(scripts.e2e, 'npm --prefix e2e test');
   assert.match(scripts['e2e:install'], /npm --prefix e2e ci/);
+});
+
+// MAIR-603 review: a broken seed, a backend that never answers or an interrupted run must stop
+// the stack with a clear error instead of hanging or leaving stale data for the next run.
+test('the e2e stack fails fast and stays on loopback', () => {
+  const text = read('docker-compose-e2e.yml');
+  const compose = yaml.load(text);
+  assert.doesNotMatch(text, /psql (?!-v ON_ERROR_STOP=1)/, 'every psql seed stops on the first error');
+  assert.doesNotMatch(text, /until curl -fsS http/, 'no unbounded readiness probe');
+  for (const [name, service] of Object.entries(compose.services)) {
+    if (typeof service.command === 'string' && service.command.includes('until curl')) {
+      assert.match(service.command, /if \[ \$\$i -ge 90 \]; then .*exit 1; fi/, `${name} gives up after 90 attempts`);
+    }
+    for (const port of service.ports ?? []) assert.match(port, /^127\.0\.0\.1:/, `${name} publishes ${port} on loopback only`);
+  }
+});
+
+test('e2e_test.sh starts from a clean stack and always tears it down', () => {
+  const script = read('e2e_test.sh');
+  const firstDown = script.indexOf('down -v --remove-orphans');
+  assert.ok(firstDown > 0 && firstDown < script.indexOf(' up -d'), 'stale stack removed before up');
+  assert.match(script, /trap 'teardown; exit 130' INT TERM/);
+  assert.match(script, /trap 'teardown' EXIT/);
+  assert.match(script, /if ! teardown; then[\s\S]*EXIT_CODE=1/, 'a failed teardown fails the run');
 });

@@ -226,7 +226,7 @@ MAIR-602) and blocks the release when a journey fails or when the folder is miss
 (HTML, traces and videos of the failed journeys) is kept in `e2e-report/`. For local iterations,
 start the stack with `docker compose -f docker-compose-e2e.yml up -d login-front` and run
 `E2E_BASE_URL=http://localhost:5000 npm run e2e` (after `npm run e2e:install`); tear it down with
-`down -v` before a new run.
+`docker compose -f docker-compose-e2e.yml down -v` before a new run.
 
 ## Troubleshooting
 
