@@ -16,3 +16,14 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO user_roles (user_id, role_id)
 SELECT 2, r.id FROM roles r WHERE lower(r.name) = 'user'
 ON CONFLICT DO NOTHING;
+-- End-to-end journeys (MAIR-603): user 3 keeps first_connect = TRUE (column default), so its first
+-- sign-in asks for a new password instead of opening a session. Same template password as user 2.
+INSERT INTO users (id, first_name, last_name, email, password, status)
+VALUES (3, 'Membre', 'Lecteur', 'membre-lecteur@mairie360.fr', '$argon2id$v=19$m=19456,t=2,p=1$/iKF9PbiDRDs4EKPjlIIhg$UKx9vfwwps250mEP/bYp63CXbEnQGULeUAhDq+az9Aw', 'active')
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO user_roles (user_id, role_id)
+SELECT 3, r.id FROM roles r WHERE lower(r.name) = 'user'
+ON CONFLICT DO NOTHING;
+-- The users above carry explicit ids: move the id sequence past them, or the first account a
+-- journey creates (Administrator) collides with user 2 (MAIR-603).
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));

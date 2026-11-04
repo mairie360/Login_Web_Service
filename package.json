@@ -21,7 +21,9 @@
     "postinstall": "node vendor/verify-security-backports.mjs --installed",
     "audit:upstream": "node vendor/verify-security-backports.mjs --audit-upstream",
     "prebuild": "node vendor/verify-security-backports.mjs --installed",
-    "pretest": "node vendor/verify-security-backports.mjs --installed"
+    "pretest": "node vendor/verify-security-backports.mjs --installed",
+    "e2e:install": "npm --prefix e2e ci && npx --prefix e2e playwright install --with-deps chromium",
+    "e2e": "npm --prefix e2e test"
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "1.1.0",

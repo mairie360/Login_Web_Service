@@ -30,3 +30,9 @@ gdpr-journey.yaml
 gdpr_simulation_test.sh
 docker-compose-gdpr-simulation.yml
 .rgaa-run.lock
+
+# end-to-end journeys (MAIR-603): run from the docker-compose-e2e.yml stack, not in the image
+e2e
+e2e-report
+docker-compose-e2e.yml
+e2e_test.sh
