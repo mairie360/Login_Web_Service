@@ -46,7 +46,7 @@ jobs:
           LOGIN_A11Y_OUTPUT_DIR: ${{ runner.temp }}/login-a11y-results
       - name: Preserve full scans, incomplete results, screenshots and console evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: login-route-accessibility
           path: ${{ runner.temp }}/login-a11y-results
