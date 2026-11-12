@@ -1,12 +1,12 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "prod_tag": "v0.4.0", "staging": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "updated": {"dev": "2026-11-12 17:05 UTC", "prod": "2026-10-21 11:08 UTC", "staging": "2026-10-21 10:57 UTC"}} -->
+<!-- release-journal-state {"dev": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "prod_tag": "v0.4.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-12 17:05 UTC", "prod": "2026-10-21 11:08 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v0.4.0 | `c9d6a7f` | 2026-10-21 11:08 UTC |
-| staging | — | `c9d6a7f` | 2026-10-21 10:57 UTC |
+| staging | — | `7503ac1` | 2026-11-12 19:05 UTC |
 | dev | — | `7503ac1` | 2026-11-12 17:05 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v0.4.0)
@@ -34,6 +34,10 @@
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+_Rien._
+
+## Différence staging → prod (en staging, pas encore en prod)
+
 - fix: MAIR-816 Release dev: align internal versions and deploy ([#255](https://github.com/mairie360/Login_Web_Service/pull/255))
 - chore(deps): update dependency mairie360/cicd to v5.6.0 (#253) ([#253](https://github.com/mairie360/Login_Web_Service/pull/253))
 - feat: MAIR-603 E2E - Parcours utilisateurs Playwright des fronts (#229) ([#229](https://github.com/mairie360/Login_Web_Service/pull/229))
@@ -55,10 +59,6 @@
 - fix(security): patch Node.js and Next.js (#231) ([#231](https://github.com/mairie360/Login_Web_Service/pull/231))
 - feat: MAIR-608 Lib UI - Normaliser la charte, les tailles et les composants partagés des fronts ([#227](https://github.com/mairie360/Login_Web_Service/pull/227))
 
-## Différence staging → prod (en staging, pas encore en prod)
-
-_Rien._
-
 > Résumé Claude indisponible pour ce passage : listes brutes des commits.
 
 ## Historique des passages
@@ -66,6 +66,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-12 19:05 UTC | staging | — | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43285863490) |
 | 2026-11-12 17:05 UTC | dev | — | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43264207817) |
 | 2026-11-04 21:13 UTC | dev | — | `5061df0` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41912443351) |
 | 2026-11-04 18:29 UTC | dev | — | `0e4ca84` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41884151391) |
