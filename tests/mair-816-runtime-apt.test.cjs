@@ -15,6 +15,9 @@ const runtimeBase = () => {
 
 test('MAIR-816 the runtime image upgrades apt past CVE-2026-109518', () => {
   const stage = runtimeBase();
-  assert.match(stage, /apt-get install -y --no-install-recommends [^\n]*\bapt\b/);
+  assert.match(stage, /apt-get -o Acquire::Retries=0 install -y --no-install-recommends [^\n]*\bapt\b/);
+  // The download runs with the vulnerable apt: no retry may reach the vulnerable code path.
+  assert.match(stage, /apt-get -o Acquire::Retries=0 update/);
+  assert.doesNotMatch(stage, /apt-get (update|install)/);
   assert.match(stage, /dpkg-query -W -f='\$\{Version\}' apt\)" ge '2\.6\.2'/);
 });

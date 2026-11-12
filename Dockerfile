@@ -22,7 +22,7 @@ WORKDIR /app
 
 # Sécurité & Healthcheck
 # Refresh the vulnerable base packages through signed Debian repositories (apt: CVE-2026-109518, MAIR-816).
-RUN apt-get update && apt-get install -y --no-install-recommends curl libpcre2-8-0 perl-base apt \
+RUN apt-get -o Acquire::Retries=0 update && apt-get -o Acquire::Retries=0 install -y --no-install-recommends curl libpcre2-8-0 perl-base apt \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libpcre2-8-0)" ge '10.42-1+deb12u2' \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' perl-base)" ge '5.36.0-7+deb12u4' \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apt)" ge '2.6.2' \
