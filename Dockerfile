@@ -21,10 +21,11 @@ FROM node:${NODE_VERSION}-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90a
 WORKDIR /app
 
 # Sécurité & Healthcheck
-# Refresh the two vulnerable base packages through signed Debian repositories.
-RUN apt-get update && apt-get install -y --no-install-recommends curl libpcre2-8-0 perl-base \
+# Refresh the vulnerable base packages through signed Debian repositories (apt: CVE-2026-109518, MAIR-816).
+RUN apt-get update && apt-get install -y --no-install-recommends curl libpcre2-8-0 perl-base apt \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libpcre2-8-0)" ge '10.42-1+deb12u2' \
     && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' perl-base)" ge '5.36.0-7+deb12u4' \
+    && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apt)" ge '2.6.2' \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-v1.22.22 \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg \
