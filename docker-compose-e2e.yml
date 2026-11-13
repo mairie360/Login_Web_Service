@@ -48,7 +48,7 @@ name: login-e2e
 
 services:
   postgres:
-    image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.3.0}
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:3.4.0}
     container_name: login-front-e2e-db
     environment:
       POSTGRES_USER: postgres
@@ -67,7 +67,7 @@ services:
       retries: 10
 
   liquibase:
-    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:3.3.0}
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:3.4.0}
     container_name: login-front-e2e-liquibase
     depends_on:
       postgres:
