@@ -236,7 +236,7 @@ services:
   playwright:
     # Browsers and system dependencies of the pinned @playwright/test (e2e/package.json): keep the
     # two versions identical (the test runner refuses a browser build of another version).
-    image: mcr.microsoft.com/playwright:v1.64.1-noble
+    image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
     container_name: login-front-e2e-playwright
     # The host user (exported by e2e_test.sh): the report written in ./e2e-report stays theirs.
     user: "${E2E_UID:-1000}:${E2E_GID:-1000}"
