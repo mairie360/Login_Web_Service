@@ -1,31 +1,34 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-12 17:05 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
+<!-- release-journal-state {"dev": "31925c797098cd839b77d236df52bf1f3e9ce58b", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-13 06:10 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v0.5.0 | `7503ac1` | 2026-11-13 01:41 UTC |
 | staging | — | `7503ac1` | 2026-11-12 19:05 UTC |
-| dev | — | `7503ac1` | 2026-11-12 17:05 UTC |
+| dev | — | `31925c7` | 2026-11-13 06:10 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v0.5.0)
 
-_Rien._
+- chore(deps): update ghcr.io/mairie360/core-api docker tag to v2.3.0 (#257) ([#257](https://github.com/mairie360/Login_Web_Service/pull/257))
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
-_Rien._
+- chore(deps): update ghcr.io/mairie360/core-api docker tag to v2.3.0 (#257) ([#257](https://github.com/mairie360/Login_Web_Service/pull/257))
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
 _Rien._
+
+> Résumé Claude indisponible pour ce passage : listes brutes des commits.
 
 ## Historique des passages
 
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-13 06:10 UTC | dev | — | `31925c7` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43376093256) |
 | 2026-11-13 01:41 UTC | prod | v0.5.0 | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43340544894) |
 | 2026-11-12 19:05 UTC | staging | — | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43285863490) |
 | 2026-11-12 17:05 UTC | dev | — | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43264207817) |
