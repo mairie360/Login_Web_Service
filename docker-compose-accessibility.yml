@@ -160,7 +160,7 @@ services:
       - backend
 
   bff-user:
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.1.0}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:1.2.0}
     container_name: login-front-a11y-bff-user
     depends_on:
       seeder-a11y:
