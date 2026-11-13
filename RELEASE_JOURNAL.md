@@ -1,36 +1,17 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod": "c9d6a7f7bacfb539be294e4d79e03722d143ea96", "prod_tag": "v0.4.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-12 17:05 UTC", "prod": "2026-10-21 11:08 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
+<!-- release-journal-state {"dev": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-12 17:05 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
-| prod | v0.4.0 | `c9d6a7f` | 2026-10-21 11:08 UTC |
+| prod | v0.5.0 | `7503ac1` | 2026-11-13 01:41 UTC |
 | staging | — | `7503ac1` | 2026-11-12 19:05 UTC |
 | dev | — | `7503ac1` | 2026-11-12 17:05 UTC |
 
-## Ajouté sur main depuis la dernière release prod (v0.4.0)
+## Ajouté sur main depuis la dernière release prod (v0.5.0)
 
-- fix: MAIR-816 Release dev: align internal versions and deploy ([#255](https://github.com/mairie360/Login_Web_Service/pull/255))
-- chore(deps): update dependency mairie360/cicd to v5.6.0 (#253) ([#253](https://github.com/mairie360/Login_Web_Service/pull/253))
-- feat: MAIR-603 E2E - Parcours utilisateurs Playwright des fronts (#229) ([#229](https://github.com/mairie360/Login_Web_Service/pull/229))
-- fix: MAIR-743 [Audit 30/10] Login, Calendars, Elearning, Projects: branch Gitleaks fingerprints invalid after squash, main likely red (N1) (#251) ([#251](https://github.com/mairie360/Login_Web_Service/pull/251))
-- fix: MAIR-497 GDPR - Usage simulation and AI review of logs and database before prod ([#249](https://github.com/mairie360/Login_Web_Service/pull/249))
-- feat: MAIR-497 RGPD - Simulation d'usage et revue IA des logs et de la base avant la prod ([#248](https://github.com/mairie360/Login_Web_Service/pull/248))
-- ci: MAIR-771 APIs, BFFs, Database : monter CICD en v5.2.2 pour activer les contrôles RGPD (#247) ([#247](https://github.com/mairie360/Login_Web_Service/pull/247))
-- fix: MAIR-744 [Audit 30/10] Login, Calendars, Elearning, Projects : le postinstall interroge le service d'avis npm, npm ci dépend du réseau (N2) (#246) ([#246](https://github.com/mairie360/Login_Web_Service/pull/246))
-- fix(deps): bump follow-redirects to 1.16.2 (GHSA-mrwp-f3q8-3g9p) ([#243](https://github.com/mairie360/Login_Web_Service/pull/243))
-- fix: MAIR-768 RGAA - Aligner les stacks d'accessibilité des fronts mergés en premier ([#241](https://github.com/mairie360/Login_Web_Service/pull/241))
-- ci: MAIR-316 RGAA - Périmètre et états des pages par front (#150) ([#150](https://github.com/mairie360/Login_Web_Service/pull/150))
-- test(login): MAIR-318 add isolated route accessibility checks (#141) ([#141](https://github.com/mairie360/Login_Web_Service/pull/141))
-- feat: MAIR-292 Ajouter des tests Playwright RGPD et les pages légales aux fronts (#159) ([#159](https://github.com/mairie360/Login_Web_Service/pull/159))
-- ci: MAIR-295 Ajouter une checklist RGPD aux PR et des rappels d'échéances automatiques (#160) ([#160](https://github.com/mairie360/Login_Web_Service/pull/160))
-- chore(deps): update dependency mairie360/cicd to v4.12.0 (#235) ([#235](https://github.com/mairie360/Login_Web_Service/pull/235))
-- fix(security): repair dependency locks and bound Zod validation (#232) ([#232](https://github.com/mairie360/Login_Web_Service/pull/232))
-- chore(deps): update dependency mairie360/cicd to v4.5.0 (#222) ([#222](https://github.com/mairie360/Login_Web_Service/pull/222))
-- chore(deps): update typescript dependencies (#230) ([#230](https://github.com/mairie360/Login_Web_Service/pull/230))
-- fix(security): patch Node.js and Next.js (#231) ([#231](https://github.com/mairie360/Login_Web_Service/pull/231))
-- feat: MAIR-608 Lib UI - Normaliser la charte, les tailles et les composants partagés des fronts ([#227](https://github.com/mairie360/Login_Web_Service/pull/227))
+_Rien._
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
@@ -38,34 +19,14 @@ _Rien._
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
-- fix: MAIR-816 Release dev: align internal versions and deploy ([#255](https://github.com/mairie360/Login_Web_Service/pull/255))
-- chore(deps): update dependency mairie360/cicd to v5.6.0 (#253) ([#253](https://github.com/mairie360/Login_Web_Service/pull/253))
-- feat: MAIR-603 E2E - Parcours utilisateurs Playwright des fronts (#229) ([#229](https://github.com/mairie360/Login_Web_Service/pull/229))
-- fix: MAIR-743 [Audit 30/10] Login, Calendars, Elearning, Projects: branch Gitleaks fingerprints invalid after squash, main likely red (N1) (#251) ([#251](https://github.com/mairie360/Login_Web_Service/pull/251))
-- fix: MAIR-497 GDPR - Usage simulation and AI review of logs and database before prod ([#249](https://github.com/mairie360/Login_Web_Service/pull/249))
-- feat: MAIR-497 RGPD - Simulation d'usage et revue IA des logs et de la base avant la prod ([#248](https://github.com/mairie360/Login_Web_Service/pull/248))
-- ci: MAIR-771 APIs, BFFs, Database : monter CICD en v5.2.2 pour activer les contrôles RGPD (#247) ([#247](https://github.com/mairie360/Login_Web_Service/pull/247))
-- fix: MAIR-744 [Audit 30/10] Login, Calendars, Elearning, Projects : le postinstall interroge le service d'avis npm, npm ci dépend du réseau (N2) (#246) ([#246](https://github.com/mairie360/Login_Web_Service/pull/246))
-- fix(deps): bump follow-redirects to 1.16.2 (GHSA-mrwp-f3q8-3g9p) ([#243](https://github.com/mairie360/Login_Web_Service/pull/243))
-- fix: MAIR-768 RGAA - Aligner les stacks d'accessibilité des fronts mergés en premier ([#241](https://github.com/mairie360/Login_Web_Service/pull/241))
-- ci: MAIR-316 RGAA - Périmètre et états des pages par front (#150) ([#150](https://github.com/mairie360/Login_Web_Service/pull/150))
-- test(login): MAIR-318 add isolated route accessibility checks (#141) ([#141](https://github.com/mairie360/Login_Web_Service/pull/141))
-- feat: MAIR-292 Ajouter des tests Playwright RGPD et les pages légales aux fronts (#159) ([#159](https://github.com/mairie360/Login_Web_Service/pull/159))
-- ci: MAIR-295 Ajouter une checklist RGPD aux PR et des rappels d'échéances automatiques (#160) ([#160](https://github.com/mairie360/Login_Web_Service/pull/160))
-- chore(deps): update dependency mairie360/cicd to v4.12.0 (#235) ([#235](https://github.com/mairie360/Login_Web_Service/pull/235))
-- fix(security): repair dependency locks and bound Zod validation (#232) ([#232](https://github.com/mairie360/Login_Web_Service/pull/232))
-- chore(deps): update dependency mairie360/cicd to v4.5.0 (#222) ([#222](https://github.com/mairie360/Login_Web_Service/pull/222))
-- chore(deps): update typescript dependencies (#230) ([#230](https://github.com/mairie360/Login_Web_Service/pull/230))
-- fix(security): patch Node.js and Next.js (#231) ([#231](https://github.com/mairie360/Login_Web_Service/pull/231))
-- feat: MAIR-608 Lib UI - Normaliser la charte, les tailles et les composants partagés des fronts ([#227](https://github.com/mairie360/Login_Web_Service/pull/227))
-
-> Résumé Claude indisponible pour ce passage : listes brutes des commits.
+_Rien._
 
 ## Historique des passages
 
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-13 01:41 UTC | prod | v0.5.0 | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43340544894) |
 | 2026-11-12 19:05 UTC | staging | — | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43285863490) |
 | 2026-11-12 17:05 UTC | dev | — | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43264207817) |
 | 2026-11-04 21:13 UTC | dev | — | `5061df0` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/41912443351) |
