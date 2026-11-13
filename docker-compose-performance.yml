@@ -76,7 +76,7 @@ services:
       - backend
 
   seeder:
-    image: postgres:18-alpine
+    image: postgres:18-alpine@sha256:1018733457011bf88d81db98cf43aac6d5150afc18787dbe204771fedf80ff95
     container_name: login-front-perf-seeder
     depends_on:
       liquibase:
@@ -91,7 +91,7 @@ services:
       - backend
 
   redis:
-    image: redis:8.4.0-bookworm
+    image: redis:8.4.0-bookworm@sha256:c22af04bb576503bf16b3e34a1fd2fd82de0f765afd866d2e380145e0af30d78
     container_name: login-front-perf-redis
     expose:
       - "6379"
@@ -134,7 +134,7 @@ services:
     # sondée depuis le conteneur core-api-ready ci-dessous.
 
   core-api-ready:
-    image: curlimages/curl:latest
+    image: curlimages/curl:latest@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93
     container_name: login-front-perf-core-api-ready
     depends_on:
       core-api:
@@ -169,7 +169,7 @@ services:
       - backend
 
   bff-user-ready:
-    image: curlimages/curl:latest
+    image: curlimages/curl:latest@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93
     container_name: login-front-perf-bff-user-ready
     depends_on:
       bff-user:
@@ -213,7 +213,7 @@ services:
       start_period: 30s
 
   k6-perf-test:
-    image: grafana/k6:latest
+    image: grafana/k6:latest@sha256:3d8e5c7f1d53ec59408c2ffbd9943602a0985ffcbd4a2430ec00f3ffca89796e
     container_name: login-front-perf-k6
     depends_on:
       login-front:
