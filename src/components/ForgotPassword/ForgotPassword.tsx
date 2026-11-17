@@ -2,7 +2,8 @@
 
 import { FormEvent, useRef, useState } from "react";
 import { RECOVERY_EMAIL_PATTERN, RECOVERY_SENT_MESSAGE } from '../../lib/password-recovery-validation';
-import RecoveryLayout, { recoveryInputClass, recoveryButtonClass, recoveryLinkClass } from '../RecoveryLayout';
+import { BackButton, Body, Button, EmailField, ErrorAlert, PageTitle, SuccessAlert } from '@mairie360/lib-components/primitives';
+import RecoveryLayout from '../RecoveryLayout';
 
 export default function ForgotPassword({ redirectUrl }: { redirectUrl?: string }) {
   const [email, setEmail] = useState("");
@@ -29,15 +30,14 @@ export default function ForgotPassword({ redirectUrl }: { redirectUrl?: string }
     finally { submitting.current = false; setPending(false); }
   }
   return <RecoveryLayout>
-    <h1 className="mb-4 text-2xl font-bold text-[var(--mairie-text)]">Mot de passe oublié</h1>
-    <p className="mb-4 text-sm">Indiquez votre email professionnel pour recevoir un lien de réinitialisation.</p>
+    <PageTitle>Mot de passe oublié</PageTitle>
+    <Body>Indiquez votre email professionnel pour recevoir un lien de réinitialisation.</Body>
     <form method="post" aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
-      <label htmlFor="recovery-email">Email professionnel</label>
-      <input id="recovery-email" name="email" type="email" autoComplete="email" required maxLength={320} value={email} onChange={event => setEmail(event.target.value)} disabled={pending || sent} className={recoveryInputClass} />
-      {error && <p role="alert" className="text-sm text-[var(--mairie-error-text)]">{error}</p>}
-      {sent && <p role="status" className="text-sm text-[var(--mairie-success-text)]">{RECOVERY_SENT_MESSAGE}</p>}
-      <button type="submit" disabled={pending || sent} className={recoveryButtonClass}>{pending ? "Envoi…" : "Envoyer le lien"}</button>
-      <a href={redirectUrl ? `/?redirect=${encodeURIComponent(redirectUrl)}` : "/"} className={recoveryLinkClass}>Retour à la connexion</a>
+      <EmailField id="recovery-email" name="email" label="Email professionnel" required maxLength={320} value={email} onChange={event => setEmail(event.target.value)} disabled={pending || sent} />
+      {error && <ErrorAlert title={error} onDismiss={() => setError("")} />}
+      {sent && <SuccessAlert title={RECOVERY_SENT_MESSAGE} />}
+      <Button type="submit" label={pending ? "Envoi…" : "Envoyer le lien"} loading={pending} disabled={pending || sent} fullWidth />
+      <BackButton label="Retour à la connexion" href={redirectUrl ? `/?redirect=${encodeURIComponent(redirectUrl)}` : "/"} />
     </form>
   </RecoveryLayout>;
 }
