@@ -45,14 +45,15 @@ it('the server layout uses validated public appearance cookies and preserves the
   vi.stubEnv('INSTANCE_TIMEZONE', 'Indian/Reunion');
   let tree = await RootLayout({ children: <RecoveryLayout><p>Recovery content</p></RecoveryLayout> });
   let html = renderToStaticMarkup(tree);
-  expect(html).toContain('data-theme="system"');
+  expect(html).toContain('data-theme="light"');
   expect(html).toContain('data-density="normal"');
   expect(html).toContain('Recovery content');
   expect(html).toContain('alt="Logo Mairie360"');
   request.cookies.mairie360_appearance = encodeURIComponent(JSON.stringify({ v: 1, theme: 'dark', density: 'compact', font_family: 'Arial' }));
   tree = await RootLayout({ children: <span>Retained child</span> });
   html = renderToStaticMarkup(tree);
-  expect(html).toContain('data-theme="dark"');
+  // MAIR-933: the product fronts are always light, a legacy theme in the cookie is ignored.
+  expect(html).toContain('data-theme="light"');
   expect(html).toContain('data-density="compact"');
   expect(html).toContain('Retained child');
 });

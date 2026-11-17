@@ -82,7 +82,7 @@ const typeInto = (id, value) => view.fire((props) => props.id === id, 'onChange'
 const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit');
 // The only footer is the legal one (MAIR-292): links to the legal notice and the privacy policy,
 // no application navigation.
-const LEGAL_FOOTER = /<footer\b[^>]*><nav aria-label="Informations légales"[^>]*><a href="\/mentions-legales"[^>]*>Mentions légales<\/a><a href="\/confidentialite"[^>]*>Politique de confidentialité<\/a><\/nav><\/footer>/;
+const LEGAL_FOOTER = /<footer\b[^>]*role="contentinfo"[^>]*>(?:(?!<\/footer>).)*<nav aria-label="Liens du pied de page"[^>]*><a href="\/mentions-legales"[^>]*>Mentions légales<\/a>(?:(?!<\/footer>).)*<a href="\/confidentialite"[^>]*>Politique de confidentialité<\/a><\/nav><\/footer>/s;
 const assertErrorMessage = (html, expected) => {
   const { JSDOM } = require('jsdom');
   const dom = new JSDOM(html);
@@ -96,7 +96,7 @@ const assertStandalone = (html) => {
   assert.match(html, /<main[^>]*min-h-dvh/);
   assert.match(html, LEGAL_FOOTER);
   assert.doesNotMatch(html.replace(LEGAL_FOOTER, ''), /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
-  assert.doesNotMatch(html, /© 2026 Mairie360/);
+  assert.doesNotMatch(html, /Version undefined|Version null/);
 };
 const renderLogin = async (searchParams = {}) => {
   view = mount(await RootLayout({ children: await Home({ searchParams: Promise.resolve(searchParams) }) }));
@@ -393,16 +393,33 @@ test('missing or invalid default destinations render an unavailable state withou
   }
 });
 
-test('MAIR-318 the unavailable state reflows within 320px under enlarged text spacing', async () => {
+test('MAIR-830 F0: without a destination the Connexion indisponible screen shows the lib warning', async () => {
   delete process.env.DASHBOARD_FRONT_URL;
   await renderLogin();
-  const section = view.html.match(/<section aria-labelledby="connection-unavailable" class="([^"]*)"/);
-  assert.ok(section, 'the unavailable section must render');
+  assert.match(view.html, /<h1[^>]*>Connexion indisponible<\/h1>/);
+  assert.match(view.html, /<img[^>]*data-size="xl"/);
+  assert.match(view.html, /data-m360-component="Card"/);
+  assert.match(view.html, /Connexion temporairement indisponible\./);
+  assert.match(view.html, /Veuillez contacter votre administrateur pour rétablir l’accès à Mairie360\./);
+  assert.doesNotMatch(view.html, /<form/);
+  assertStandalone(view.html);
+  view.unmount();
+  view = undefined;
+});
+
+test('MAIR-318 the shared card reflows within 320px under enlarged text spacing', async () => {
+  delete process.env.DASHBOARD_FRONT_URL;
+  await renderLogin();
   // Long words such as "temporairement" overflowed a 320px viewport (340px document) once the
-  // letter spacing reached .12em: they must wrap, with the reduced mobile padding.
-  assert.match(section[1], /\[overflow-wrap:anywhere\]/);
-  assert.match(section[1], /(^| )p-6( |$)/);
-  assert.match(section[1], /(^| )sm:p-8( |$)/);
+  // letter spacing reached .12em: the card wraps them, with the reduced mobile padding.
+  const layout = view.html.match(/<div class="([^"]*max-w-lg[^"]*)"/);
+  assert.ok(layout, 'the shared layout must render');
+  assert.match(layout[1], /(^| )px-4( |$)/);
+  const card = view.html.match(/<section class="([^"]*)"[^>]*data-m360-component="Card"/);
+  assert.ok(card, 'the shared card must render');
+  assert.match(card[1], /\[overflow-wrap:anywhere\]/);
+  assert.match(card[1], /(^| )p-4( |$)/);
+  assert.match(card[1], /(^| )sm:p-6( |$)/);
   view.unmount();
   view = undefined;
 });
@@ -428,14 +445,16 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   await renderLogin();
 
   assert.equal(view.passes, 1);
-  assert.match(view.html, /<img[^>]*src="\/logo\.png" alt="Logo Mairie360"/);
+  assert.match(view.html, /<img[^>]*alt="Logo Mairie360" data-size="xl"/);
+  assert.doesNotMatch(view.html, /src="\/logo\.png"/, 'the logo comes from lib-components, not from a local image');
+  assert.match(view.html, /<section[^>]*data-m360-component="Card"/);
   assertStandalone(view.html);
   assert.match(view.html, /<form[^>]*method="post"/);
   assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
   assert.match(view.html, /<input id="email" type="email"[^>]*placeholder="exemple@domaine\.com" required=""[^>]*name="email" value=""/);
   assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
-  assert.match(view.html, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
+  assert.match(view.html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
 });
 
@@ -570,7 +589,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
 
   assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
   assert.match(html, /<input id="password"[^>]*value=""/, 'the password is cleared once sent');
-  assert.match(html, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
+  assert.match(html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
   assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
@@ -590,7 +609,7 @@ test('refused credentials are rendered as the page message, without a session', 
   assertErrorMessage(html, 'Email ou mot de passe incorrect.');
   assert.equal(front.cookies.get('accessToken'), undefined);
   assert.deepEqual(window.location.assigned, []);
-  assert.match(html, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
+  assert.match(html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
 });
 
 test('a first connection switches to the password change form, then signs in with the new password', async () => {
@@ -611,7 +630,7 @@ test('a first connection switches to the password change form, then signs in wit
   assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
   assert.match(change, /<input id="new-password"[^>]*type="password"/);
   assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
-  assert.match(change, /<button type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Modifier le mot de passe(?:(?!<\/button>)[\s\S])*<\/button>/);
+  assert.match(change, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Modifier le mot de passe(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(change, /id="email"/);
   assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token', 'the one-time token stays in an HttpOnly cookie');
   assert.equal(front.cookies.get('accessToken'), undefined);
@@ -670,7 +689,7 @@ test('MAIR-895: the sign-in screen offers no single-account sign-in and ignores 
   await renderLogin({ redirect: 'https://projects.mairie.test/', keycloakError: 'account' });
   assert.doesNotMatch(view.html, /compte unique|keycloak/i);
   assert.doesNotMatch(view.html, /role="alert"/);
-  assert.match(view.html, /<button type="submit"[^>]*>Se connecter<\/button>/);
+  assert.match(view.html, /<button[^>]*type="submit"[^>]*>Se connecter<\/button>/);
   assert.deepEqual(upstream(), []);
 });
 
@@ -680,7 +699,7 @@ test('MAIR-900: resumeSession is ignored, the form is shown and no renewal is re
   try {
     await renderLogin({ redirect: 'https://projects.mairie.test/', resumeSession: '1' });
     assert.doesNotMatch(view.text(), /Reprise de votre session/);
-    assert.match(view.html, /<button type="submit"[^>]*>Se connecter<\/button>/);
+    assert.match(view.html, /<button[^>]*type="submit"[^>]*>Se connecter<\/button>/);
     assert.deepEqual(upstream(), []);
   } finally {
     if (previous === undefined) delete process.env.LOGIN_FRONT_URL;

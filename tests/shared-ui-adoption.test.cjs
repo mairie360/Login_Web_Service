@@ -30,6 +30,7 @@ test('dismissing a credential validation receipt preserves the form draft and se
 
   assert.equal(view.hostElements(props => props.role === 'alert').length, 0);
   assert.equal(view.hostElements(props => props.id === 'email')[0].props.value, 'draft@example.invalid');
-  assert.equal(view.hostElements((_props, _text, tag) => tag === 'form').length, 1);
+  // Children handed through RecoveryLayout and Card are reported once per wrapping instance: read the rendered HTML.
+  assert.equal(view.html.match(/<form\b/g).length, 1);
   assert.equal(requests, 0);
 });
