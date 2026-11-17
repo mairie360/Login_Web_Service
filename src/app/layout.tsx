@@ -5,7 +5,8 @@ import { InstanceProvider } from '@mairie360/lib-components/react';
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import LegalLinks from "../components/LegalLinks";
+import { Footer } from "@mairie360/lib-components/shell";
+import { LEGAL_NOTICE_PATH, PRIVACY_POLICY_PATH } from "../lib/legal-config";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 
@@ -34,14 +35,15 @@ export default async function RootLayout({
   const appearance = parseAppearanceCookie(cookieStore.get(APPEARANCE_COOKIE)?.value);
   const timeZone = instanceTimeZone(process.env.INSTANCE_TIMEZONE);
   return (
-    <html lang="fr" data-theme={appearance?.theme ?? "system"} data-density={appearance?.density ?? "normal"}>
+    <html lang="fr" data-theme="light" data-density={appearance?.density ?? "normal"}>
       <body className={`${geistSans.variable} mairie-ui antialiased`}>
         <a href="#login-content" className="app-skip-link">Aller au contenu</a>
         <main id="login-content" tabIndex={-1} className="login-page flex min-h-dvh items-center justify-center bg-[var(--mairie-background)]">
           <InstanceProvider role="Guest" timeZone={timeZone} appearance={appearance} appearanceCookieDomain={process.env.COOKIE_DOMAIN}>{children}</InstanceProvider>
         </main>
         {/* Every page links to the legal notice and the privacy policy (MAIR-292). */}
-        <LegalLinks />
+        <Footer variant="horizontal" version={process.env.APP_VERSION?.trim() || undefined}
+          legalLinks={{ legalNotice: LEGAL_NOTICE_PATH, privacyPolicy: PRIVACY_POLICY_PATH }} className="bg-[var(--mairie-background)]" />
       </body>
     </html>
   );

@@ -9,7 +9,8 @@ const { requireTs } = require('./support/load-ts.cjs');
 const config = requireTs('src/lib/legal-config.ts');
 const { default: LegalNoticePage } = requireTs('src/app/mentions-legales/page.tsx');
 const { default: PrivacyPolicyPage } = requireTs('src/app/confidentialite/page.tsx');
-const { default: LegalLinks } = requireTs('src/components/LegalLinks/LegalLinks.tsx');
+const { loadRootLayout } = require('./support/root-layout.cjs');
+const { default: RootLayout } = loadRootLayout(() => requireTs('src/app/layout.tsx'));
 
 const LEGAL = {
   mairie: { name: 'Mairie de Testville', address: '1 place de la Mairie, 00000 Testville', email: 'contact@testville.fr' },
@@ -75,8 +76,9 @@ test('without configuration nothing is invented: the mairie must complete', () =
   assert.doesNotMatch(privacy, /Resend/);
 });
 
-test('every page links to both legal pages', () => {
-  const html = renderToStaticMarkup(React.createElement(LegalLinks));
+test('every page links to both legal pages through the lib Footer', async () => {
+  const html = renderToStaticMarkup(await RootLayout({ children: React.createElement('p', null, 'Page') }));
+  assert.match(html, /<footer\b[^>]*role="contentinfo"/);
   assert.match(html, /<a href="\/mentions-legales"[^>]*>Mentions légales<\/a>/);
   assert.match(html, /<a href="\/confidentialite"[^>]*>Politique de confidentialité<\/a>/);
 });

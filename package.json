@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "1.1.0",
-    "@mairie360/lib-components": "1.0.3",
+    "@mairie360/lib-components": "2.1.0",
     "next": "16.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
+    "@jridgewell/trace-mapping": "0.3.31",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "16.3.3",
@@ -61,7 +62,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "5.0.5",
-    "zod": "file:vendor/zod",
-    "@jridgewell/trace-mapping": "0.3.31"
+    "zod": "file:vendor/zod"
   }
 }

@@ -31,7 +31,7 @@ Suites:
   - Timeouts are simulated by shortening `AbortSignal.timeout` together with `delayMs`, and network failures with `dropConnection`.
   - HEAD is validated as the matching GET.
   - `/openapi.json` is allowed through `allowUndeclared`.
-- `login-page-html.test.cjs` renders the real page (`src/app/page.tsx` → `Login.tsx`) through `tests/support/server-view.cjs` (`react-dom/server` with hook state kept between passes, same file in every front, see `../CLAUDE.md`) and `tests/support/browser-front.cjs`, which dispatches the page's same-origin `fetch` to the real `src/app/api/auth/*` handlers with a cookie jar and lets them reach only the mock BFF User. Typing (`view.fire(id, 'onChange')`), submitting, the success/error messages, the `accessToken` cookie, the first-connection password change and the redirect (`window.location.assign`) are asserted on the HTML. `next/image` is stubbed to a plain `<img>` (its loader needs the Next.js runtime).
+- `login-page-html.test.cjs` renders the real page (`src/app/page.tsx` → `Login.tsx`) through `tests/support/server-view.cjs` (`react-dom/server` with hook state kept between passes, same file in every front, see `../CLAUDE.md`) and `tests/support/browser-front.cjs`, which dispatches the page's same-origin `fetch` to the real `src/app/api/auth/*` handlers with a cookie jar and lets them reach only the mock BFF User. Typing (`view.fire(id, 'onChange')`), submitting, the success/error messages, the `accessToken` cookie, the first-connection password change and the redirect (`window.location.assign`) are asserted on the HTML.
 - `network-calls.test.cjs` walks the TypeScript AST of `src/**` and fails on any network API other than `fetch`. Each `fetch` must be one of:
   - `fetch(bffUserUrl('<path>'), { method: '<LIT>' })` hitting a contract operation;
   - a same-origin literal (`fetch('/api/…')`) matching an existing `src/app/**/route.ts` export or a contract operation;
@@ -127,7 +127,7 @@ and agree the mockup first, then code it: the sync direction is Figma → code.
 
 `src/app/mentions-legales/page.tsx` and `src/app/confidentialite/page.tsx` render `LEGAL_CONFIG`
 (JSON of the chart's `global.legal`, read at request time by `src/lib/legal-config.ts`, missing
-values shown as "À compléter par la mairie"); `src/components/LegalLinks/` is the layout footer
+values shown as "À compléter par la mairie"); the root layout renders the lib `Footer` (`variant="horizontal"`, `legalLinks`, optional `APP_VERSION`)
 linking to both on every page (the only footer `tests/login-page-html.test.cjs` allows). The other
 fronts link there through `LOGIN_FRONT_URL`. Tests: `tests/legal-pages.test.cjs`.
 
