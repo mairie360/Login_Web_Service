@@ -132,7 +132,7 @@ for (const mode of modes) {
       test.use({ configured: false });
       test('unavailable configuration has meaningful standalone content', async ({ page, frontend }, info) => {
         await page.goto(frontend.origin);
-        await expect(page.getByRole('heading', { name: 'Connexion temporairement indisponible' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Connexion indisponible' })).toBeVisible();
         await expect(page.locator('form')).toHaveCount(0);
         await inspect(page, mode, info, 'configuration-unavailable');
       });
