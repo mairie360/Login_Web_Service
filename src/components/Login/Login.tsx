@@ -11,7 +11,6 @@ import { useLoginForm } from "./use-login-form";
 type LoginProps = {
   redirectUrl?: string;
   navigate?: (url: string) => void;
-  resumeSession?: boolean;
   /** Start of the Keycloak sign-in (MAIR-153), absent when the instance does not configure it. */
   keycloakLoginUrl?: string;
   /** Message of a Keycloak sign-in that came back without a session. */
@@ -20,8 +19,8 @@ type LoginProps = {
 
 const navigateToFront = (url: string) => window.location.assign(url);
 
-export default function Login({ redirectUrl, navigate = navigateToFront, resumeSession = false, keycloakLoginUrl, initialError = "" }: LoginProps) {
-  const form = useLoginForm({ redirectUrl, navigate, resumeSession, initialError });
+export default function Login({ redirectUrl, navigate = navigateToFront, keycloakLoginUrl, initialError = "" }: LoginProps) {
+  const form = useLoginForm({ redirectUrl, navigate, initialError });
 
   return (
     <div className="flex w-full flex-col items-center justify-center px-6 py-8">
@@ -57,7 +56,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, resumeS
           <CredentialsFields email={form.email} password={form.password} disabled={form.isLoading} onEmailChange={form.setEmail} onPasswordChange={form.setPassword} />
         )}
         {!form.isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[var(--mairie-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
-        <LoginFeedback resuming={form.isResuming} error={form.errorMessage} success={form.successMessage} onDismissError={form.dismissError} />
+        <LoginFeedback error={form.errorMessage} success={form.successMessage} onDismissError={form.dismissError} />
         <LoginSubmit loading={form.isLoading} passwordChange={form.isPasswordChange} />
         {keycloakLoginUrl && !form.isPasswordChange && <SingleAccountLink href={keycloakLoginUrl} disabled={form.isLoading} />}
       </form>

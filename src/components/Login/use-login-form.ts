@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 type LoginResponse = {
   success?: boolean;
@@ -12,62 +12,20 @@ type LoginResponse = {
 export type LoginFormOptions = {
   redirectUrl?: string;
   navigate: (url: string) => void;
-  resumeSession: boolean;
   initialError: string;
 };
 
-// Session resume, password sign-in and the first-login password change of the sign-in card.
-export function useLoginForm({ redirectUrl, navigate, resumeSession, initialError }: LoginFormOptions) {
+// Password sign-in and the first-login password change of the sign-in card.
+export function useLoginForm({ redirectUrl, navigate, initialError }: LoginFormOptions) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordChange, setIsPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
-  const [isLoading, setIsLoading] = useState(Boolean(resumeSession && redirectUrl));
-  const [isResuming, setIsResuming] = useState(Boolean(resumeSession && redirectUrl));
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(initialError);
   const [successMessage, setSuccessMessage] = useState("");
-  const submissionPending = useRef(Boolean(resumeSession && redirectUrl));
-  const resumeRequest = useRef<{ target: string; result: Promise<{ status: number; valid: boolean }> } | null>(null);
-
-  useEffect(() => {
-    if (!resumeSession || !redirectUrl) return;
-    let active = true;
-    submissionPending.current = true;
-    if (!resumeRequest.current || resumeRequest.current.target !== redirectUrl) {
-      // A Strict Mode effect replay observes the same request. The owner reads
-      // its scoped HttpOnly cookie; no credential is passed through the page.
-      const result = fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        redirect: "manual",
-        body: "{}",
-      }).then(async response => {
-        const body: unknown = await response.json().catch(() => null);
-        return {
-          status: response.status,
-          valid: response.status === 200 && typeof body === "object" && body !== null &&
-            "message" in body && typeof body.message === "string" && Boolean(body.message.trim()),
-        };
-      }).catch(() => ({ status: 0, valid: false }));
-      resumeRequest.current = { target: redirectUrl, result };
-    }
-    void resumeRequest.current.result.then(result => {
-      if (!active) return;
-      if (result.valid) {
-        try { navigate(redirectUrl); return; } catch { /* Keep sign-in available if navigation fails. */ }
-      }
-      setErrorMessage(result.status === 401
-        ? "Votre session a expiré. Veuillez vous reconnecter."
-        : "La reprise de votre session est temporairement indisponible. Vous pouvez vous connecter à nouveau.");
-      submissionPending.current = false;
-      setIsLoading(false);
-      setIsResuming(false);
-    });
-    return () => { active = false; };
-  }, [resumeSession, redirectUrl, navigate]);
+  const submissionPending = useRef(false);
 
   const redirectAfterLogin = () => {
     if (redirectUrl) {
@@ -192,7 +150,7 @@ export function useLoginForm({ redirectUrl, navigate, resumeSession, initialErro
 
   return {
     email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword, newPasswordConfirmation, setNewPasswordConfirmation,
-    isLoading, isResuming, errorMessage, successMessage,
+    isLoading, errorMessage, successMessage,
     dismissError: () => setErrorMessage(""),
     onSubmit: isPasswordChange ? handlePasswordChange : handleLogin,
   };

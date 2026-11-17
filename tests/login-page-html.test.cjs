@@ -708,16 +708,26 @@ test('MAIR-153: a Keycloak sign-in that came back without a session explains why
   });
 });
 
-test('MAIR-153: a Keycloak error stops the automatic session resume so the message stays visible', async () => {
+test('MAIR-900: resumeSession is ignored, the form is shown and no renewal is requested', async () => {
   const previous = process.env.LOGIN_FRONT_URL;
   process.env.LOGIN_FRONT_URL = 'https://login.mairie.test/';
   try {
-    await renderLogin({ redirect: 'https://projects.mairie.test/', resumeSession: '1', keycloakError: 'expired' });
-    assert.match(view.text(), /a expiré ou a été interrompue/);
+    await renderLogin({ redirect: 'https://projects.mairie.test/', resumeSession: '1' });
     assert.doesNotMatch(view.text(), /Reprise de votre session/);
+    assert.match(view.html, /<button type="submit"[^>]*>Se connecter<\/button>/);
     assert.deepEqual(upstream(), []);
   } finally {
     if (previous === undefined) delete process.env.LOGIN_FRONT_URL;
     else process.env.LOGIN_FRONT_URL = previous;
   }
+});
+
+test('MAIR-900: the logout page and the Logout component are gone, the owner handlers stay', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.resolve(__dirname, '..');
+  assert.equal(fs.existsSync(path.join(root, 'src/app/logout')), false);
+  assert.equal(fs.existsSync(path.join(root, 'src/components/Logout')), false);
+  assert.ok(fs.existsSync(path.join(root, 'src/app/api/auth/logout/route.ts')));
+  assert.ok(fs.existsSync(path.join(root, 'src/app/api/auth/refresh/route.ts')));
 });

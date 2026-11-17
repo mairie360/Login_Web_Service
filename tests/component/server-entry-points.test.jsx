@@ -12,7 +12,6 @@ import RootLayout from '@/app/layout';
 import Home from '@/app/page';
 import ForgotPasswordPage, { metadata as forgotMetadata } from '@/app/forgot-password/page';
 import ResetPasswordPage, { metadata as resetMetadata } from '@/app/reset-password/page';
-import LogoutPage from '@/app/logout/page';
 import RecoveryLayout from '@/components/RecoveryLayout';
 
 beforeEach(() => {
@@ -24,15 +23,6 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 const home = search => Home({ searchParams: Promise.resolve(search) });
 
-it('only resumes the validated requested frontend and keeps its query', async () => {
-  const requested = 'https://projects.mairie.test/?project=42';
-  const result = await home({ returnUrl: requested, resumeSession: '1' });
-  expect(result.props.redirectUrl).toBe(requested);
-  expect(result.props.resumeSession).toBe(true);
-  for (const search of [{ redirect: 'https://foreign.test/', resumeSession: '1' }, { redirect: requested }, { redirect: 'https://login.mairie.test/', resumeSession: '1' }]) {
-    expect((await home(search)).props.resumeSession).toBe(false);
-  }
-});
 it('renders an actionable unavailable page when the default destination is missing', async () => {
   vi.stubEnv('DASHBOARD_FRONT_URL', '');
   const html = renderToStaticMarkup(await home({ redirect: ['https://foreign.test/'] }));
@@ -50,7 +40,6 @@ it('recovery pages validate destinations and reject repeated token parameters', 
   expect(repeated.props.redirectUrl).toBe('https://dashboard.mairie.test/');
   expect(forgotMetadata.referrer).toBe('no-referrer');
   expect(resetMetadata.robots).toEqual({ index: false, follow: false });
-  expect(LogoutPage().type.name).toBe('Logout');
 });
 it('the server layout uses validated public appearance cookies and preserves the standalone content', async () => {
   vi.stubEnv('INSTANCE_TIMEZONE', 'Indian/Reunion');

@@ -23,7 +23,7 @@ test('MAIR-608 the sign-in card composes its sub-components through their folder
 });
 
 test('MAIR-608 every page component is a folder with its index and co-located test', () => {
-  for (const name of ['Login', 'Logout', 'ForgotPassword', 'ResetPassword', 'RecoveryLayout']) {
+  for (const name of ['Login', 'ForgotPassword', 'ResetPassword', 'RecoveryLayout']) {
     assert.ok(fs.existsSync(path.join(root, 'src/components', name, 'index.ts')), `${name}/index.ts`);
     assert.ok(fs.existsSync(path.join(root, 'src/components', name, `${name}.test.jsx`)), `${name}/${name}.test.jsx`);
   }

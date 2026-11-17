@@ -160,12 +160,8 @@ Flux OpenID Connect « authorization code » avec PKCE (`src/lib/keycloak-login.
 
 ## Session, permissions et erreurs
 
-`Logout.tsx` lance le `POST /auth/logout` existant uniquement sur une action
-explicite, jamais dans un effet de montage. Une ref synchrone protège toute
-la chaîne amont → `POST /api/auth/logout` local → `location.replace('/')`,
-y compris les clics répétés et le passage à la navigation. HTTP401 suit le
-même nettoyage local qu'un succès ; les autres refus amont et les échecs
-d'expiration libèrent la garde pour une reprise explicite, sans faux succès.
+La page de connexion n'a plus d'écran de déconnexion ni de reprise de session (MAIR-900) : `POST /api/auth/logout` et
+`POST /api/auth/refresh` ne subsistent que comme handlers serveur portés par Login pour les autres fronts.
 Aucun route handler, proxy, contrat publié ou règle de cookie ne change.
 
 Les tests HTTP du vrai consommateur chargent `Login.tsx` et `Logout.tsx` avec
@@ -259,7 +255,7 @@ Compléments historiques: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md)
 
 Login porte POST /api/auth/refresh et POST /api/auth/logout via l’entrée serveur optionnelle publiée de lib-components. Les huit origines frontend configurées peuvent déléguer le renouvellement avec le cookie HttpOnly existant. URL User BFF, domaine des cookies et confiance ingress restent configurés comme auparavant. La coordination des rotations est locale à un processus Login ; un déploiement avec chevauchement ou plusieurs processus reste à vérifier.
 
-La page de déconnexion envoie un seul POST JSON après commande explicite. Le reçu session_revoked distingue la fermeture locale des cookies de la révocation Core. Une fermeture serveur non confirmée reste visible jusqu’au retour explicite à Login. Une logout_url Keycloak validée est visitée lorsqu’elle est fournie ; refus et erreurs réseau permettent une reprise explicite. Les tests locaux avec mocks ne certifient pas l’authentification Dev, Core ou l’IdP réels.
+Le handler propriétaire distingue la fermeture locale des cookies de la révocation Core par session_revoked. Les tests locaux avec mocks ne certifient pas l’authentification Dev, Core ou l’IdP réels.
 
 ## Pages légales (MAIR-292)
 
