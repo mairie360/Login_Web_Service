@@ -1,16 +1,17 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "8a1695af53a7f8676d151819d1e1197bed81926e", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-17 13:29 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
+<!-- release-journal-state {"dev": "9b169cbe541ea70c2bf8949d38b6f5e3d52452fd", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-17 14:22 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v0.5.0 | `7503ac1` | 2026-11-13 01:41 UTC |
 | staging | — | `7503ac1` | 2026-11-12 19:05 UTC |
-| dev | — | `8a1695a` | 2026-11-17 13:29 UTC |
+| dev | — | `9b169cb` | 2026-11-17 14:22 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v0.5.0)
 
+- feat: MAIR-998 Test stacks follow the moving upstream tag of the stage (#263) ([#263](https://github.com/mairie360/Login_Web_Service/pull/263))
 - chore(deps): update dependency mairie360/cicd to v5.11.0 (#265) ([#265](https://github.com/mairie360/Login_Web_Service/pull/265))
 - ci: MAIR-1008 Nightly rehearsal of the promotion gates (#261) ([#261](https://github.com/mairie360/Login_Web_Service/pull/261))
 - chore(deps): update dependency mairie360/cicd to v5.6.1 (#264) ([#264](https://github.com/mairie360/Login_Web_Service/pull/264))
@@ -19,6 +20,7 @@
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+- feat: MAIR-998 Test stacks follow the moving upstream tag of the stage (#263) ([#263](https://github.com/mairie360/Login_Web_Service/pull/263))
 - chore(deps): update dependency mairie360/cicd to v5.11.0 (#265) ([#265](https://github.com/mairie360/Login_Web_Service/pull/265))
 - ci: MAIR-1008 Nightly rehearsal of the promotion gates (#261) ([#261](https://github.com/mairie360/Login_Web_Service/pull/261))
 - chore(deps): update dependency mairie360/cicd to v5.6.1 (#264) ([#264](https://github.com/mairie360/Login_Web_Service/pull/264))
@@ -36,6 +38,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-17 14:22 UTC | dev | — | `9b169cb` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44100544644) |
 | 2026-11-17 13:29 UTC | dev | — | `8a1695a` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44092295130) |
 | 2026-11-17 12:42 UTC | dev | — | `a8e6e9b` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44084344571) |
 | 2026-11-17 08:11 UTC | dev | — | `316dcca` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44043643712) |
