@@ -666,46 +666,12 @@ test('an unreachable BFF is rendered as the unavailable-service message', async 
   assert.equal(front.cookies.get('accessToken'), undefined);
 });
 
-// MAIR-153: Keycloak sign-in next to the password form.
-const withKeycloak = async (run) => {
-  const keys = ['KEYCLOAK_REALM_URL', 'KEYCLOAK_CLIENT_ID', 'LOGIN_FRONT_URL'];
-  const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
-  Object.assign(process.env, { KEYCLOAK_REALM_URL: 'https://auth.mairie.test/realms/mairie360', KEYCLOAK_CLIENT_ID: 'core-api', LOGIN_FRONT_URL: 'https://login.mairie.test/' });
-  try { await run(); } finally {
-    for (const [key, value] of Object.entries(previous)) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  }
-};
-
-test('MAIR-153: a configured instance offers the Keycloak sign-in towards the requested page, password sign-in kept', async () => {
-  await withKeycloak(async () => {
-    await renderLogin({ redirect: 'https://projects.mairie.test/projects' });
-    assert.match(view.html, /<a href="\/api\/auth\/keycloak\?redirect=https%3A%2F%2Fprojects\.mairie\.test%2Fprojects"[^>]*>Se connecter avec le compte unique<\/a>/);
-    assert.match(view.html, /<input id="password" type="password"/);
-    assert.match(view.html, /<button type="submit"[^>]*>Se connecter<\/button>/);
-    assert.doesNotMatch(view.html, /role="(alert|status)"/);
-  });
-});
-
-test('MAIR-153: without Keycloak settings the page shows the password sign-in only', async () => {
-  await renderLogin();
-  assert.doesNotMatch(view.html, /\/api\/auth\/keycloak/);
-  assert.doesNotMatch(view.html, /compte unique/);
-});
-
-test('MAIR-153: a Keycloak sign-in that came back without a session explains why, other values are ignored', async () => {
-  await withKeycloak(async () => {
-    await renderLogin({ keycloakError: 'account', redirect: 'https://projects.mairie.test/' });
-    assert.match(view.text(), /Aucun compte Mairie360 actif n’est associé à ce compte unique\. Contactez votre administrateur\./);
-    view.unmount();
-    await renderLogin({ keycloakError: 'cancelled' });
-    assert.match(view.text(), /La connexion avec le compte unique a été annulée\./);
-    view.unmount();
-    await renderLogin({ keycloakError: '<script>alert(1)</script>' });
-    assert.doesNotMatch(view.html, /role="alert"|script>alert/);
-  });
+test('MAIR-895: the sign-in screen offers no single-account sign-in and ignores keycloakError', async () => {
+  await renderLogin({ redirect: 'https://projects.mairie.test/', keycloakError: 'account' });
+  assert.doesNotMatch(view.html, /compte unique|keycloak/i);
+  assert.doesNotMatch(view.html, /role="alert"/);
+  assert.match(view.html, /<button type="submit"[^>]*>Se connecter<\/button>/);
+  assert.deepEqual(upstream(), []);
 });
 
 test('MAIR-900: resumeSession is ignored, the form is shown and no renewal is requested', async () => {

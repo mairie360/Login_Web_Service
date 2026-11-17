@@ -12,18 +12,17 @@ type LoginResponse = {
 export type LoginFormOptions = {
   redirectUrl?: string;
   navigate: (url: string) => void;
-  initialError: string;
 };
 
 // Password sign-in and the first-login password change of the sign-in card.
-export function useLoginForm({ redirectUrl, navigate, initialError }: LoginFormOptions) {
+export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordChange, setIsPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(initialError);
+  const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const submissionPending = useRef(false);
 
