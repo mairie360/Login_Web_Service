@@ -193,7 +193,7 @@ export async function inspect(page, mode, testInfo, state, title = 'Connexion | 
   await expect(page.locator('header, aside, nextjs-portal')).toHaveCount(0);
   await expect(page.locator('footer')).toHaveCount(1);
   await expect(page.locator('nav')).toHaveCount(1);
-  await expect(page.locator('footer > nav[aria-label="Informations légales"]')).toHaveCount(1);
+  await expect(page.locator('footer > nav[aria-label="Liens du pied de page"]')).toHaveCount(1);
   const metrics = await page.evaluate(() => ({
     width: innerWidth, documentWidth: document.documentElement.scrollWidth,
     dpr: devicePixelRatio, cssZoom: getComputedStyle(document.documentElement).zoom,
