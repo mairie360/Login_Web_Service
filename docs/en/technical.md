@@ -160,12 +160,8 @@ OpenID Connect authorization code flow with PKCE (`src/lib/keycloak-login.ts`). 
 
 ## Session, permissions and errors
 
-`Logout.tsx` starts the existing `POST /auth/logout` only from an explicit
-button action, never from a mount effect. A synchronous ref guards the whole
-upstream → local `POST /api/auth/logout` → `location.replace('/')` chain,
-including repeated clicks and the navigation handoff. HTTP401 follows the
-same local-cleanup path as success; other upstream refusals and local-expiry
-failures release the guard for an explicit retry without claiming success.
+The sign-in page has no logout screen and no session resume (MAIR-900): `POST /api/auth/logout` and
+`POST /api/auth/refresh` remain only as server handlers owned by Login for the other fronts.
 No route handler, proxy, cookie policy or published contract is changed.
 
 The real consumer HTTP tests load `Login.tsx` and `Logout.tsx` through the TSX
@@ -258,7 +254,7 @@ Historical supplements: [BFF.md](../../BFF.md), [BACKEND.md](../../BACKEND.md). 
 
 Login now owns POST /api/auth/refresh and POST /api/auth/logout through the published optional server entry of lib-components. The configured eight frontend origins may delegate renewal using the existing HttpOnly refresh cookie. The User BFF URL, cookie domain and ingress IP trust policy retain their existing configuration. One Login process coordinates concurrent rotations and a short handover; cross-process coordination during a rolling update or scaling is not certified.
 
-The logout page sends one JSON POST to the owner after an explicit command. Successful local cookie expiry is distinguished from Core revocation by session_revoked. An unconfirmed receipt remains visible until the user explicitly returns to Login. A validated Keycloak logout_url is visited when present; refusals and network errors retain an explicit retry. Unit/React/HTTP-mock evidence does not certify real Dev authentication, Core revocation or the identity provider.
+The owner handler distinguishes successful local cookie expiry from Core revocation by session_revoked. Unit/React/HTTP-mock evidence does not certify real Dev authentication, Core revocation or the identity provider.
 
 ## Legal pages (MAIR-292)
 

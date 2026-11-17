@@ -8,8 +8,8 @@ landmark outside `main` is the legal links footer every page carries (MAIR-292).
 
 ## Route and state inventory
 
-The UI routes are `/`, `/logout`, `/forgot-password`, `/reset-password`,
-`/mentions-legales` and `/confidentialite`, corresponding to the six `page.tsx`
+The UI routes are `/`, `/forgot-password`, `/reset-password`,
+`/mentions-legales` and `/confidentialite`, corresponding to the five `page.tsx`
 files under `src/app`. `/api/auth/*` and the `[...path]` proxy are HTTP handlers, not UI
 pages. They are not omitted UI routes or accessibility exemptions.
 
@@ -27,11 +27,6 @@ pages. They are not omitted UI routes or accessibility exemptions.
 | `/` → Dashboard | Sign-in success | Actual successful navigation and existing request bodies; destination is intercepted test HTML. Transient final status is not scan-certified (see limits) |
 | `/` | Transport unavailable | Aborted isolated request, service-unavailable alert |
 | `/` | Destination configuration unavailable | Separate frontend process without Dashboard URL, meaningful heading/message, no form |
-| `/logout` | Confirmation | Skip link then « Se déconnecter » in tab order, no request before the explicit choice |
-| `/logout` | Pending | Delayed first response, real live status |
-| `/logout` | Refused | HTTP 503, alert and keyboard retry |
-| `/logout` | Server session unconfirmed | `session_revoked: false` receipt, alert, explicit return |
-| `/logout` → `/` | Return to sign-in | Keyboard « Retour à la connexion », observed root navigation and sign-in rendered |
 | `/forgot-password` | Initial form | Full-page scan of the recovery request form |
 | `/reset-password` | Initial form | Full-page scan with a synthetic token, no request sent |
 | `/mentions-legales` | Legal notice | Full-page scan of the `LEGAL_CONFIG`-less placeholder content |

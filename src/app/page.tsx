@@ -2,21 +2,16 @@ export const dynamic = 'force-dynamic';
 
 import Login from '../components/Login';
 import { resolveLoginRedirect } from "../lib/login-redirect";
-import { parseFrontUrl } from "../lib/front-url";
 import { isKeycloakLoginError, KEYCLOAK_ERRORS, keycloakSettings } from "../lib/keycloak-login";
 
 type HomeProps = {
-  searchParams: Promise<{ redirect?: string | string[]; returnUrl?: string | string[]; resumeSession?: string | string[]; keycloakError?: string | string[] }>;
+  searchParams: Promise<{ redirect?: string | string[]; returnUrl?: string | string[]; keycloakError?: string | string[] }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { redirect, returnUrl, resumeSession, keycloakError } = await searchParams;
+  const { redirect, returnUrl, keycloakError } = await searchParams;
   const returnDestination = redirect ?? returnUrl;
   const redirectUrl = resolveLoginRedirect(returnDestination);
-  const requested = typeof returnDestination === "string" ? parseFrontUrl(returnDestination) : undefined;
-  const login = parseFrontUrl(process.env.LOGIN_FRONT_URL);
-  const canResume = Boolean(login && requested && resumeSession === "1" &&
-    requested.href === redirectUrl && requested.origin !== login.origin);
 
   if (!redirectUrl) {
     return (
@@ -33,6 +28,5 @@ export default async function Home({ searchParams }: HomeProps) {
   // MAIR-153: Keycloak sign-in is offered only once the instance configures it; the password sign-in stays.
   const keycloakLoginUrl = keycloakSettings() ? `/api/auth/keycloak?redirect=${encodeURIComponent(redirectUrl)}` : undefined;
   const keycloakMessage = isKeycloakLoginError(keycloakError) ? KEYCLOAK_ERRORS[keycloakError] : undefined;
-  return <Login key={`${canResume ? "resume" : "signin"}:${redirectUrl}`} redirectUrl={redirectUrl} resumeSession={canResume && !keycloakMessage}
-    keycloakLoginUrl={keycloakLoginUrl} initialError={keycloakMessage} />;
+  return <Login key={redirectUrl} redirectUrl={redirectUrl} keycloakLoginUrl={keycloakLoginUrl} initialError={keycloakMessage} />;
 }

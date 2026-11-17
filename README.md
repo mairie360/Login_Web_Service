@@ -64,23 +64,16 @@ blanket RGAA or authentication compliance claim.
 
 ## Contracts and background / Contrats et compléments
 
-### Functional-only stabilization (MAIR-403 / MAIR-143)
+### Sign-in stabilization (MAIR-403 / MAIR-143, trimmed by MAIR-900)
 
-Opening `/logout` waits for **Se déconnecter**; it makes no mount-time request.
-A synchronous single-flight guard covers the existing upstream call, local
-cookie expiry and return to standalone Login. A rejected session (HTTP401)
-still requires successful local expiry; other refusals offer explicit retry.
-Pending sign-in/password-change requests also reject duplicate submissions
-and freeze their inputs. No frontend HTTP adapter, API/BFF, contract, security
-check, workflow or deployment configuration changes in this correction.
+Pending sign-in/password-change requests reject duplicate submissions and freeze their inputs.
+The `/logout` page and the session resume were removed from this front (MAIR-900): only the server
+handlers `POST /api/auth/logout` and `POST /api/auth/refresh` remain, for the other fronts.
 
-Ouvrir `/logout` reste sans effet jusqu'au clic **Se déconnecter**. La garde
-synchrone couvre aussi l'expiration locale et le retour à Login ; les refus
-permettent une reprise explicite sans faux succès. Les champs de connexion
-restent figés pendant l'envoi. Les tests HTTP mesurent réellement les TSX,
-avec les seuils existants inchangés ; les cookies jetables de recette ne
-prouvent pas une révocation réelle. Les nouveaux travaux RGAA de la branche
-mixte restent séparés et les contrôles présents sur main sont conservés.
+Les requêtes de connexion et de changement de mot de passe en cours rejettent les doubles soumissions
+et figent leurs champs. La page `/logout` et la reprise de session ont été retirées de ce front
+(MAIR-900) : seuls les handlers serveur `POST /api/auth/logout` et `POST /api/auth/refresh` subsistent,
+pour les autres fronts.
 
 ### Image packaging (MAIR-436 / issue #139)
 

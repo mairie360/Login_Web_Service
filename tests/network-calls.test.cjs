@@ -140,8 +140,6 @@ test('browser calls stay same-origin and land on an existing route handler or a 
     'src/components/ForgotPassword/ForgotPassword.tsx POST /api/auth/forgot-password',
     'src/components/Login/use-login-form.ts POST /api/auth/force_change_password',
     'src/components/Login/use-login-form.ts POST /api/auth/login',
-    'src/components/Login/use-login-form.ts POST /api/auth/refresh',
-    'src/components/Logout/Logout.tsx POST /api/auth/logout',
     'src/components/ResetPassword/ResetPassword.tsx POST /api/auth/reset-password',
   ]);
 });

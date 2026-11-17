@@ -115,36 +115,6 @@ for (const mode of modes) {
       await inspect(page, mode, info, 'transport-unavailable');
     });
 
-    test('sign-out confirmation, pending, refusal, retry, unconfirmed server session and return', async ({ page, frontend }, info) => {
-      const gate = deferred();
-      const local = await responses(page, frontend.origin, '/api/auth/logout', [
-        { gate, status: 503 }, { json: { session_revoked: false } },
-      ]);
-      try {
-        await page.goto(`${frontend.origin}/logout`);
-        await expect(page.getByRole('heading', { name: 'Déconnexion' })).toBeVisible();
-        await inspect(page, mode, info, 'sign-out-confirm');
-        await page.keyboard.press('Tab');
-        await expect(page.getByRole('link', { name: 'Aller au contenu' })).toBeFocused();
-        await page.keyboard.press('Tab');
-        await expect(page.getByRole('button', { name: 'Se déconnecter' })).toBeFocused();
-        await page.keyboard.press('Enter');
-        await expect(page.getByRole('status')).toHaveText('Déconnexion en cours…');
-        await inspect(page, mode, info, 'sign-out-pending');
-        gate.release();
-        await expect(page.getByRole('main').getByRole('alert')).toHaveText('La déconnexion n’a pas abouti. Veuillez réessayer.');
-        await inspect(page, mode, info, 'sign-out-refused');
-        await page.getByRole('button', { name: 'Réessayer' }).press('Enter');
-        await expect(page.getByRole('main').getByRole('alert')).toHaveText('La session locale est fermée. La fermeture de la session serveur n’a pas pu être confirmée.');
-        await inspect(page, mode, info, 'sign-out-unconfirmed');
-        await page.getByRole('button', { name: 'Retour à la connexion' }).press('Enter');
-        await expect(page).toHaveURL(`${frontend.origin}/`);
-        await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
-        await inspect(page, mode, info, 'sign-out-return');
-        expect(local).toHaveLength(2);
-      } finally { gate.release(); }
-    });
-
     for (const [path, title, heading, state] of [
       ['/forgot-password', 'Mot de passe oublié | Mairie360', 'Mot de passe oublié', 'forgot-password'],
       ['/reset-password?token=isolated-test-token', 'Réinitialiser le mot de passe | Mairie360', 'Réinitialiser le mot de passe', 'reset-password'],

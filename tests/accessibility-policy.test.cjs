@@ -16,7 +16,7 @@ function pages(directory, prefix = '') {
 
 test('accessibility scope inventories every actual Login UI page, not HTTP handlers', () => {
   const routes = pages(join(root, 'src/app')).sort();
-  assert.deepEqual(routes, ['/', '/confidentialite', '/forgot-password', '/logout', '/mentions-legales', '/reset-password']);
+  assert.deepEqual(routes, ['/', '/confidentialite', '/forgot-password', '/mentions-legales', '/reset-password']);
   const scope = read('docs/accessibility.md');
   const spec = read('tests/accessibility/login.spec.mjs');
   for (const route of routes) {
