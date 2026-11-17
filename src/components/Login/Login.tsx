@@ -1,6 +1,7 @@
 "use client";
 
-import { PageTitle } from "@mairie360/lib-components/primitives";
+import { Divider, LinkButton, PageTitle } from "@mairie360/lib-components/primitives";
+import type { ReactNode } from "react";
 import RecoveryLayout from "../RecoveryLayout";
 import { CredentialsFields } from "./components/CredentialsFields";
 import { LoginFeedback } from "./components/LoginFeedback";
@@ -11,11 +12,13 @@ import { useLoginForm } from "./use-login-form";
 type LoginProps = {
   redirectUrl?: string;
   navigate?: (url: string) => void;
+  /** Passkey sign-in button (MAIR-811), shown under the main action after an « ou » separator. */
+  passkeySlot?: ReactNode;
 };
 
 const navigateToFront = (url: string) => window.location.assign(url);
 
-export default function Login({ redirectUrl, navigate = navigateToFront }: LoginProps) {
+export default function Login({ redirectUrl, navigate = navigateToFront, passkeySlot }: LoginProps) {
   const form = useLoginForm({ redirectUrl, navigate });
 
   return (
@@ -26,7 +29,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
         method="post"
         aria-busy={form.isLoading}
         onSubmit={form.onSubmit}
-        className="flex w-full flex-col items-stretch gap-4 [&_input]:!my-0"
+        className="flex w-full flex-col items-stretch gap-4"
       >
         <PageTitle>{form.isPasswordChange ? "Nouveau mot de passe" : "Connexion"}</PageTitle>
         {form.isPasswordChange ? (
@@ -41,9 +44,10 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
         ) : (
           <CredentialsFields email={form.email} password={form.password} disabled={form.isLoading} onEmailChange={form.setEmail} onPasswordChange={form.setPassword} />
         )}
-        {!form.isPasswordChange && <a href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} className="text-sm text-[var(--mairie-accent)] underline focus-visible:outline-2 focus-visible:outline-offset-2">Mot de passe oublié ?</a>}
+        {!form.isPasswordChange && <LinkButton label="Mot de passe oublié ?" href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} size="s" className="self-start" />}
         <LoginFeedback error={form.errorMessage} success={form.successMessage} onDismissError={form.dismissError} />
         <LoginSubmit loading={form.isLoading} passwordChange={form.isPasswordChange} />
+        {!form.isPasswordChange && passkeySlot && <><Divider label="ou" />{passkeySlot}</>}
       </form>
     </RecoveryLayout>
   );

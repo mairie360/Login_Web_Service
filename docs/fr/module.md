@@ -15,7 +15,8 @@ Domaine fonctionnel: Identité et administration.
 - Formulaire de connexion avec remontée des erreurs serveur.
 - Les champs de connexion et de changement obligatoire de mot de passe sont figés pendant une requête ; les doubles soumissions sont bloquées immédiatement et un échec efface les anciens messages de succès.
 - Écrans de connexion, de premier changement de mot de passe, de configuration indisponible autonomes : aucun AppShell, header, sidebar ou footer applicatif avant le retour vers un module authentifié.
-- Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe.
+- Parcours de première connexion avec jeton temporaire et choix d’un nouveau mot de passe. Depuis MAIR-875/MAIR-888, le front refuse avant tout appel un nouveau mot de passe de moins de 12 caractères ou sans chiffre ou sans lettre (`checkNewPassword` de lib-components) ; l’API accepte encore 8 caractères jusqu’à MAIR-757.
+- Écrans V2 (MAIR-826) : toutes les pages sont construites avec lib-components (`Logo`, `Card`, `Footer`, `EmailField`, `PasswordField`, `NewPasswordField`, `LinkButton`, `BackButton`, alertes), les pages mot de passe oublié et réinitialisation suivent la maquette (F3, F4) et l’écran d’indisponibilité est « Connexion indisponible » (F0). Les fronts produit sont toujours en mode clair (MAIR-933). La double authentification et les passkeys ne sont pas encore dans ce front (MAIR-806, MAIR-809, MAIR-811) : `Login` n’expose qu’un `passkeySlot`.
 - Création du cookie d’accès puis retour vers la page demandée si son URL appartient à un front Mairie360 configuré ; sinon, redirection vers le tableau de bord configuré.
 
 ## Parcours type

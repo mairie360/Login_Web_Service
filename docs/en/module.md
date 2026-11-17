@@ -15,7 +15,8 @@ Business domain: Identity and administration.
 - Sign-in form with server error feedback.
 - Sign-in and mandatory-password-change inputs are frozen while a request is pending; duplicate submissions are ignored synchronously and failed replies clear stale success feedback.
 - Standalone sign-in, first-password-change, unavailable-configuration screens: no application AppShell, header, sidebar or footer before returning to an authenticated module.
-- First-sign-in flow with a temporary token and a new password.
+- First-sign-in flow with a temporary token and a new password. Since MAIR-875/MAIR-888 the front refuses, before any call, a new password under 12 characters or without a digit or a letter (`checkNewPassword` of lib-components); the API still accepts 8 characters until MAIR-757.
+- V2 screens (MAIR-826): every page is built from lib-components (`Logo`, `Card`, `Footer`, `EmailField`, `PasswordField`, `NewPasswordField`, `LinkButton`, `BackButton`, alerts), the forgot-password and reset-password pages follow the mock-up (F3, F4), and the unavailable screen is « Connexion indisponible » (F0). The product fronts are always light (MAIR-933). Two-factor authentication and passkeys are not part of this front yet (MAIR-806, MAIR-809, MAIR-811): `Login` only exposes a `passkeySlot`.
 - Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Dashboard module.
 
 ## Typical workflow

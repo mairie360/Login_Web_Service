@@ -18,6 +18,8 @@ for (const mode of modes) {
         await page.keyboard.press('Tab');
         await expect(page.getByLabel('Mot de passe', { exact: true })).toBeFocused();
         await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Afficher le mot de passe' })).toBeFocused();
+        await page.keyboard.press('Tab');
         await expect(page.getByRole('link', { name: 'Mot de passe oublié ?' })).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.getByRole('button', { name: 'Se connecter' })).toBeFocused();

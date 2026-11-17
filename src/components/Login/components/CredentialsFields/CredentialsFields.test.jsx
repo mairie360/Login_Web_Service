@@ -11,4 +11,13 @@ describe('CredentialsFields', () => {
     fireEvent.change(screen.getByLabelText('Mot de passe'), { target: { value: 'secret' } });
     expect(onPasswordChange).toHaveBeenCalledWith('secret');
   });
+
+  it('MAIR-866 F1: lib email and password fields with the passkey-ready autocomplete and the required marker', () => {
+    render(<CredentialsFields email="" password="" disabled={false} onEmailChange={vi.fn()} onPasswordChange={vi.fn()} />);
+    const email = screen.getByLabelText('Email professionnel');
+    expect(email.getAttribute('autocomplete')).toBe('username webauthn');
+    expect(email.required).toBe(true);
+    expect(screen.getByLabelText('Mot de passe').required).toBe(true);
+    expect(screen.getByRole('button', { name: 'Afficher le mot de passe' })).toBeTruthy();
+  });
 });

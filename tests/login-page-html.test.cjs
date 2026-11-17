@@ -452,8 +452,12 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   assert.match(view.html, /<form[^>]*method="post"/);
   assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(view.html, /<label for="email"[^>]*>Email professionnel<\/label>/);
-  assert.match(view.html, /<input id="email" type="email"[^>]*placeholder="exemple@domaine\.com" required=""[^>]*name="email" value=""/);
-  assert.match(view.html, /<input id="password" type="password"[^>]*required=""[^>]*name="password" value=""/);
+  assert.match(view.html, /<input[^>]*id="email"[^>]*type="email"/);
+  assert.match(view.html, /<input[^>]*autoComplete="username webauthn"[^>]*placeholder="exemple@domaine\.com"[^>]*required=""[^>]*name="email" value=""/);
+  assert.match(view.html, /<input[^>]*id="password"[^>]*type="password"/);
+  assert.match(view.html, /<input[^>]*autoComplete="current-password"[^>]*required=""[^>]*name="password" value=""/);
+  assert.match(view.html, /<a[^>]*href="\/forgot-password\?redirect=[^"]*"[^>]*>Mot de passe oublié \?<\/a>/);
+  assert.doesNotMatch(view.html, /<hr|role="separator"/, 'no « ou » separator without a passkey button');
   assert.match(view.html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
 });
@@ -581,14 +585,14 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
 
   await typeInto('email', '  alice@mairie.test ');
   await typeInto('password', 'S3cret!');
-  assert.match(view.html, /<input id="email"[^>]*value="  alice@mairie\.test "/);
-  assert.match(view.html, /<input id="password"[^>]*value="S3cret!"/);
+  assert.match(view.html, /<input[^>]*id="email"[^>]*value="  alice@mairie\.test "/);
+  assert.match(view.html, /<input[^>]*id="password"[^>]*value="S3cret!"/);
 
   await submit();
   const html = await view.waitFor((current) => current.includes('role="status"'));
 
   assert.match(html, /<div[^>]*role="status" data-tone="success"[\s\S]*?Connexion réussie\./);
-  assert.match(html, /<input id="password"[^>]*value=""/, 'the password is cleared once sent');
+  assert.match(html, /<input[^>]*id="password"[^>]*value=""/, 'the password is cleared once sent');
   assert.match(html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);

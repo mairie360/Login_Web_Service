@@ -1,4 +1,4 @@
-import { LoginField } from '../LoginField';
+import { EmailField, PasswordField } from "@mairie360/lib-components/primitives";
 
 export interface CredentialsFieldsProps {
   email: string;
@@ -8,12 +8,12 @@ export interface CredentialsFieldsProps {
   onPasswordChange: (value: string) => void;
 }
 
-/** Professional email and current password. */
+/** Professional email and current password (F1); `webauthn` lets a browser offer a passkey (MAIR-811). */
 export const CredentialsFields = ({ email, password, disabled, onEmailChange, onPasswordChange }: CredentialsFieldsProps) => (
   <>
-    <LoginField id="email" label="Email professionnel" type="email" value={email} autoComplete="email" disabled={disabled}
-      placeholder="exemple@domaine.com" onChange={onEmailChange} wrapperClassName="text-[var(--mairie-text)]" />
-    <LoginField id="password" label="Mot de passe" type="password" value={password} autoComplete="current-password" disabled={disabled}
-      onChange={onPasswordChange} labelRow />
+    <EmailField id="email" name="email" label="Email professionnel" autoComplete="username webauthn" placeholder="exemple@domaine.com" required
+      value={email} disabled={disabled} onChange={(event) => onEmailChange(event.target.value)} />
+    <PasswordField id="password" name="password" label="Mot de passe" autoComplete="current-password" required
+      value={password} disabled={disabled} onChange={(event) => onPasswordChange(event.target.value)} />
   </>
 );
