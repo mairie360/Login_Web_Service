@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { RESET_EXPIRED_MESSAGE } from '@/lib/password-recovery-validation';
 import ResetPassword from './ResetPassword';
+import source from './ResetPassword.tsx?raw';
 
 describe('ResetPassword', () => {
   it('asks for a new link without a valid token', () => {
@@ -13,11 +14,15 @@ describe('ResetPassword', () => {
   it('checks the passwords before any request', () => {
     const fetchMock = vi.fn(); vi.stubGlobal('fetch', fetchMock);
     render(<ResetPassword token={crypto.randomUUID()} />);
-    fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'motdepasse1' } });
-    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'motdepasse2' } });
+    fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'motdepasse-12345' } });
+    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'motdepasse-67890' } });
     fireEvent.submit(document.querySelector('form'));
     expect(screen.getByRole('alert').textContent).toBe('Les mots de passe ne correspondent pas.');
     expect(fetchMock).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+  it('MAIR-888 F4: no hand-written recovery* class and no 8-character rule is left in the page', () => {
+    expect(source).not.toMatch(/recovery(Input|Button|Link)Class/);
+    expect(source).not.toMatch(/length < 8/);
   });
 });

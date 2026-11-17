@@ -56,16 +56,16 @@ it('requires matching passwords and submits the token only in the JSON body once
   render(<ResetPassword token={token} redirectUrl="https://dashboard.example.test/" navigate={navigate} />);
   expect(window.location.search).toBe('');
   expect(document.body.innerHTML).not.toContain(token);
-  await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password');
-  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'different-password');
+  await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password-1');
+  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'different-password-2');
   await user.click(screen.getByRole('button', { name: 'Modifier le mot de passe' }));
   expect(screen.getByRole('alert').textContent).toContain('ne correspondent pas'); expect(fetchMock).not.toHaveBeenCalled();
   await user.clear(screen.getByLabelText('Confirmer le mot de passe'));
-  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password');
+  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password-1');
   act(() => { fireEvent.submit(document.querySelector('form')); fireEvent.submit(document.querySelector('form')); });
   expect(fetchMock).toHaveBeenCalledTimes(1);
   expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/reset-password');
-  expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ token, newPassword: 'updated-password' });
+  expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ token, newPassword: 'updated-password-1' });
   expect(fetchMock.mock.calls[0][1].referrerPolicy).toBe('no-referrer');
   expect(screen.getByLabelText('Confirmer le mot de passe').disabled).toBe(true);
   expect(navigate).not.toHaveBeenCalled();
@@ -76,8 +76,8 @@ it('requires matching passwords and submits the token only in the JSON body once
 it('reports expired/reused tokens and offers another link without navigation', async () => {
   fetchMock.mockResolvedValue(reply({ message: 'secret backend detail' }, 401));
   const navigate = vi.fn(); const user = userEvent.setup(); render(<ResetPassword token={token} navigate={navigate} />);
-  await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password');
-  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password');
+  await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password-1');
+  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password-1');
   await user.click(screen.getByRole('button', { name: 'Modifier le mot de passe' }));
   expect((await screen.findByRole('alert')).textContent).toContain('expiré ou déjà utilisé');
   expect(screen.getByRole('link', { name: 'Demander un nouveau lien' })).toBeTruthy();
@@ -86,8 +86,8 @@ it('reports expired/reused tokens and offers another link without navigation', a
 it('does not navigate on malformed success and allows retry after a network failure', async () => {
   fetchMock.mockResolvedValueOnce(reply({})).mockRejectedValueOnce(new Error('transport failure'));
   const navigate = vi.fn(); const user = userEvent.setup(); render(<ResetPassword token={token} navigate={navigate} />);
-  await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password');
-  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password');
+  await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password-1');
+  await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password-1');
   await user.click(screen.getByRole('button', { name: 'Modifier le mot de passe' }));
   expect((await screen.findByRole('alert')).textContent).toContain('n’a pas pu être modifié');
   await user.click(screen.getByRole('button', { name: 'Modifier le mot de passe' }));
@@ -107,8 +107,8 @@ it('ignores a late accepted reset response after leaving the recovery screen', a
   fetchMock.mockReturnValue(new Promise(done => { resolve = done; }));
   const navigate = vi.fn();
   const view = render(<ResetPassword token={token} redirectUrl="https://dashboard.example.test/old-destination" navigate={navigate} />);
-  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
-  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password-1' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password-1' } });
   fireEvent.submit(document.querySelector('form'));
   view.unmount();
   await act(async () => resolve(reply({ success: true })));
@@ -118,8 +118,8 @@ it('ignores a late accepted reset response after leaving the recovery screen', a
 it('starts a fresh reset form when a new token replaces an expired link', async () => {
   fetchMock.mockResolvedValue(reply({}, 401));
   const view = render(<ResetPassword token={token} />);
-  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
-  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password-1' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password-1' } });
   fireEvent.submit(document.querySelector('form'));
   await screen.findByRole('alert');
   view.rerender(<ResetPassword token="22222222-e39c-4a8e-96e8-1c8caad20cab" />);
@@ -135,8 +135,8 @@ it('keeps a new token usable in StrictMode and ignores acceptance of the superse
   const navigate = vi.fn();
   const view = render(<StrictMode><ResetPassword token={token} redirectUrl="https://dashboard.example.test/old" navigate={navigate} /></StrictMode>);
   const submitPassword = () => {
-    fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
-    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+    fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password-1' } });
+    fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password-1' } });
     fireEvent.submit(document.querySelector('form'));
   };
   submitPassword();
@@ -164,21 +164,52 @@ it('keeps the destination in the return link and allows retry after a generic re
   expect((await screen.findByRole('alert')).textContent).toContain('n’a pas pu être envoyée');
 });
 
-it.each([['too short', 'short'], ['too long', 'x'.repeat(256)]])('validates a %s password before sending a reset token', (_, password) => {
+const RULE = 'Utilisez au moins 12 caractères, avec des chiffres et des lettres.';
+it.each([
+  ['too short', 'abcdef12345', RULE],
+  ['without a digit', 'abcdefghijklm', RULE],
+  ['without a letter', '123456789012', RULE],
+  ['too long', 'x'.repeat(255) + '1', 'ne doit pas dépasser 255 caractères'],
+])('MAIR-888 F4: a %s password is refused before sending a reset token', (_, password, message) => {
   render(<ResetPassword token={token} />);
   fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: password } });
   fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: password } });
   fireEvent.submit(document.querySelector('form'));
-  expect(screen.getByRole('alert').textContent).toContain('entre 8 et 255 caractères');
+  expect(screen.getByRole('alert').textContent).toContain(message);
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it('MAIR-888 F4: the rule is shown as help text, then the confirmation is checked, and a 12-character password is accepted', async () => {
+  fetchMock.mockResolvedValue(reply({ success: true }));
+  render(<ResetPassword token={token} navigate={vi.fn()} />);
+  expect(document.body.textContent).toContain('Choisissez un mot de passe d’au moins 12 caractères, avec des chiffres et des lettres.');
+  expect(document.body.textContent).toContain('12 caractères minimum, avec chiffres et lettres.');
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'abcdefghij12' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'abcdefghij13' } });
+  fireEvent.submit(document.querySelector('form'));
+  expect(screen.getByRole('alert').textContent).toContain('ne correspondent pas');
+  expect(fetchMock).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'abcdefghij12' } });
+  fireEvent.submit(document.querySelector('form'));
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Mot de passe modifié. Vous êtes connecté.'));
+  expect(screen.getByLabelText('Nouveau mot de passe').disabled).toBe(true);
+  expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(true);
+});
+
+it('MAIR-888 F4: an invalid link offers a new link as the main action and a way back to sign-in', () => {
+  render(<ResetPassword redirectUrl="https://dashboard.example.test/" />);
+  expect(screen.getByRole('alert').textContent).toBe('Ce lien est expiré ou déjà utilisé. Demandez un nouveau lien.');
+  expect(screen.getByRole('link', { name: 'Demander un nouveau lien' }).getAttribute('href')).toBe('/forgot-password?redirect=https%3A%2F%2Fdashboard.example.test%2F');
+  expect(screen.getByRole('link', { name: 'Retour à la connexion' }).getAttribute('href')).toBe('/?redirect=https%3A%2F%2Fdashboard.example.test%2F');
 });
 
 it('recovers from reset throttling and confirms an accepted reset without a destination', async () => {
   fetchMock.mockResolvedValueOnce(reply({ message: 'sensitive upstream detail' }, 429)).mockResolvedValueOnce(reply({ success: true }));
   const navigate = vi.fn();
   render(<ResetPassword token={token} navigate={navigate} />);
-  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
-  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password-1' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password-1' } });
   fireEvent.submit(document.querySelector('form'));
   expect((await screen.findByRole('alert')).textContent).toContain('Trop de demandes');
   expect(document.body.textContent).not.toContain('sensitive upstream detail');
@@ -195,8 +226,8 @@ it('aborts the in-flight reset and ignores its rejected fetch after leaving the 
   fetchMock.mockReturnValue(new Promise((_, fail) => { reject = fail; }));
   const navigate = vi.fn();
   const view = render(<ResetPassword token={token} navigate={navigate} />);
-  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password' } });
-  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password' } });
+  fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'updated-password-1' } });
+  fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'updated-password-1' } });
   fireEvent.submit(document.querySelector('form'));
   const signal = fetchMock.mock.calls[0][1].signal;
   expect(signal.aborted).toBe(false);
