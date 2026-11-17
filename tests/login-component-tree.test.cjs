@@ -10,7 +10,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 // folders and keeps its session/sign-in flow in a hook beside it.
 test('MAIR-608 the sign-in card composes its sub-components through their folders and uses the lib feedback', () => {
   const login = read('src/components/Login/Login.tsx');
-  for (const part of ['CredentialsFields', 'PasswordChangeFields', 'LoginFeedback', 'LoginSubmit', 'SingleAccountLink']) {
+  for (const part of ['CredentialsFields', 'PasswordChangeFields', 'LoginFeedback', 'LoginSubmit']) {
     assert.ok(login.includes(`./components/${part}"`), `Login composes ${part}`);
     assert.ok(fs.existsSync(path.join(root, 'src/components/Login/components', part, 'index.ts')), `${part} has its folder and index`);
   }

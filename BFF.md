@@ -9,7 +9,6 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 | Méthode | Route | Réponse / schéma |
 | --- | --- | --- |
 | POST | `/auth/force_change_password` | 2XX sans corps |
-| POST | `/auth/keycloak` | 2XX AuthSessionResponse |
 | POST | `/auth/login` | 2XX AuthSessionResponse ; 412 PostAuthLogin412 |
 | POST | `/auth/logout` | 2XX LogoutResponse |
 | POST | `/auth/refresh` | 2XX RefreshResponse |
