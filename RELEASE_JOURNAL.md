@@ -1,16 +1,17 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "a8e6e9b94890c431401ba8b0f6fa93983aea3efc", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-17 12:42 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
+<!-- release-journal-state {"dev": "8a1695af53a7f8676d151819d1e1197bed81926e", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-17 13:29 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v0.5.0 | `7503ac1` | 2026-11-13 01:41 UTC |
 | staging | — | `7503ac1` | 2026-11-12 19:05 UTC |
-| dev | — | `a8e6e9b` | 2026-11-17 12:42 UTC |
+| dev | — | `8a1695a` | 2026-11-17 13:29 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v0.5.0)
 
+- chore(deps): update dependency mairie360/cicd to v5.11.0 (#265) ([#265](https://github.com/mairie360/Login_Web_Service/pull/265))
 - ci: MAIR-1008 Nightly rehearsal of the promotion gates (#261) ([#261](https://github.com/mairie360/Login_Web_Service/pull/261))
 - chore(deps): update dependency mairie360/cicd to v5.6.1 (#264) ([#264](https://github.com/mairie360/Login_Web_Service/pull/264))
 - chore(deps): update mairie360 database schema to v3.4.0 (#258) ([#258](https://github.com/mairie360/Login_Web_Service/pull/258))
@@ -18,6 +19,7 @@
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+- chore(deps): update dependency mairie360/cicd to v5.11.0 (#265) ([#265](https://github.com/mairie360/Login_Web_Service/pull/265))
 - ci: MAIR-1008 Nightly rehearsal of the promotion gates (#261) ([#261](https://github.com/mairie360/Login_Web_Service/pull/261))
 - chore(deps): update dependency mairie360/cicd to v5.6.1 (#264) ([#264](https://github.com/mairie360/Login_Web_Service/pull/264))
 - chore(deps): update mairie360 database schema to v3.4.0 (#258) ([#258](https://github.com/mairie360/Login_Web_Service/pull/258))
@@ -34,6 +36,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-17 13:29 UTC | dev | — | `8a1695a` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44092295130) |
 | 2026-11-17 12:42 UTC | dev | — | `a8e6e9b` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44084344571) |
 | 2026-11-17 08:11 UTC | dev | — | `316dcca` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44043643712) |
 | 2026-11-13 20:05 UTC | dev | — | `8123c69` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43497318594) |
