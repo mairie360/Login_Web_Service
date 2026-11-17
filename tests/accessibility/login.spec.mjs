@@ -54,7 +54,11 @@ for (const mode of modes) {
         await expect(page.getByLabel('Confirmer le mot de passe')).toHaveAttribute('autocomplete', 'new-password');
         await page.getByLabel('Nouveau mot de passe', { exact: true }).focus();
         await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Afficher le mot de passe' }).first()).toBeFocused();
+        await page.keyboard.press('Tab');
         await expect(page.getByLabel('Confirmer le mot de passe')).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Afficher le mot de passe' }).last()).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.getByRole('button', { name: 'Modifier le mot de passe' })).toBeFocused();
         await page.getByLabel('Nouveau mot de passe', { exact: true }).fill(updatedPassword);

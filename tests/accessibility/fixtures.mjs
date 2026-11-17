@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const destination = 'http://127.0.0.1:5118/dashboard';
 export const credentials = { email: 'agent@example.invalid', password: 'isolated-test-password' };
-export const updatedPassword = 'isolated-updated-password';
+export const updatedPassword = 'isolated-updated-password-1';
 const expectedResourceErrors = new WeakMap();
 export const modes = [
   { name: 'desktop', width: 1280, height: 720, zoom: 1 },

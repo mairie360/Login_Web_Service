@@ -66,8 +66,8 @@ describe("Login form", () => {
     await enterCredentials(user);
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
     await screen.findByRole("heading", { name: "Nouveau mot de passe" });
-    await user.type(screen.getByLabelText("Nouveau mot de passe", { exact: true }), "updated-test-password");
-    await user.type(screen.getByLabelText("Confirmer le mot de passe"), "updated-test-password");
+    await user.type(screen.getByLabelText("Nouveau mot de passe", { exact: true }), "updated-test-password-1");
+    await user.type(screen.getByLabelText("Confirmer le mot de passe"), "updated-test-password-1");
     const form = document.querySelector("form");
     act(() => { fireEvent.submit(form); fireEvent.submit(form); });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -170,14 +170,14 @@ describe("Login form", () => {
     expect(navigate).not.toHaveBeenCalled();
     const password = screen.getByLabelText("Nouveau mot de passe", { exact: true });
     const confirmation = screen.getByLabelText("Confirmer le mot de passe");
-    await user.type(password, "updated-test-password");
-    await user.type(confirmation, "different-test-password");
+    await user.type(password, "updated-test-password-1");
+    await user.type(confirmation, "different-test-password-2");
     await user.click(screen.getByRole("button", { name: "Modifier le mot de passe" }));
     expect((await screen.findByRole("alert")).textContent).toBe("Les mots de passe ne correspondent pas.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await user.clear(confirmation);
-    await user.type(confirmation, "updated-test-password");
+    await user.type(confirmation, "updated-test-password-1");
     await user.click(screen.getByRole("button", { name: "Modifier le mot de passe" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith(requestedFront));
 
@@ -186,10 +186,10 @@ describe("Login form", () => {
       "/api/auth/force_change_password",
       "/api/auth/login",
     ]);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ newPassword: "updated-test-password" });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ newPassword: "updated-test-password-1" });
     expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({
       email: "agent@example.invalid",
-      password: "updated-test-password",
+      password: "updated-test-password-1",
     });
   });
 

@@ -33,6 +33,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront }: Login
           <PasswordChangeFields
             password={form.newPassword}
             confirmation={form.newPasswordConfirmation}
+            passwordError={form.passwordError}
             disabled={form.isLoading}
             onPasswordChange={form.setNewPassword}
             onConfirmationChange={form.setNewPasswordConfirmation}

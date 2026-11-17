@@ -255,8 +255,8 @@ test('first-password refusal without a message keeps the draft for an explicit r
   await typeInto('email', 'alice@mairie.test');
   await typeInto('password', 'temporary');
   await submit();
-  await typeInto('new-password', 'N3w-secret');
-  await typeInto('new-password-confirmation', 'N3w-secret');
+  await typeInto('new-password', 'N3w-secret-pass');
+  await typeInto('new-password-confirmation', 'N3w-secret-pass');
   const originalFetch = front.fetch;
   front.fetch = async function (input, init) {
     if (input === '/api/auth/force_change_password') {
@@ -273,7 +273,7 @@ test('first-password refusal without a message keeps the draft for an explicit r
     assert.match(view.html, /aria-busy="false"/);
     for (const id of ['new-password', 'new-password-confirmation']) {
       const [input] = view.hostElements((props) => props.id === id);
-      assert.equal(input.props.value, 'N3w-secret');
+      assert.equal(input.props.value, 'N3w-secret-pass');
       assert.equal(input.props.disabled, false);
     }
     assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
@@ -300,13 +300,13 @@ test('a refused first-password mutation keeps the draft, and an expired token re
   await typeInto('email', 'alice@mairie.test');
   await typeInto('password', 'temporary');
   await submit();
-  await typeInto('new-password', 'N3w-secret');
-  await typeInto('new-password-confirmation', 'N3w-secret');
+  await typeInto('new-password', 'N3w-secret-pass');
+  await typeInto('new-password-confirmation', 'N3w-secret-pass');
   await submit();
   assert.match(view.text(), /Le nouveau mot de passe est invalide\./);
   assert.match(view.html, /role="alert"/);
-  assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.value, 'N3w-secret');
-  assert.equal(view.hostElements((props) => props.id === 'new-password-confirmation')[0].props.value, 'N3w-secret');
+  assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.value, 'N3w-secret-pass');
+  assert.equal(view.hostElements((props) => props.id === 'new-password-confirmation')[0].props.value, 'N3w-secret-pass');
   assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
   assert.equal(front.browserCalls.length, 2);
   assert.deepEqual(window.location.assigned, []);
@@ -315,7 +315,7 @@ test('a refused first-password mutation keeps the draft, and an expired token re
   assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(view.html, /role="alert"/);
   assert.match(view.text(), /Le lien de changement de mot de passe est invalide ou expiré\. Reconnectez-vous\./);
-  assert.doesNotMatch(view.html, /id="new-password"|N3w-secret/);
+  assert.doesNotMatch(view.html, /id="new-password"|N3w-secret-pass/);
   assert.equal(front.cookies.get('passwordChangeToken'), undefined);
   assert.equal(front.browserCalls.length, 3);
   assert.equal(bff.requests.length, 3);
@@ -344,8 +344,8 @@ test('one lock spans first-password confirmation and lost reconnection without s
     await typeInto('email', 'alice@mairie.test');
     await typeInto('password', 'temporary');
     await submit();
-    await typeInto('new-password', 'N3w-secret');
-    await typeInto('new-password-confirmation', 'N3w-secret');
+    await typeInto('new-password', 'N3w-secret-pass');
+    await typeInto('new-password-confirmation', 'N3w-secret-pass');
     pending = submit();
     await view.waitFor((html) => html.includes('Modification…'));
     assertPending(['new-password', 'new-password-confirmation']);
@@ -587,7 +587,7 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
   await submit();
   const html = await view.waitFor((current) => current.includes('role="status"'));
 
-  assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
+  assert.match(html, /<div[^>]*role="status" data-tone="success"[\s\S]*?Connexion réussie\./);
   assert.match(html, /<input id="password"[^>]*value=""/, 'the password is cleared once sent');
   assert.match(html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
@@ -628,28 +628,38 @@ test('a first connection switches to the password change form, then signs in wit
   assert.match(change, /<h1[^>]*>Nouveau mot de passe<\/h1>/);
   assertStandalone(change);
   assert.match(change, /Pour finaliser votre première connexion, choisissez un nouveau mot de passe\./);
-  assert.match(change, /<input id="new-password"[^>]*type="password"/);
-  assert.match(change, /<input id="new-password-confirmation"[^>]*type="password"/);
+  assert.match(change, /<input[^>]*id="new-password"[^>]*type="password"/);
+  assert.match(change, /<input[^>]*id="new-password-confirmation"[^>]*type="password"/);
   assert.match(change, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Modifier le mot de passe(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(change, /id="email"/);
   assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token', 'the one-time token stays in an HttpOnly cookie');
   assert.equal(front.cookies.get('accessToken'), undefined);
 
-  await typeInto('new-password', 'N3w-secret');
+  // MAIR-875 F2: the 12-character rule (digits and letters) is checked before the confirmation and before any call.
+  assert.match(change, /12 caractères minimum, avec chiffres et lettres\./);
+  for (const weak of ['court1', 'sans-chiffre-du-tout', '123456789012']) {
+    await typeInto('new-password', weak);
+    await typeInto('new-password-confirmation', weak);
+    await submit();
+    assert.match(view.text(), /Utilisez au moins 12 caractères, avec des chiffres et des lettres\./);
+    assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
+  }
+
+  await typeInto('new-password', 'N3w-secret-pass');
   await typeInto('new-password-confirmation', 'other');
   await submit();
   assertErrorMessage(view.html, 'Les mots de passe ne correspondent pas.');
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
 
-  await typeInto('new-password-confirmation', 'N3w-secret');
+  await typeInto('new-password-confirmation', 'N3w-secret-pass');
   await submit();
   const html = await view.waitFor((current) => current.includes('Connexion réussie.'));
 
   assert.match(html, /<h1[^>]*>Connexion<\/h1>/);
-  assert.match(html, /<p role="status"[^>]*>Connexion réussie\.<\/p>/);
+  assert.match(html, /<div[^>]*role="status" data-tone="success"[\s\S]*?Connexion réussie\./);
   assert.deepEqual(front.browserCalls.map((call) => call.path), ['/api/auth/login', '/api/auth/force_change_password', '/api/auth/login']);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie']);
-  assert.equal(bff.requests[2].body.password, 'N3w-secret');
+  assert.equal(bff.requests[2].body.password, 'N3w-secret-pass');
   assert.equal(front.cookies.get('accessToken'), 'fresh-access-token');
   assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/projects?view=board']);
 });
@@ -665,8 +675,8 @@ test('a first connection without a requested page ends on Dashboard', async () =
   await typeInto('password', 'temporary');
   await submit();
   await view.waitFor((current) => current.includes('Nouveau mot de passe'));
-  await typeInto('new-password', 'N3w-secret');
-  await typeInto('new-password-confirmation', 'N3w-secret');
+  await typeInto('new-password', 'N3w-secret-pass');
+  await typeInto('new-password-confirmation', 'N3w-secret-pass');
   await submit();
   await view.waitFor((current) => current.includes('Connexion réussie.'));
   assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
