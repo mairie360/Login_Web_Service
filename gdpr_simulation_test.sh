@@ -128,7 +128,7 @@ if ! docker compose -f "$COMPOSE_FILE" down -v --remove-orphans > /dev/null 2>&1
 fi
 # A failed dependency (seeder, migration, upstream readiness) leaves the runner created but never
 # started, and `docker compose wait` would then report 0: fail here instead.
-if ! docker compose -f "$COMPOSE_FILE" up -d --pull missing; then
+if ! docker compose -f "$COMPOSE_FILE" up -d; then
     echo "==> The stack did not start: a dependency failed. Logs:"
     docker compose -f "$COMPOSE_FILE" logs --tail 80
     exit 1

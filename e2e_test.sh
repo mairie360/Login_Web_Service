@@ -35,9 +35,9 @@ trap 'teardown' EXIT
 echo "==> [1/4] Starting the stack and the Playwright journeys..."
 if [ -n "${TARGET_IMAGE:-}" ]; then
   echo "Image under test: $TARGET_IMAGE (no local build)."
-  docker compose -f "$COMPOSE_FILE" up -d --no-build --pull missing
+  docker compose -f "$COMPOSE_FILE" up -d --no-build
 else
-  docker compose -f "$COMPOSE_FILE" up -d --build --pull missing
+  docker compose -f "$COMPOSE_FILE" up -d --build
 fi
 UP_EXIT_CODE=$?
 

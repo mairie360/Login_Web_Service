@@ -64,7 +64,7 @@ npm run contracts:sync      # (= contracts:generate) rebuild contracts/openapi.j
 npm run contracts:check     # fail if the version isn't an accepted exact version, installed != package.json, a second bff-*-openapi exists, or the snapshot is stale
 ```
 
-These commands run offline. After a bump, also move the `bff-user` image tags in the `docker-compose*.yml` files to the image built from the same commit (`X.Y.Z` for a release, `dev-<sha7>` for a dev package, `staging-<sha7>` for a staging package; `package-contract.test.cjs` enforces it through `imageTagForContractVersion`), then adapt the route handlers. The stacks also pin dev images of Core API and the database; the dev Core API needs `JWT_ALLOW_WEAK_SECRET` for the shared test secret and `RATE_LIMIT_ENABLED=false`, BFF User needs `JWT_SECRET` and `AUTH_RATE_LIMIT_ENABLED=false` for ZAP, and `init-test.sql` must seed argon2id password hashes.
+These commands run offline. After a bump, adapt the route handlers; the `docker-compose*.yml` files do not move: since MAIR-998 they run `bff-user`, Core API and the database on the moving tag of the stage under test, `${UPSTREAM_TAG:-dev}` (`package-contract.test.cjs` and `mair-998-upstream-tag.test.cjs` enforce it), so the contract is only bumped when the code needs it. In those images the dev Core API needs `JWT_ALLOW_WEAK_SECRET` for the shared test secret and `RATE_LIMIT_ENABLED=false`, BFF User needs `JWT_SECRET` and `AUTH_RATE_LIMIT_ENABLED=false` for ZAP, and `init-test.sql` must seed argon2id password hashes.
 
 ## Figma mockup
 
