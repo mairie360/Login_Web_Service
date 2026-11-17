@@ -100,6 +100,19 @@ test('production reset requires shared cookie configuration before sending a one
   process.env.NODE_ENV = 'production';
   const result = await handle('reset_password', valid); assert.equal(result.status, 503); assert.equal(calls.length, 0);
 });
+test('MAIR-757 an 11-character reset password is refused with the whole policy before reaching the BFF', async () => {
+  const result = await resetPassword(request('/api/auth/reset-password', { ...valid, newPassword: 'Velo-2026-x' }));
+  assert.equal(result.status, 400);
+  assert.match((await result.json()).message, /au moins 12 caractères.*mots de passe courants.*adresse e-mail.*prénom.*nom/);
+  assert.equal(calls.length, 0);
+});
+test('MAIR-757 a reset password refused by Core API shows the whole policy', async () => {
+  global.fetch = async () => Response.json({ error: { code: 'BAD_REQUEST', message: 'Bad request', details: [] } }, { status: 400 });
+  const result = await resetPassword(request('/api/auth/reset-password', valid));
+  assert.equal(result.status, 400);
+  assert.match((await result.json()).message, /au moins 12 caractères.*mots de passe courants/);
+  assert.equal(result.headers.get('set-cookie'), null);
+});
 test('BFF rejection never reveals registration or sensitive upstream details', async () => {
   for (const status of [400, 404, 429, 500]) {
     global.fetch = async () => Response.json({ error: 'registered-agent@example.test ' + token }, { status });

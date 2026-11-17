@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../lib/bff-user";
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
+import { PASSWORD_POLICY_MESSAGE } from "../../../../lib/password-recovery-validation";
 
 type ForceChangePasswordBody = {
   newPassword?: unknown;
@@ -18,11 +19,11 @@ function clearPasswordChangeToken(response: NextResponse) {
   });
 }
 
-// Les messages de BFF User sont techniques et en anglais (« Invalid password-change payload »,
-// « Unknown or expired user token ») : l'interface affiche ses propres messages selon le statut.
+// BFF User messages are technical and in English: the interface shows its own message per status. A 400 is a password
+// Core API's policy refused (MAIR-757), without saying which rule, so the whole policy is shown.
 function getErrorMessage(status: number) {
   if (status === 400) {
-    return "Le nouveau mot de passe est invalide.";
+    return PASSWORD_POLICY_MESSAGE;
   }
 
   if (status === 401 || status === 403) {
