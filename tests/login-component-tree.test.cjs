@@ -18,7 +18,7 @@ test('MAIR-608 the sign-in card composes its sub-components through their folder
   assert.ok(login.includes('./use-login-form"'), 'the sign-in flow lives in use-login-form.ts');
   assert.doesNotMatch(login, /fetch\(/, 'the card itself sends no request');
   const feedback = read('src/components/Login/components/LoginFeedback/LoginFeedback.tsx');
-  assert.match(feedback, /import \{ ErrorAlert \} from "@mairie360\/lib-components\/primitives"/);
+  assert.match(feedback, /import \{ ErrorAlert, SuccessAlert \} from "@mairie360\/lib-components\/primitives"/);
   assert.doesNotMatch(login + feedback, /<Toast\b/, 'a standalone lib Toast is not announced');
 });
 

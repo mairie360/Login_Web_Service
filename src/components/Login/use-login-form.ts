@@ -1,5 +1,6 @@
 'use client';
 
+import { checkNewPassword } from "@mairie360/lib-components/shared";
 import { FormEvent, useRef, useState } from "react";
 
 type LoginResponse = {
@@ -24,6 +25,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const submissionPending = useRef(false);
 
   const redirectAfterLogin = () => {
@@ -91,11 +93,18 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const handlePasswordChange = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submissionPending.current) return;
+    setPasswordError("");
     setErrorMessage("");
     setSuccessMessage("");
 
     if (!newPassword) {
       setErrorMessage("Veuillez renseigner votre nouveau mot de passe.");
+      return;
+    }
+
+    const ruleError = checkNewPassword(newPassword);
+    if (ruleError) {
+      setPasswordError(ruleError);
       return;
     }
 
@@ -148,7 +157,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   };
 
   return {
-    email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword, newPasswordConfirmation, setNewPasswordConfirmation,
+    email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation, setNewPasswordConfirmation,
     isLoading, errorMessage, successMessage,
     dismissError: () => setErrorMessage(""),
     onSubmit: isPasswordChange ? handlePasswordChange : handleLogin,
