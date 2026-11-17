@@ -2,7 +2,9 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { RESET_TOKEN_PATTERN, RESET_EXPIRED_MESSAGE } from '../../lib/password-recovery-validation';
-import RecoveryLayout, { recoveryInputClass, recoveryButtonClass, recoveryLinkClass } from '../RecoveryLayout';
+import { checkNewPassword } from '@mairie360/lib-components/shared';
+import { BackButton, Body, Button, ErrorAlert, LinkButton, NewPasswordField, PageTitle, PasswordField, SuccessAlert } from '@mairie360/lib-components/primitives';
+import RecoveryLayout from '../RecoveryLayout';
 
 const navigateToFront = (url: string) => window.location.assign(url);
 type Props = { token?: string; redirectUrl?: string; navigate?: (url: string) => void };
@@ -35,7 +37,8 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
     event.preventDefault();
     if (submitting.current || !validToken || expired || complete) return;
     setError("");
-    if (password.length < 8 || password.length > 255) { setError("Le mot de passe doit contenir entre 8 et 255 caractères."); return; }
+    const ruleError = checkNewPassword(password);
+    if (ruleError || password.length > 255) { setError(ruleError ?? "Le mot de passe ne doit pas dépasser 255 caractères."); return; }
     if (password !== confirmation) { setError("Les mots de passe ne correspondent pas."); return; }
     submitting.current = true; setPending(true);
     const request = new AbortController();
@@ -57,21 +60,21 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
     } catch { if (current()) setError("Impossible de joindre le service de récupération. Veuillez réessayer."); }
     finally { if (current()) { submitting.current = false; setPending(false); } }
   }
+  const loginUrl = redirectUrl ? `/?redirect=${encodeURIComponent(redirectUrl)}` : "/";
   return <RecoveryLayout>
-    <h1 className="mb-4 text-2xl font-bold text-[var(--mairie-text)]">Réinitialiser le mot de passe</h1>
+    <PageTitle>Réinitialiser le mot de passe</PageTitle>
     {!validToken || expired ? <>
-      <p role="alert" className="mb-4 text-sm text-[var(--mairie-error-text)]">{RESET_EXPIRED_MESSAGE}</p>
-      <a href={recoveryUrl} className={recoveryLinkClass}>Demander un nouveau lien</a>
+      <ErrorAlert title={RESET_EXPIRED_MESSAGE} />
+      <Button label="Demander un nouveau lien" href={recoveryUrl} fullWidth />
+      <BackButton label="Retour à la connexion" href={loginUrl} />
     </> : <form method="post" aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
-      <p id="password-requirements" className="text-sm">Choisissez un mot de passe de 8 à 255 caractères.</p>
-      <label htmlFor="reset-password">Nouveau mot de passe</label>
-      <input id="reset-password" name="new-password" type="password" autoComplete="new-password" required minLength={8} maxLength={255} aria-describedby="password-requirements" value={password} onChange={event => setPassword(event.target.value)} disabled={pending || complete} className={recoveryInputClass} />
-      <label htmlFor="reset-confirmation">Confirmer le mot de passe</label>
-      <input id="reset-confirmation" name="password-confirmation" type="password" autoComplete="new-password" required minLength={8} maxLength={255} value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={pending || complete} className={recoveryInputClass} />
-      {error && <p role="alert" className="text-sm text-[var(--mairie-error-text)]">{error}</p>}
-      {complete && <p role="status" className="text-sm text-[var(--mairie-success-text)]">Mot de passe modifié. Vous êtes connecté.</p>}
-      <button type="submit" disabled={pending || complete} className={recoveryButtonClass}>{pending ? "Modification…" : "Modifier le mot de passe"}</button>
-      <a href={recoveryUrl} className={recoveryLinkClass}>Demander un nouveau lien</a>
+      <Body>Choisissez un mot de passe d’au moins 12 caractères, avec des chiffres et des lettres.</Body>
+      <NewPasswordField id="reset-password" name="new-password" required maxLength={255} value={password} onChange={event => setPassword(event.target.value)} disabled={pending || complete} />
+      <PasswordField id="reset-confirmation" name="password-confirmation" label="Confirmer le mot de passe" autoComplete="new-password" required maxLength={255} value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={pending || complete} />
+      {error && <ErrorAlert title={error} onDismiss={() => setError("")} />}
+      {complete && <SuccessAlert title="Mot de passe modifié. Vous êtes connecté." />}
+      <Button type="submit" label={pending ? "Modification…" : "Modifier le mot de passe"} loading={pending} disabled={pending || complete} fullWidth />
+      <LinkButton label="Demander un nouveau lien" href={recoveryUrl} />
     </form>}
   </RecoveryLayout>;
 }
