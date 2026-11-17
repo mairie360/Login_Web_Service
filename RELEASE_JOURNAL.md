@@ -1,21 +1,23 @@
 # Journal des releases — Login_Web_Service
 
-<!-- release-journal-state {"dev": "8123c6901da85a41b4956e5e6bd2dc84e6119ea9", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-13 20:05 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
+<!-- release-journal-state {"dev": "316dcca4f8e4588df51a8bbb2eb7be62637480f3", "prod": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "prod_tag": "v0.5.0", "staging": "7503ac1dfdfc043716bf99cfb30698e61ac73611", "updated": {"dev": "2026-11-17 08:11 UTC", "prod": "2026-11-13 01:41 UTC", "staging": "2026-11-12 19:05 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v0.5.0 | `7503ac1` | 2026-11-13 01:41 UTC |
 | staging | — | `7503ac1` | 2026-11-12 19:05 UTC |
-| dev | — | `8123c69` | 2026-11-13 20:05 UTC |
+| dev | — | `316dcca` | 2026-11-17 08:11 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v0.5.0)
 
+- chore(deps): update dependency mairie360/cicd to v5.6.1 (#264) ([#264](https://github.com/mairie360/Login_Web_Service/pull/264))
 - chore(deps): update mairie360 database schema to v3.4.0 (#258) ([#258](https://github.com/mairie360/Login_Web_Service/pull/258))
 - chore(deps): update ghcr.io/mairie360/core-api docker tag to v2.3.0 (#257) ([#257](https://github.com/mairie360/Login_Web_Service/pull/257))
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+- chore(deps): update dependency mairie360/cicd to v5.6.1 (#264) ([#264](https://github.com/mairie360/Login_Web_Service/pull/264))
 - chore(deps): update mairie360 database schema to v3.4.0 (#258) ([#258](https://github.com/mairie360/Login_Web_Service/pull/258))
 - chore(deps): update ghcr.io/mairie360/core-api docker tag to v2.3.0 (#257) ([#257](https://github.com/mairie360/Login_Web_Service/pull/257))
 
@@ -30,6 +32,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-17 08:11 UTC | dev | — | `316dcca` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/44043643712) |
 | 2026-11-13 20:05 UTC | dev | — | `8123c69` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43497318594) |
 | 2026-11-13 06:10 UTC | dev | — | `31925c7` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43376093256) |
 | 2026-11-13 01:41 UTC | prod | v0.5.0 | `7503ac1` | [run](https://github.com/mairie360/Login_Web_Service/actions/runs/43340544894) |
