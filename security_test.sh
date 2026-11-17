@@ -8,7 +8,7 @@ echo "==> [1/4] Démarrage de la stack et lancement du scan ZAP..."
 # `up --build` would rebuild and retag it locally, so the build is skipped and the image pulled.
 if [ -n "${TARGET_IMAGE:-}" ]; then
   echo "Image sous test : $TARGET_IMAGE (pas de build local)."
-  docker compose -f "$COMPOSE_FILE" up -d --no-build --pull missing
+  docker compose -f "$COMPOSE_FILE" up -d --no-build
 else
   docker compose -f "$COMPOSE_FILE" up -d --build
 fi

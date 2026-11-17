@@ -42,6 +42,7 @@ x-api-env: &api-env
 services:
   postgres:
     image: ${DB_IMAGE:-ghcr.io/mairie360/database:${UPSTREAM_TAG:-dev}}
+    pull_policy: ${UPSTREAM_PULL_POLICY:-always}
     container_name: login-front-sec-db
     environment:
       POSTGRES_USER: postgres
@@ -61,6 +62,7 @@ services:
 
   liquibase:
     image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:${UPSTREAM_TAG:-dev}}
+    pull_policy: ${UPSTREAM_PULL_POLICY:-always}
     container_name: login-front-sec-liquibase
     depends_on:
       postgres:
@@ -111,6 +113,7 @@ services:
 
   core-api:
     image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:${UPSTREAM_TAG:-dev}}
+    pull_policy: ${UPSTREAM_PULL_POLICY:-always}
     container_name: login-front-sec-core-api
     depends_on:
       liquibase:
@@ -151,6 +154,7 @@ services:
 
   bff-user:
     image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:${UPSTREAM_TAG:-dev}}
+    pull_policy: ${UPSTREAM_PULL_POLICY:-always}
     container_name: login-front-sec-bff-user
     depends_on:
       seeder:

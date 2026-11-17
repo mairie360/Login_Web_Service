@@ -15,7 +15,7 @@ const STAGE_TAG = '${UPSTREAM_TAG:-dev}';
 
 const upstreamImages = (content) => content.split('\n')
   .filter((line) => !line.trimStart().startsWith('#'))
-  .flatMap((line) => [...line.matchAll(/ghcr\.io\/mairie360\/([a-z0-9][a-z0-9._-]*)(?::(\$\{[^}]*\}|[^\s"'}@]+))?/g)])
+  .flatMap((line) => [...line.matchAll(/ghcr\.io\/mairie360\/([a-z0-9][a-z0-9._-]*)(?::(\$\{[^}]*\}[^\s"'}]*|[^\s"'}@]+))?/g)])
   .map(([, name, tag]) => ({ name, tag: tag ?? '' }))
   .filter(({ name }) => name !== OWN_IMAGE);
 
@@ -32,6 +32,8 @@ test('MAIR-998 every compose file runs its upstreams on ${UPSTREAM_TAG:-dev}', (
 test('MAIR-998 a pinned, untagged or nested image is seen, a comment or the own image is not', () => {
   const compose = [
     'image: ${DB_IMAGE:-ghcr.io/mairie360/database:${UPSTREAM_TAG:-dev}}',
+    'image: ghcr.io/mairie360/database:${UPSTREAM_TAG:-dev}-c5b8e22',
+    'image: ghcr.io/mairie360/core-api:${UPSTREAM_TAG:-dev}@sha256:abc',
     'image: ghcr.io/mairie360/core-api:2.3.0',
     'image: ghcr.io/mairie360/bff-user',
     '# image: ghcr.io/mairie360/calendar-api:1.0.0',
@@ -39,6 +41,8 @@ test('MAIR-998 a pinned, untagged or nested image is seen, a comment or the own 
   ].join('\n');
   assert.deepEqual(upstreamImages(compose), [
     { name: 'database', tag: STAGE_TAG },
+    { name: 'database', tag: `${STAGE_TAG}-c5b8e22` },
+    { name: 'core-api', tag: `${STAGE_TAG}@sha256:abc` },
     { name: 'core-api', tag: '2.3.0' },
     { name: 'bff-user', tag: '' },
   ]);

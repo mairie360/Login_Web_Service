@@ -56,7 +56,7 @@ RGAA_GID="$(id -g)"
 export RGAA_UID RGAA_GID
 
 echo "==> [1/4] Starting the stack and the RGAA run..."
-docker compose -f "$COMPOSE_FILE" up -d --pull missing
+docker compose -f "$COMPOSE_FILE" up -d
 UP_EXIT_CODE=$?
 
 echo "==> [2/4] Waiting for the end of the RGAA run..."
