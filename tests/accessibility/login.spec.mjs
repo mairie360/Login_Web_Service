@@ -18,6 +18,8 @@ for (const mode of modes) {
         await page.keyboard.press('Tab');
         await expect(page.getByLabel('Mot de passe', { exact: true })).toBeFocused();
         await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Afficher le mot de passe' })).toBeFocused();
+        await page.keyboard.press('Tab');
         await expect(page.getByRole('link', { name: 'Mot de passe oublié ?' })).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.getByRole('button', { name: 'Se connecter' })).toBeFocused();
@@ -54,7 +56,11 @@ for (const mode of modes) {
         await expect(page.getByLabel('Confirmer le mot de passe')).toHaveAttribute('autocomplete', 'new-password');
         await page.getByLabel('Nouveau mot de passe', { exact: true }).focus();
         await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Afficher le mot de passe' }).first()).toBeFocused();
+        await page.keyboard.press('Tab');
         await expect(page.getByLabel('Confirmer le mot de passe')).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(page.getByRole('button', { name: 'Afficher le mot de passe' }).last()).toBeFocused();
         await page.keyboard.press('Tab');
         await expect(page.getByRole('button', { name: 'Modifier le mot de passe' })).toBeFocused();
         await page.getByLabel('Nouveau mot de passe', { exact: true }).fill(updatedPassword);
@@ -132,7 +138,7 @@ for (const mode of modes) {
       test.use({ configured: false });
       test('unavailable configuration has meaningful standalone content', async ({ page, frontend }, info) => {
         await page.goto(frontend.origin);
-        await expect(page.getByRole('heading', { name: 'Connexion temporairement indisponible' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Connexion indisponible' })).toBeVisible();
         await expect(page.locator('form')).toHaveCount(0);
         await inspect(page, mode, info, 'configuration-unavailable');
       });
