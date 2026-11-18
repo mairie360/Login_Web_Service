@@ -41,3 +41,12 @@ test('MAIR-809 the secure-account step is a component folder with its hook, sub-
   assert.doesNotMatch(read(`${dir}/SecureAccountStep.tsx`), /fetch\(/, 'the component sends no request, its hook does');
   assert.ok(read('src/components/Login/Login.tsx').includes('./components/SecureAccountStep"'));
 });
+
+test('MAIR-811 the passkey sign-in is a component folder with its hook and WebAuthn helpers, mounted by the sign-in card', () => {
+  const dir = 'src/components/Login/components/PasskeySignIn';
+  for (const file of ['index.ts', 'PasskeySignIn.tsx', 'PasskeySignIn.test.jsx', 'use-passkey-sign-in.ts', 'webauthn.ts']) {
+    assert.ok(fs.existsSync(path.join(root, dir, file)), file);
+  }
+  assert.doesNotMatch(read(`${dir}/PasskeySignIn.tsx`), /fetch\(/, 'the component sends no request, its hook does');
+  assert.ok(read('src/components/Login/Login.tsx').includes('./components/PasskeySignIn"'));
+});
