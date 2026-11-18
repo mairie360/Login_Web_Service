@@ -459,6 +459,47 @@
         ],
         "type": "object"
       },
+      "AdministrationProjectWithoutGroup": {
+        "properties": {
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AdministrationProjectsWithoutGroup": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationProjectWithoutGroup"
+            },
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "projects"
+        ],
+        "type": "object"
+      },
       "AdministrationRole": {
         "properties": {
           "can_be_deleted": {
@@ -1389,7 +1430,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.8574431d4b6aeeccebb2d7711ce59272cf223950"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.c1f64d47ecf3f1b55b9541bd16b9e4ab527b5b40"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1676,6 +1717,24 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/KeycloakConsoleAccess"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/projects-without-group": {
+      "get": {
+        "operationId": "getAdminProjectsWithoutGroup",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministrationProjectsWithoutGroup"
                 }
               }
             },
