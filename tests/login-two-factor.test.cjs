@@ -137,3 +137,27 @@ test('MAIR-806 second step: in production the shared cookie domain must be confi
     process.env = environment;
   }
 });
+
+test('MAIR-806 second step: a 429 without Retry-After, a 4xx refusal and a timeout keep a French message', async () => {
+  global.fetch = async () => bffError(429);
+  const limited = await secondStep(stepRequest({ code: '123456' }));
+  assert.deepEqual([limited.status, limited.headers.get('retry-after'), await limited.json()], [429, null, { message: 'Trop de tentatives.' }]);
+
+  global.fetch = async () => bffError(403);
+  const forbidden = await secondStep(stepRequest({ code: '123456' }));
+  assert.deepEqual([forbidden.status, (await forbidden.json()).message], [403, 'La connexion a échoué. Veuillez réessayer.']);
+
+  global.fetch = async () => { throw Object.assign(new Error('timeout'), { name: 'TimeoutError' }); };
+  const slow = await secondStep(stepRequest({ code: '123456' }));
+  assert.deepEqual([slow.status, (await slow.json()).message], [504, 'Le service de connexion met trop de temps à répondre.']);
+});
+
+test('MAIR-806 login: a 202 that is not a second-step answer opens nothing and sets no cookie', async () => {
+  for (const body of [{ status: '2fa_required' }, { status: 'other', token: 'x' }, 'text', null]) {
+    global.fetch = async () => new Response(JSON.stringify(body), { status: 202, headers: { 'Content-Type': 'application/json' } });
+    const result = await login(loginRequest());
+    assert.equal(result.cookies.get('twoFactorToken'), undefined);
+    assert.equal(result.cookies.get('accessToken'), undefined);
+    assert.notEqual((await result.json()).requiresTwoFactor, true);
+  }
+});
