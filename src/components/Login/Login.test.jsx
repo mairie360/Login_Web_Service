@@ -87,4 +87,52 @@ describe('Login', () => {
       vi.unstubAllGlobals();
     });
   });
+
+  describe('MAIR-809 mandatory second factor on an account that has none', () => {
+    const reply = (status, body) => Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
+    const CODES = ['YOQM-3Y5S', '2ZXN-64EK', '7KNA-K6CC', 'FDGB-RIMD', 'WQZH-JFBF', 'HTET-ID44', 'K4CD-EDXC', '52CF-QF3J', '73KG-ZKVB', 'YHUI-67QX'];
+
+    it('business journey: password, enrolment, backup codes, then the requested module', async () => {
+      const navigate = vi.fn();
+      const answers = {
+        '/api/auth/login': () => reply(200, { requiresTwoFactorSetup: true, policy: { totp: true, passkey: false, backupCodes: true } }),
+        '/api/auth/2fa/setup': () => reply(200, { secret: 'EXAMPLEKEYEXAMPL', otpauthUri: 'otpauth://totp/Mairie360:a@b.test?secret=EXAMPLEKEYEXAMPL' }),
+        '/api/auth/2fa/confirm': () => reply(200, { success: true, backupCodes: CODES }),
+      };
+      const fetchMock = vi.fn((url) => answers[url]());
+      vi.stubGlobal('fetch', fetchMock);
+      render(<Login redirectUrl="https://projects.example.test/" navigate={navigate} />);
+      fireEvent.change(screen.getByLabelText(/Email professionnel/), { target: { value: 'alice@example.test' } });
+      fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'fixture-password' } });
+      fireEvent.submit(document.querySelector('form'));
+      expect(await screen.findByText('Ajoutez Mairie 360 à votre application')).toBeTruthy();
+      expect(screen.queryByLabelText(/Mot de passe/)).toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+      fireEvent.change(await screen.findByLabelText(/Code affiché par l’application/), { target: { value: '492039' } });
+      fireEvent.submit(document.querySelector('form'));
+      await screen.findByText('Enregistrez vos codes de secours');
+      expect(navigate).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByLabelText('J’ai enregistré mes codes de secours en lieu sûr.'));
+      fireEvent.submit(document.querySelector('form'));
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith('https://projects.example.test/'), { timeout: 3000 });
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/auth/login', '/api/auth/2fa/setup', '/api/auth/2fa/confirm']);
+      vi.unstubAllGlobals();
+    });
+
+    it('an enrolment session that is over shows the sign-in form again with its alert', async () => {
+      const answers = {
+        '/api/auth/login': () => reply(200, { requiresTwoFactorSetup: true }),
+        '/api/auth/2fa/setup': () => reply(401, { message: 'Votre session de connexion a expiré.', restartLogin: true }),
+      };
+      vi.stubGlobal('fetch', vi.fn((url) => answers[url]()));
+      render(<Login navigate={vi.fn()} />);
+      fireEvent.change(screen.getByLabelText(/Email professionnel/), { target: { value: 'alice@example.test' } });
+      fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'fixture-password' } });
+      fireEvent.submit(document.querySelector('form'));
+      expect((await screen.findByRole('alert')).textContent).toContain('Votre session de connexion a expiré.');
+      expect(screen.getByLabelText(/Mot de passe/)).toBeTruthy();
+      expect(screen.queryByText('Ajoutez Mairie 360 à votre application')).toBeNull();
+      vi.unstubAllGlobals();
+    });
+  });
 });

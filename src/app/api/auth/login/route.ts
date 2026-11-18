@@ -5,7 +5,7 @@ import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 import { createAuthSessionResponse } from "../../../../lib/auth-session";
 import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
-import { setTwoFactorToken } from "../../../../lib/two-factor-token";
+import { setTwoFactorSetupToken, setTwoFactorToken } from "../../../../lib/two-factor-token";
 
 type LoginBody = {
   email?: unknown;
@@ -70,10 +70,20 @@ function getAuthorizationToken(response: Response) {
 }
 
 
-function getSecondStepToken(body: unknown) {
+function getSecondStepToken(body: unknown, status: "2fa_required" | "2fa_setup_required" = "2fa_required") {
   if (typeof body !== "object" || body === null) return null;
-  const { status, token } = body as { status?: unknown; token?: unknown };
-  return status === "2fa_required" && typeof token === "string" && token ? token : null;
+  const { status: kind, token } = body as { status?: unknown; token?: unknown };
+  return kind === status && typeof token === "string" && token ? token : null;
+}
+
+/** What the administrator allows, carried by `2fa_setup_required`: three booleans, or nothing when the BFF sends none. */
+function getSetupPolicy(body: unknown) {
+  const policy = typeof body === "object" && body !== null ? (body as { policy?: unknown }).policy : undefined;
+  if (typeof policy !== "object" || policy === null) return undefined;
+  const { totp_allowed: totp, passkey_allowed: passkey, backup_codes_allowed: backupCodes } = policy as Record<string, unknown>;
+  return typeof totp === "boolean" && typeof passkey === "boolean" && typeof backupCodes === "boolean"
+    ? { totp, passkey, backupCodes }
+    : undefined;
 }
 
 function getPasswordChangeToken(body: unknown) {
@@ -188,6 +198,15 @@ export async function POST(request: NextRequest) {
     if (upstreamResponse.status === 202 && getSecondStepToken(upstreamBody)) {
       const response = NextResponse.json({ requiresTwoFactor: true }, { headers: { "Cache-Control": "no-store" } });
       setTwoFactorToken(response, getSecondStepToken(upstreamBody) as string);
+      return response;
+    }
+
+    // Mot de passe correct, mais l'instance impose la double authentification et le compte n'en a pas : l'agent doit
+    // l'enrôler avant toute session. Le jeton d'enrôlement reste côté serveur.
+    if (upstreamResponse.status === 202 && getSecondStepToken(upstreamBody, "2fa_setup_required")) {
+      const policy = getSetupPolicy(upstreamBody);
+      const response = NextResponse.json({ requiresTwoFactorSetup: true, ...(policy ? { policy } : {}) }, { headers: { "Cache-Control": "no-store" } });
+      setTwoFactorSetupToken(response, getSecondStepToken(upstreamBody, "2fa_setup_required") as string);
       return response;
     }
 

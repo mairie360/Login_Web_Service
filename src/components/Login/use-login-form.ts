@@ -2,6 +2,7 @@
 
 import { checkNewPassword } from "@mairie360/lib-components/shared";
 import { FormEvent, useRef, useState } from "react";
+import type { SetupPolicy } from "./components/SecureAccountStep";
 
 type LoginResponse = {
   success?: boolean;
@@ -9,6 +10,8 @@ type LoginResponse = {
   requiresPasswordChange?: boolean;
   restartLogin?: boolean;
   requiresTwoFactor?: boolean;
+  requiresTwoFactorSetup?: boolean;
+  policy?: SetupPolicy;
 };
 
 export type LoginFormOptions = {
@@ -28,6 +31,8 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [successMessage, setSuccessMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isTwoFactor, setIsTwoFactor] = useState(false);
+  const [setupPolicy, setSetupPolicy] = useState<SetupPolicy | undefined>(undefined);
+  const [isTwoFactorSetup, setIsTwoFactorSetup] = useState(false);
   const [errorDescription, setErrorDescription] = useState("");
   const submissionPending = useRef(false);
 
@@ -57,6 +62,14 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
       return;
     }
 
+    if (result.requiresTwoFactorSetup) {
+      setSetupPolicy(result.policy);
+      setIsTwoFactorSetup(true);
+      setPassword("");
+      setSuccessMessage("");
+      return;
+    }
+
     if (result.requiresPasswordChange) {
       setIsPasswordChange(true);
       setPassword("");
@@ -78,6 +91,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   // The login token is over (expired, or burnt by five wrong codes): the password is asked again.
   const restartAfterExpiredSession = () => {
     setIsTwoFactor(false);
+    setIsTwoFactorSetup(false);
     setPassword("");
     setSuccessMessage("");
     setErrorMessage("Votre session de connexion a expiré.");
@@ -178,11 +192,11 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
 
   return {
     email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation, setNewPasswordConfirmation,
-    isLoading, errorMessage, errorDescription, successMessage, isTwoFactor,
+    isLoading, errorMessage, errorDescription, successMessage, isTwoFactor, isTwoFactorSetup, setupPolicy,
     dismissError: () => { setErrorMessage(""); setErrorDescription(""); },
     completeTwoFactor: redirectAfterLogin,
     restartAfterExpiredSession,
-    backToCredentials: () => setIsTwoFactor(false),
+    backToCredentials: () => { setIsTwoFactor(false); setIsTwoFactorSetup(false); },
     onSubmit: isPasswordChange ? handlePasswordChange : handleLogin,
   };
 }

@@ -7,6 +7,7 @@ import { CredentialsFields } from "./components/CredentialsFields";
 import { LoginFeedback } from "./components/LoginFeedback";
 import { LoginSubmit } from "./components/LoginSubmit";
 import { PasswordChangeFields } from "./components/PasswordChangeFields";
+import { SecureAccountStep } from "./components/SecureAccountStep";
 import { TwoFactorStep } from "./components/TwoFactorStep";
 import { useLoginForm } from "./use-login-form";
 
@@ -21,6 +22,14 @@ const navigateToFront = (url: string) => window.location.assign(url);
 
 export default function Login({ redirectUrl, navigate = navigateToFront, passkeySlot }: LoginProps) {
   const form = useLoginForm({ redirectUrl, navigate });
+
+  if (form.isTwoFactorSetup) {
+    return (
+      <RecoveryLayout>
+        <SecureAccountStep policy={form.setupPolicy} onSuccess={form.completeTwoFactor} onSessionOver={form.restartAfterExpiredSession} onBack={form.backToCredentials} />
+      </RecoveryLayout>
+    );
+  }
 
   if (form.isTwoFactor) {
     return (

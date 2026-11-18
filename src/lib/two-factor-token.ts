@@ -4,6 +4,9 @@ import type { NextResponse } from "next/server";
 export const TWO_FACTOR_TOKEN_COOKIE = "twoFactorToken";
 export const TWO_FACTOR_TOKEN_MAX_AGE = 5 * 60;
 
+/** Enrolment token of an agent who must set up a second factor (`2fa_setup_required`): same lifetime, same scope. */
+export const TWO_FACTOR_SETUP_TOKEN_COOKIE = "twoFactorSetupToken";
+
 const cookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -17,4 +20,12 @@ export function setTwoFactorToken(response: NextResponse, token: string) {
 
 export function clearTwoFactorToken(response: NextResponse) {
   response.cookies.set(TWO_FACTOR_TOKEN_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
+}
+
+export function setTwoFactorSetupToken(response: NextResponse, token: string) {
+  response.cookies.set(TWO_FACTOR_SETUP_TOKEN_COOKIE, token, { ...cookieOptions(), maxAge: TWO_FACTOR_TOKEN_MAX_AGE });
+}
+
+export function clearTwoFactorSetupToken(response: NextResponse) {
+  response.cookies.set(TWO_FACTOR_SETUP_TOKEN_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
 }

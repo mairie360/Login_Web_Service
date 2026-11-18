@@ -6,24 +6,12 @@ import { rejectUnsafeAuthRequest } from "../../../../../lib/auth-request";
 import { createAuthSessionResponse } from "../../../../../lib/auth-session";
 import { readBffCookieSession } from "../../../../../lib/bff-session-cookies";
 import { clearTwoFactorToken, TWO_FACTOR_TOKEN_COOKIE } from "../../../../../lib/two-factor-token";
+import { bffFailure, bffUnreachable, NO_STORE, refusalPath, tooManyAttempts } from "../../../../../lib/bff-refusal";
 
 type SecondStepBody = { code?: unknown };
 
 // LoginTwoFactorView (bff-user-openapi) : le code fait 1 à 32 caractères.
 const CODE_MAX_LENGTH = 32;
-const NO_STORE = { "Cache-Control": "no-store" };
-
-type BffRefusal = { error?: { details?: { path?: unknown }[] } };
-
-/** Le BFF distingue, par `error.details[0].path`, le code de secours déjà utilisé et la session de connexion terminée. */
-async function refusalPath(response: Response): Promise<string | undefined> {
-  try {
-    const path = ((await response.json()) as BffRefusal).error?.details?.[0]?.path;
-    return typeof path === "string" ? path : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function sessionOver() {
   const response = NextResponse.json(
@@ -81,21 +69,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (upstreamResponse.status === 429) {
-      const retryAfter = Number.parseInt(upstreamResponse.headers.get("retry-after") ?? "", 10);
-      return NextResponse.json(
-        { message: "Trop de tentatives.", ...(Number.isFinite(retryAfter) && retryAfter > 0 ? { retryAfter } : {}) },
-        { status: 429, headers: { ...NO_STORE, ...(Number.isFinite(retryAfter) && retryAfter > 0 ? { "Retry-After": String(retryAfter) } : {}) } },
-      );
-    }
+    if (upstreamResponse.status === 429) return tooManyAttempts(upstreamResponse);
 
-    if (!upstreamResponse.ok) {
-      const unavailable = upstreamResponse.status >= 500;
-      return NextResponse.json(
-        { message: unavailable ? "Le service de connexion est indisponible. Veuillez réessayer." : "La connexion a échoué. Veuillez réessayer." },
-        { status: upstreamResponse.status, headers: NO_STORE },
-      );
-    }
+    if (!upstreamResponse.ok) return bffFailure(upstreamResponse.status, "La connexion a échoué. Veuillez réessayer.");
 
     const cookieSession = readBffCookieSession(upstreamResponse);
     if (!cookieSession?.accessToken || !cookieSession.refreshToken) {
@@ -105,10 +81,6 @@ export async function POST(request: NextRequest) {
     clearTwoFactorToken(response);
     return response;
   } catch (error) {
-    const timedOut = error instanceof Error && error.name === "TimeoutError";
-    return NextResponse.json(
-      { message: timedOut ? "Le service de connexion met trop de temps à répondre." : "Le service de connexion est indisponible." },
-      { status: timedOut ? 504 : 502, headers: NO_STORE },
-    );
+    return bffUnreachable(error);
   }
 }
