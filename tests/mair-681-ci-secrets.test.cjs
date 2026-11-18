@@ -160,6 +160,15 @@ test('MAIR-681: the pull requests get their GDPR review', () => {
   assert.ok(cicdCalls.some((job) => callee(job) === 'gdpr-pr-cicd.yml'));
 });
 
+test('MAIR-681: the nightly promotions run as dry runs', () => {
+  const live = cicdCalls.filter(
+    (job) =>
+      (callee(job) ?? '').endsWith('[dry-run]') &&
+      !job.lines.some((line) => /^ {6}dry_run:\s*['"]?true['"]?$/.test(line)),
+  );
+  assert.deepEqual(live.map((job) => job.where), []);
+});
+
 test('MAIR-681: the release journal is no longer tracked', () => {
   const tracked = execFileSync('git', ['ls-files', '--', 'RELEASE_JOURNAL.md'], { cwd: root, encoding: 'utf8' });
   assert.equal(tracked.trim(), '');
