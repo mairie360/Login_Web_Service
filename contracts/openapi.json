@@ -1361,6 +1361,9 @@
       },
       "TwoFactorRequiredResponse": {
         "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/TwoFactorRequiredResponsePolicy"
+          },
           "status": {
             "$ref": "#/components/schemas/TwoFactorRequiredResponseStatus"
           },
@@ -1371,6 +1374,25 @@
         "required": [
           "status",
           "token"
+        ],
+        "type": "object"
+      },
+      "TwoFactorRequiredResponsePolicy": {
+        "properties": {
+          "backup_codes_allowed": {
+            "type": "boolean"
+          },
+          "passkey_allowed": {
+            "type": "boolean"
+          },
+          "totp_allowed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "totp_allowed",
+          "passkey_allowed",
+          "backup_codes_allowed"
         ],
         "type": "object"
       },
@@ -1430,7 +1452,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.c1f64d47ecf3f1b55b9541bd16b9e4ab527b5b40"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.99f7c14eaa8d9921dc3678588ff397e5f61b01de"
   },
   "openapi": "3.1.0",
   "paths": {

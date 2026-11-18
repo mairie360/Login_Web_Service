@@ -1,3 +1,3 @@
 // Test environment ownership is declared here, independently of coverage scores.
 // Additional React hooks can be listed explicitly after rendered interaction tests exist.
-module.exports = { reactSources: ["src/components/Login/components/TwoFactorStep/use-two-factor-step.ts", "src/components/Login/use-login-form.ts"], serverTsxSources: [] };
+module.exports = { reactSources: ["src/components/Login/components/TwoFactorStep/use-two-factor-step.ts", "src/components/Login/use-login-form.ts", "src/components/Login/components/SecureAccountStep/use-secure-account-step.ts"], serverTsxSources: [] };

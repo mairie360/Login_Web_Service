@@ -28,3 +28,16 @@ test('MAIR-608 every page component is a folder with its index and co-located te
     assert.ok(fs.existsSync(path.join(root, 'src/components', name, `${name}.test.jsx`)), `${name}/${name}.test.jsx`);
   }
 });
+
+test('MAIR-809 the secure-account step is a component folder with its hook, sub-components and co-located test', () => {
+  const dir = 'src/components/Login/components/SecureAccountStep';
+  for (const file of ['index.ts', 'SecureAccountStep.tsx', 'SecureAccountStep.test.jsx', 'use-secure-account-step.ts']) {
+    assert.ok(fs.existsSync(path.join(root, dir, file)), file);
+  }
+  for (const part of ['AuthenticatorSetup', 'BackupCodes', 'AccountSecured', 'PasskeyOnlyNotice']) {
+    assert.ok(read(`${dir}/SecureAccountStep.tsx`).includes(`./components/${part}"`), `composes ${part}`);
+    assert.ok(fs.existsSync(path.join(root, dir, 'components', part, 'index.ts')), `${part}/index.ts`);
+  }
+  assert.doesNotMatch(read(`${dir}/SecureAccountStep.tsx`), /fetch\(/, 'the component sends no request, its hook does');
+  assert.ok(read('src/components/Login/Login.tsx').includes('./components/SecureAccountStep"'));
+});
