@@ -105,3 +105,35 @@ test('MAIR-806 second step: BFF failures keep a French message and their status'
   delete process.env.BFF_USER_API_URL;
   assert.equal((await secondStep(stepRequest({ code: '123456' }))).status, 503);
 });
+
+test('MAIR-806 second step: an unreadable request body, a 401 that is not JSON and a BFF answer without session cookies', async () => {
+  let called = false;
+  global.fetch = async () => { called = true; return Response.json({}); };
+  const unreadable = new NextRequest('http://localhost/api/auth/login/2fa', { method: 'POST', headers: headers('twoFactorToken=login-token-fixture'), body: '{not json' });
+  const refused = await secondStep(unreadable);
+  assert.deepEqual([refused.status, (await refused.json()).message], [400, 'La requête est invalide.']);
+  assert.equal(called, false);
+
+  global.fetch = async () => new Response('Invalid verification code.', { status: 401, headers: { 'Content-Type': 'text/plain' } });
+  const wrong = await secondStep(stepRequest({ code: '000000' }));
+  assert.deepEqual([wrong.status, (await wrong.json()).reason], [401, 'wrong-code']);
+
+  global.fetch = async () => Response.json({ message: 'Logged in successfully' });
+  const noSession = await secondStep(stepRequest({ code: '123456' }));
+  assert.equal(noSession.status, 502);
+  assert.equal(noSession.cookies.get('accessToken'), undefined);
+});
+
+test('MAIR-806 second step: in production the shared cookie domain must be configured before the BFF is called', async () => {
+  const environment = process.env;
+  let called = false;
+  global.fetch = async () => { called = true; return Response.json({}); };
+  process.env = { ...environment, NODE_ENV: 'production', COOKIE_DOMAIN: '' };
+  try {
+    const result = await secondStep(stepRequest({ code: '123456' }));
+    assert.equal(result.status, 503);
+    assert.equal(called, false);
+  } finally {
+    process.env = environment;
+  }
+});

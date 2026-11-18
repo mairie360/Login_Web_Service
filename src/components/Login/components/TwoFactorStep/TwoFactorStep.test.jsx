@@ -119,3 +119,30 @@ describe('TwoFactorStep (F6)', () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 });
+
+describe('TwoFactorStep failures (MAIR-806)', () => {
+  it('shows the French message of a BFF failure and keeps the field usable', async () => {
+    setup(vi.fn(() => reply(503, { message: 'Le service de connexion est indisponible. Veuillez réessayer.' })));
+    type('Code de vérification', '123456');
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toContain('Le service de connexion est indisponible.');
+    expect(screen.getByLabelText(/Code de vérification/).disabled).toBe(false);
+  });
+
+  it('tells the agent when the service cannot be reached, and lets them retry', async () => {
+    setup(vi.fn(() => Promise.reject(new Error('network down'))));
+    type('Code de vérification', '123456');
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toContain('Impossible de joindre le service de connexion.');
+    expect(screen.getByRole('button', { name: 'Vérifier' }).disabled).toBe(false);
+  });
+
+  it('dismisses the alert', async () => {
+    setup(vi.fn(() => reply(401, { message: 'Code incorrect.', reason: 'wrong-code' })));
+    type('Code de vérification', '000000');
+    submit();
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: /fermer|Close/i }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
