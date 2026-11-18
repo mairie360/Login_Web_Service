@@ -459,6 +459,47 @@
         ],
         "type": "object"
       },
+      "AdministrationProjectWithoutGroup": {
+        "properties": {
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AdministrationProjectsWithoutGroup": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationProjectWithoutGroup"
+            },
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "total",
+          "projects"
+        ],
+        "type": "object"
+      },
       "AdministrationRole": {
         "properties": {
           "can_be_deleted": {
@@ -891,6 +932,22 @@
         "required": [],
         "type": "object"
       },
+      "KeycloakConsoleAccess": {
+        "properties": {
+          "expires_in": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "expires_in"
+        ],
+        "type": "object"
+      },
       "KeycloakLoginView": {
         "properties": {
           "code": {
@@ -922,6 +979,25 @@
           "code",
           "redirect_uri",
           "device_info"
+        ],
+        "type": "object"
+      },
+      "LoginTwoFactorView": {
+        "properties": {
+          "code": {
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          },
+          "token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "code"
         ],
         "type": "object"
       },
@@ -973,6 +1049,53 @@
             "type": "string"
           }
         },
+        "required": [],
+        "type": "object"
+      },
+      "PasskeyLoginOptionsResponse": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/PasskeyLoginOptionsResponseOptions"
+          }
+        },
+        "required": [
+          "id",
+          "options"
+        ],
+        "type": "object"
+      },
+      "PasskeyLoginOptionsResponseOptions": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "PasskeyLoginView": {
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/PasskeyLoginViewCredential"
+          },
+          "device_info": {
+            "maxLength": 512,
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "credential",
+          "device_info"
+        ],
+        "type": "object"
+      },
+      "PasskeyLoginViewCredential": {
+        "properties": {},
         "required": [],
         "type": "object"
       },
@@ -1146,6 +1269,150 @@
         ],
         "type": "object"
       },
+      "TwoFactorEnrolmentCompletedResponse": {
+        "properties": {
+          "backup_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "backup_codes"
+        ],
+        "type": "object"
+      },
+      "TwoFactorEnrolmentResponse": {
+        "properties": {
+          "otpauth_uri": {
+            "type": "string"
+          },
+          "secret": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret",
+          "otpauth_uri"
+        ],
+        "type": "object"
+      },
+      "TwoFactorPolicy": {
+        "properties": {
+          "backup_codes_allowed": {
+            "type": "boolean"
+          },
+          "passkey_allowed": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "totp_allowed": {
+            "type": "boolean"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "updated_by": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "required",
+          "totp_allowed",
+          "passkey_allowed",
+          "backup_codes_allowed",
+          "updated_by",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "TwoFactorPolicyUpdate": {
+        "properties": {
+          "backup_codes_allowed": {
+            "type": "boolean"
+          },
+          "passkey_allowed": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "totp_allowed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "required",
+          "totp_allowed",
+          "passkey_allowed",
+          "backup_codes_allowed"
+        ],
+        "type": "object"
+      },
+      "TwoFactorRequiredResponse": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TwoFactorRequiredResponseStatus"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "token"
+        ],
+        "type": "object"
+      },
+      "TwoFactorRequiredResponseStatus": {
+        "enum": [
+          "2fa_required",
+          "2fa_setup_required"
+        ],
+        "type": "string"
+      },
+      "TwoFactorSetupConfirmView": {
+        "properties": {
+          "code": {
+            "maxLength": 32,
+            "minLength": 1,
+            "type": "string"
+          },
+          "token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "code"
+        ],
+        "type": "object"
+      },
+      "TwoFactorSetupTokenView": {
+        "properties": {
+          "token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "type": "object"
+      },
       "UserIdParams": {
         "properties": {
           "userId": {
@@ -1163,7 +1430,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@1.1.0"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.c1f64d47ecf3f1b55b9541bd16b9e4ab527b5b40"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1440,6 +1707,42 @@
         }
       }
     },
+    "/admin/keycloak/console-access": {
+      "post": {
+        "operationId": "postAdminKeycloakConsoleAccess",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeycloakConsoleAccess"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/projects-without-group": {
+      "get": {
+        "operationId": "getAdminProjectsWithoutGroup",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministrationProjectsWithoutGroup"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/admin/roles": {
       "get": {
         "operationId": "getAdminRoles",
@@ -1690,6 +1993,64 @@
         }
       }
     },
+    "/admin/two-factor-policy": {
+      "get": {
+        "operationId": "getAdminTwoFactorPolicy",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TwoFactorPolicy"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "put": {
+        "operationId": "putAdminTwoFactorPolicy",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorPolicyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TwoFactorPolicy"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/admin/users": {
       "get": {
         "operationId": "getAdminUsers",
@@ -1832,6 +2193,33 @@
         }
       }
     },
+    "/admin/users/{userId}/2fa": {
+      "delete": {
+        "operationId": "deleteAdminUsersUserId2fa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/admin/users/{userId}/password": {
       "patch": {
         "operationId": "patchAdminUsersUserIdPassword",
@@ -1941,6 +2329,62 @@
         }
       }
     },
+    "/auth/2fa/confirm": {
+      "post": {
+        "operationId": "postAuth2faConfirm",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorSetupConfirmView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorEnrolmentCompletedResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "operationId": "postAuth2faSetup",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorSetupTokenView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorEnrolmentResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/auth/force_change_password": {
       "post": {
         "operationId": "postAuthForceChangePassword",
@@ -2040,6 +2484,41 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthSessionResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TwoFactorRequiredResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/login/2fa": {
+      "post": {
+        "operationId": "postAuthLogin2fa",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginTwoFactorView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/AuthSessionResponse"
                 }
               }
@@ -2069,6 +2548,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/passkey": {
+      "post": {
+        "operationId": "postAuthPasskey",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/passkey/options": {
+      "post": {
+        "operationId": "postAuthPasskeyOptions",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyLoginOptionsResponse"
                 }
               }
             },
@@ -2124,7 +2649,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthSessionResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TwoFactorRequiredResponse"
+                    }
+                  ]
                 }
               }
             },

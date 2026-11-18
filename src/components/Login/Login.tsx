@@ -7,6 +7,7 @@ import { CredentialsFields } from "./components/CredentialsFields";
 import { LoginFeedback } from "./components/LoginFeedback";
 import { LoginSubmit } from "./components/LoginSubmit";
 import { PasswordChangeFields } from "./components/PasswordChangeFields";
+import { TwoFactorStep } from "./components/TwoFactorStep";
 import { useLoginForm } from "./use-login-form";
 
 type LoginProps = {
@@ -20,6 +21,14 @@ const navigateToFront = (url: string) => window.location.assign(url);
 
 export default function Login({ redirectUrl, navigate = navigateToFront, passkeySlot }: LoginProps) {
   const form = useLoginForm({ redirectUrl, navigate });
+
+  if (form.isTwoFactor) {
+    return (
+      <RecoveryLayout>
+        <TwoFactorStep onSuccess={form.completeTwoFactor} onSessionOver={form.restartAfterExpiredSession} onBack={form.backToCredentials} />
+      </RecoveryLayout>
+    );
+  }
 
   return (
     <RecoveryLayout>
@@ -45,7 +54,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, passkey
           <CredentialsFields email={form.email} password={form.password} disabled={form.isLoading} onEmailChange={form.setEmail} onPasswordChange={form.setPassword} />
         )}
         {!form.isPasswordChange && <LinkButton label="Mot de passe oublié ?" href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} size="s" className="self-start" />}
-        <LoginFeedback error={form.errorMessage} success={form.successMessage} onDismissError={form.dismissError} />
+        <LoginFeedback error={form.errorMessage} errorDescription={form.errorDescription} success={form.successMessage} onDismissError={form.dismissError} />
         <LoginSubmit loading={form.isLoading} passwordChange={form.isPasswordChange} />
         {!form.isPasswordChange && passkeySlot && <><Divider label="ou" />{passkeySlot}</>}
       </form>

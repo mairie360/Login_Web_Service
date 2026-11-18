@@ -16,14 +16,16 @@ Business domain: Identity and administration.
 - Sign-in and mandatory-password-change inputs are frozen while a request is pending; duplicate submissions are ignored synchronously and failed replies clear stale success feedback.
 - Standalone sign-in, first-password-change, unavailable-configuration screens: no application AppShell, header, sidebar or footer before returning to an authenticated module.
 - First-sign-in flow with a temporary token and a new password. Since MAIR-875/MAIR-888 the front refuses, before any call, a new password under 12 characters or without a digit or a letter (`checkNewPassword` of lib-components); the API still accepts 8 characters until MAIR-757.
-- V2 screens (MAIR-826): every page is built from lib-components (`Logo`, `Card`, `Footer`, `EmailField`, `PasswordField`, `NewPasswordField`, `LinkButton`, `BackButton`, alerts), the forgot-password and reset-password pages follow the mock-up (F3, F4), and the unavailable screen is « Connexion indisponible » (F0). The product fronts are always light (MAIR-933). Two-factor authentication and passkeys are not part of this front yet (MAIR-806, MAIR-809, MAIR-811): `Login` only exposes a `passkeySlot`.
+- V2 screens (MAIR-826): every page is built from lib-components (`Logo`, `Card`, `Footer`, `EmailField`, `PasswordField`, `NewPasswordField`, `LinkButton`, `BackButton`, alerts), the forgot-password and reset-password pages follow the mock-up (F3, F4), and the unavailable screen is « Connexion indisponible » (F0). The product fronts are always light (MAIR-933). Passkeys are not part of this front yet (MAIR-809, MAIR-811): `Login` only exposes a `passkeySlot`.
+- Second step of a protected account (MAIR-806, mock-up F6): « Code de vérification » (6 digits of the authenticator application) or « Code de secours » (`XXXX-XXXX`), with the mock-up states: incomplete code (no request), wrong code, too many attempts (field and button disabled for the `Retry-After` delay), spent backup code, and a login session that is over (back to the sign-in form with « Votre session de connexion a expiré. »).
 - Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Dashboard module.
 
 ## Typical workflow
 
 1. Enter credentials and submit the form.
 2. If the server requires a password change, complete that flow and sign in again.
-3. Access the configured module after the session cookie is created.
+3. If the account is protected by a second factor, type the code of the authenticator application or a backup code.
+4. Access the configured module after the session cookie is created.
 
 ## Role within Mairie360
 

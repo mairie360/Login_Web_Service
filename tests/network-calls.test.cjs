@@ -117,6 +117,7 @@ test('server-side BFF calls go through bffUserUrl to operations declared in the 
   assert.deepEqual(serverCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/app/api/auth/force-change-password/route.ts POST /auth/force_change_password',
     'src/app/api/auth/forgot-password/route.ts POST /auth/forgot_password',
+    'src/app/api/auth/login/2fa/route.ts POST /auth/login/2fa',
     'src/app/api/auth/login/route.ts POST /auth/login',
     'src/app/api/auth/reset-password/route.ts POST /auth/reset_password',
   ]);
@@ -137,6 +138,7 @@ test('browser calls stay same-origin and land on an existing route handler or a 
   }
   assert.deepEqual(browserCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/components/ForgotPassword/ForgotPassword.tsx POST /api/auth/forgot-password',
+    'src/components/Login/components/TwoFactorStep/use-two-factor-step.ts POST /api/auth/login/2fa',
     'src/components/Login/use-login-form.ts POST /api/auth/force_change_password',
     'src/components/Login/use-login-form.ts POST /api/auth/login',
     'src/components/ResetPassword/ResetPassword.tsx POST /api/auth/reset-password',
