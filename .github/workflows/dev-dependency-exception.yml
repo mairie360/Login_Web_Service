@@ -19,9 +19,9 @@ permissions:
 jobs:
   dev_exception:
     name: Dev dependency exception
-    uses: mairie360/CICD/.github/workflows/frontend-dev-exception.yml@d93c55255ddbe42244a816b7625e3731de7c66f0 # v5.11.0
+    uses: mairie360/CICD/.github/workflows/frontend-dev-exception.yml@ea2119852b44e4b09dd910ef29906491822062f6 # v5.11.2
     with:
       package_name: login-front
-      cicd_ref: d93c55255ddbe42244a816b7625e3731de7c66f0 # v5.11.0
+      cicd_ref: ea2119852b44e4b09dd910ef29906491822062f6 # v5.11.2
       node_version: "24.22.1"
       reason: ${{ inputs.reason }}
