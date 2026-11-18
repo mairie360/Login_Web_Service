@@ -54,7 +54,7 @@ jobs:
       contents: read
       packages: write
       actions: read
-    uses: mairie360/CICD/.github/workflows/promote-staging.yml@d93c55255ddbe42244a816b7625e3731de7c66f0 # v5.11.0
+    uses: mairie360/CICD/.github/workflows/promote-staging.yml@ea2119852b44e4b09dd910ef29906491822062f6 # v5.11.2
     with:
       stack: fronts
       package_name: login-front
@@ -73,7 +73,7 @@ jobs:
       contents: write
       packages: write
       actions: read
-    uses: mairie360/CICD/.github/workflows/promote-prod.yml@d93c55255ddbe42244a816b7625e3731de7c66f0 # v5.11.0
+    uses: mairie360/CICD/.github/workflows/promote-prod.yml@ea2119852b44e4b09dd910ef29906491822062f6 # v5.11.2
     with:
       stack: fronts
       package_name: login-front
