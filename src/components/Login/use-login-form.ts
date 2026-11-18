@@ -8,6 +8,7 @@ type LoginResponse = {
   message?: string;
   requiresPasswordChange?: boolean;
   restartLogin?: boolean;
+  requiresTwoFactor?: boolean;
 };
 
 export type LoginFormOptions = {
@@ -26,6 +27,8 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isTwoFactor, setIsTwoFactor] = useState(false);
+  const [errorDescription, setErrorDescription] = useState("");
   const submissionPending = useRef(false);
 
   const redirectAfterLogin = () => {
@@ -47,6 +50,13 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
     });
     const result = (await response.json()) as LoginResponse;
 
+    if (result.requiresTwoFactor) {
+      setIsTwoFactor(true);
+      setPassword("");
+      setSuccessMessage("");
+      return;
+    }
+
     if (result.requiresPasswordChange) {
       setIsPasswordChange(true);
       setPassword("");
@@ -65,10 +75,20 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
     redirectAfterLogin();
   };
 
+  // The login token is over (expired, or burnt by five wrong codes): the password is asked again.
+  const restartAfterExpiredSession = () => {
+    setIsTwoFactor(false);
+    setPassword("");
+    setSuccessMessage("");
+    setErrorMessage("Votre session de connexion a expiré.");
+    setErrorDescription("Saisissez de nouveau votre email et votre mot de passe.");
+  };
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submissionPending.current) return;
     setErrorMessage("");
+    setErrorDescription("");
     setSuccessMessage("");
 
     if (!email.trim() || !password) {
@@ -158,8 +178,11 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
 
   return {
     email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation, setNewPasswordConfirmation,
-    isLoading, errorMessage, successMessage,
-    dismissError: () => setErrorMessage(""),
+    isLoading, errorMessage, errorDescription, successMessage, isTwoFactor,
+    dismissError: () => { setErrorMessage(""); setErrorDescription(""); },
+    completeTwoFactor: redirectAfterLogin,
+    restartAfterExpiredSession,
+    backToCredentials: () => setIsTwoFactor(false),
     onSubmit: isPasswordChange ? handlePasswordChange : handleLogin,
   };
 }

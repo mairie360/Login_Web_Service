@@ -5,6 +5,7 @@ import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 import { createAuthSessionResponse } from "../../../../lib/auth-session";
 import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
+import { setTwoFactorToken } from "../../../../lib/two-factor-token";
 
 type LoginBody = {
   email?: unknown;
@@ -68,6 +69,12 @@ function getAuthorizationToken(response: Response) {
   return match?.[1] ?? null;
 }
 
+
+function getSecondStepToken(body: unknown) {
+  if (typeof body !== "object" || body === null) return null;
+  const { status, token } = body as { status?: unknown; token?: unknown };
+  return status === "2fa_required" && typeof token === "string" && token ? token : null;
+}
 
 function getPasswordChangeToken(body: unknown) {
   if (typeof body !== "object" || body === null) {
@@ -175,6 +182,13 @@ export async function POST(request: NextRequest) {
 
         return response;
       }
+    }
+
+    // Compte protégé : mot de passe correct, aucune session ; le jeton de connexion ne quitte pas le serveur.
+    if (upstreamResponse.status === 202 && getSecondStepToken(upstreamBody)) {
+      const response = NextResponse.json({ requiresTwoFactor: true }, { headers: { "Cache-Control": "no-store" } });
+      setTwoFactorToken(response, getSecondStepToken(upstreamBody) as string);
+      return response;
     }
 
     if (!upstreamResponse.ok) {
