@@ -982,6 +982,20 @@
         ],
         "type": "object"
       },
+      "LoginSessionResponse": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "passkey_offer": {
+            "$ref": "#/components/schemas/PasskeyOffer"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
       "LoginTwoFactorView": {
         "properties": {
           "code": {
@@ -1095,6 +1109,120 @@
         "type": "object"
       },
       "PasskeyLoginViewCredential": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "PasskeyOffer": {
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "registered": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "allowed",
+          "registered"
+        ],
+        "type": "object"
+      },
+      "PasskeyRegisterOptionsResponse": {
+        "properties": {
+          "options": {
+            "$ref": "#/components/schemas/PasskeyRegisterOptionsResponseOptions"
+          }
+        },
+        "required": [
+          "options"
+        ],
+        "type": "object"
+      },
+      "PasskeyRegisterOptionsResponseOptions": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "PasskeyRegisterView": {
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/PasskeyRegisterViewCredential"
+          },
+          "label": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "credential"
+        ],
+        "type": "object"
+      },
+      "PasskeyRegisterViewCredential": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "PasskeyResponse": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "provider",
+          "created_at",
+          "last_used_at"
+        ],
+        "type": "object"
+      },
+      "PasskeySetupView": {
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/PasskeySetupViewCredential"
+          },
+          "label": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "label",
+          "credential"
+        ],
+        "type": "object"
+      },
+      "PasskeySetupViewCredential": {
         "properties": {},
         "required": [],
         "type": "object"
@@ -1452,7 +1580,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.99f7c14eaa8d9921dc3678588ff397e5f61b01de"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.50bc20ccaa49c7112a4debc9049f4b34aaeb8978"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2508,7 +2636,7 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/AuthSessionResponse"
+                      "$ref": "#/components/schemas/LoginSessionResponse"
                     },
                     {
                       "$ref": "#/components/schemas/TwoFactorRequiredResponse"
@@ -2541,7 +2669,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponse"
+                  "$ref": "#/components/schemas/LoginSessionResponse"
                 }
               }
             },
@@ -2616,6 +2744,62 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PasskeyLoginOptionsResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/passkey/setup": {
+      "post": {
+        "operationId": "postAuthPasskeySetup",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeySetupView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/auth/passkey/setup/options": {
+      "post": {
+        "operationId": "postAuthPasskeySetupOptions",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorSetupTokenView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyRegisterOptionsResponse"
                 }
               }
             },
@@ -2744,6 +2928,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/user/me/passkeys": {
+      "post": {
+        "operationId": "postUserMePasskeys",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/user/me/passkeys/options": {
+      "post": {
+        "operationId": "postUserMePasskeysOptions",
+        "parameters": [],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyRegisterOptionsResponse"
                 }
               }
             },

@@ -4,7 +4,8 @@ import { BackButton, Body, Button, PageTitle, RadioGroup } from "@mairie360/lib-
 import { AccountSecured } from "./components/AccountSecured";
 import { AuthenticatorSetup } from "./components/AuthenticatorSetup";
 import { BackupCodes } from "./components/BackupCodes";
-import { PasskeyOnlyNotice } from "./components/PasskeyOnlyNotice";
+import { PasskeySetup } from "./components/PasskeySetup";
+import { PasskeyUnsupported } from "./components/PasskeyUnsupported";
 import { useSecureAccountStep } from "./use-secure-account-step";
 import type { SecureAccountMethod, SecureAccountOptions } from "./use-secure-account-step";
 
@@ -39,7 +40,22 @@ export function SecureAccountStep({ policy, onSuccess, onSessionOver, onBack }: 
       />
     );
   }
-  if (step.stage === "passkey-only") return <PasskeyOnlyNotice onBack={step.hasChoice ? step.backToChoice : onBack} />;
+  if (step.stage === "passkey") {
+    return (
+      <PasskeySetup
+        label={step.label}
+        onLabelChange={step.setLabel}
+        fieldError={step.labelError}
+        alert={step.alert}
+        onDismissAlert={step.dismissAlert}
+        isSubmitting={step.isSubmitting}
+        onSubmit={step.onCreatePasskey}
+        backLabel={step.hasChoice ? "Choisir une autre méthode" : "Retour à la connexion"}
+        onBack={step.hasChoice ? step.backToChoice : onBack}
+      />
+    );
+  }
+  if (step.stage === "passkey-unsupported") return <PasskeyUnsupported onBack={onBack} />;
 
   return (
     <form method="post" onSubmit={step.onChoose} className="flex w-full flex-col items-stretch gap-5" noValidate>
