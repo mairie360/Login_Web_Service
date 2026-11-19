@@ -105,7 +105,7 @@ test('MAIR-811 passkey: without a user agent the device is « Navigateur inconnu
 
 test('MAIR-811 passkey: a malformed request never reaches the BFF', async () => {
   global.fetch = async () => { throw new Error('the BFF must not be called'); };
-  for (const body of ['not json', { credential: CREDENTIAL }, { id: 'x'.repeat(513), credential: CREDENTIAL }, { id: 'ceremony-1' }, { id: 'ceremony-1', credential: 'text' }, { id: 'ceremony-1', credential: null }, { id: 'ceremony-1', credential: [] }, { id: 7, credential: CREDENTIAL }]) {
+  for (const body of ['not json', null, [], 'null', { credential: CREDENTIAL }, { id: 'x'.repeat(513), credential: CREDENTIAL }, { id: 'ceremony-1' }, { id: 'ceremony-1', credential: 'text' }, { id: 'ceremony-1', credential: null }, { id: 'ceremony-1', credential: [] }, { id: 7, credential: CREDENTIAL }]) {
     const result = await passkey(answerRequest(body));
     assert.equal(result.status, 400, JSON.stringify(body).slice(0, 60));
     assert.deepEqual(await result.json(), { message: 'La requête est invalide.' });

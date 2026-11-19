@@ -46,6 +46,32 @@ describe('MAIR-811 F5 passkey sign-in', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('a re-render of Login (new onSuccess each time) neither aborts nor restarts the conditional ceremony', async () => {
+    stubBrowser({ conditional: true });
+    const { rerender } = render(<PasskeySignIn onSuccess={() => {}} />);
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(1));
+    const signal = get.mock.calls[0][0].signal;
+
+    rerender(<PasskeySignIn onSuccess={() => {}} />);
+    rerender(<PasskeySignIn onSuccess={() => {}} />);
+    await act(async () => {});
+
+    expect(signal.aborted).toBe(false);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls.filter(([url]) => url === '/api/auth/passkey/options')).toHaveLength(1);
+  });
+
+  it('calls the latest onSuccess once the passkey signed the agent in', async () => {
+    stubBrowser({ conditional: true });
+    const first = vi.fn();
+    const latest = vi.fn();
+    const { rerender } = render(<PasskeySignIn onSuccess={first} />);
+    rerender(<PasskeySignIn onSuccess={latest} />);
+
+    await waitFor(() => expect(latest).toHaveBeenCalledTimes(1));
+    expect(first).not.toHaveBeenCalled();
+  });
+
   it('offers the « ou » separator and the passkey button once the challenge is available', async () => {
     stubBrowser();
     render(<PasskeySignIn onSuccess={vi.fn()} />);

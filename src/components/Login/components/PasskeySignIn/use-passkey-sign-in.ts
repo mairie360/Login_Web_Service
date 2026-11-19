@@ -31,6 +31,12 @@ export function usePasskeySignIn(onSuccess: () => void) {
   const [error, setError] = useState("");
   const conditional = useRef<AbortController | null>(null);
   const pending = useRef(false);
+  // `Login` passes a function recreated on every render: read it through a ref so a keystroke in the e-mail field
+  // does not rebuild `finish` and `ask`, which would abort and restart the conditional ceremony.
+  const onSuccessRef = useRef(onSuccess);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
 
   // The signed answer goes to the front, which opens the session. Returns true once the agent is signed in.
   const finish = useCallback(async (ceremony: Ceremony, credential: PublicKeyCredential) => {
@@ -40,13 +46,13 @@ export function usePasskeySignIn(onSuccess: () => void) {
       body: JSON.stringify({ id: ceremony.id, credential: credentialToJson(credential) }),
     });
     if (response.ok) {
-      onSuccess();
+      onSuccessRef.current();
       return;
     }
     const body = (await response.json().catch(() => ({}))) as { message?: string; reason?: string };
     if (response.status === 503) setAvailability("unavailable");
     else setError(body.message ?? START_FAILED);
-  }, [onSuccess]);
+  }, []);
 
   const ask = useCallback(async (ceremony: Ceremony, mediation?: CredentialMediationRequirement, signal?: AbortSignal) => {
     const credential = (await navigator.credentials.get({ publicKey: requestOptionsFromJson(ceremony.options), ...(mediation ? { mediation } : {}), ...(signal ? { signal } : {}) })) as PublicKeyCredential | null;

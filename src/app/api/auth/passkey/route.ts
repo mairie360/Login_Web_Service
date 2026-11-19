@@ -27,6 +27,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "La requête est invalide." }, { status: 400, headers: NO_STORE });
   }
 
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json({ message: "La requête est invalide." }, { status: 400, headers: NO_STORE });
+  }
+
   const id = typeof body.id === "string" ? body.id : "";
   const credential = body.credential;
   if (!id || id.length > CEREMONY_ID_MAX_LENGTH || typeof credential !== "object" || credential === null || Array.isArray(credential)) {
