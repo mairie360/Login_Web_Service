@@ -136,3 +136,65 @@ describe('Login', () => {
     });
   });
 });
+
+describe('MAIR-811 F5 journey: sign in with a passkey from the sign-in card', () => {
+  const OPTIONS = { id: 'ceremony-1', options: { publicKey: { challenge: 'q1w2e3r4', userVerification: 'required' } } };
+  const bytes = (...values) => new Uint8Array(values).buffer;
+  const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+  const stubPasskeys = (answer) => {
+    function PublicKeyCredential() {}
+    PublicKeyCredential.isConditionalMediationAvailable = async () => false;
+    window.PublicKeyCredential = PublicKeyCredential;
+    const get = vi.fn(async () => ({
+      id: 'k3m9x7p2', rawId: bytes(1), type: 'public-key', getClientExtensionResults: () => ({}),
+      response: { authenticatorData: bytes(2), clientDataJSON: bytes(3), signature: bytes(4), userHandle: null },
+    }));
+    Object.defineProperty(navigator, 'credentials', { configurable: true, value: { get } });
+    const fetchMock = vi.fn(async (url) => (url === '/api/auth/passkey/options' ? json(200, OPTIONS) : answer));
+    vi.stubGlobal('fetch', fetchMock);
+    return { get, fetchMock };
+  };
+  const cleanup = () => { vi.unstubAllGlobals(); delete window.PublicKeyCredential; Reflect.deleteProperty(navigator, 'credentials'); };
+
+  it('the passkey opens the session and sends the agent to the requested module, with no code step and no password request', async () => {
+    const { fetchMock } = stubPasskeys(json(200, { success: true }));
+    const navigate = vi.fn();
+    render(<Login redirectUrl="https://projects.example.test/" navigate={navigate} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Se connecter avec une passkey' }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('https://projects.example.test/'));
+    const called = fetchMock.mock.calls.map(([url]) => url);
+    // One challenge when the card loads (is the passkey available?) and a fresh single-use one for the click.
+    expect(called).toEqual(['/api/auth/passkey/options', '/api/auth/passkey/options', '/api/auth/passkey']);
+    expect(called).not.toContain('/api/auth/login');
+    expect(screen.queryByText('Code de vérification')).toBeNull();
+    expect(screen.queryByText('Sécurisez votre compte')).toBeNull();
+    cleanup();
+  });
+
+  it('a refused passkey keeps the agent on the sign-in card, where the password still works', async () => {
+    stubPasskeys(json(401, { message: 'Cette passkey n’est pas reconnue.' }));
+    const navigate = vi.fn();
+    render(<Login redirectUrl="https://projects.example.test/" navigate={navigate} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Se connecter avec une passkey' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Cette passkey n’est pas reconnue.');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/Mot de passe/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeTruthy();
+    cleanup();
+  });
+
+  it('the passkey is not offered while the first-login password change is shown', async () => {
+    const fetchMock = vi.fn(async (url) => (url === '/api/auth/login' ? json(200, { requiresPasswordChange: true }) : json(200, OPTIONS)));
+    stubPasskeys(json(200, { success: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<Login redirectUrl="https://projects.example.test/" navigate={vi.fn()} />);
+    await screen.findByRole('button', { name: 'Se connecter avec une passkey' });
+    fireEvent.change(screen.getByLabelText(/Email professionnel/), { target: { value: 'agent@saint-andre.fr' } });
+    fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'fixture-password-1' } });
+    fireEvent.submit(document.querySelector('form'));
+    await screen.findByRole('heading', { name: 'Nouveau mot de passe' });
+    expect(screen.queryByRole('button', { name: 'Se connecter avec une passkey' })).toBeNull();
+    cleanup();
+  });
+});

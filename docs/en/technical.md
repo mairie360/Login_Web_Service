@@ -150,6 +150,8 @@ These data paths are exposed at the same origin through the proxy; Next.js pages
 | POST | `/api/auth/login/2fa` | [src/app/api/auth/login/2fa/route.ts](../../src/app/api/auth/login/2fa/route.ts) |
 | POST | `/api/auth/2fa/setup` | [src/app/api/auth/2fa/setup/route.ts](../../src/app/api/auth/2fa/setup/route.ts) |
 | POST | `/api/auth/2fa/confirm` | [src/app/api/auth/2fa/confirm/route.ts](../../src/app/api/auth/2fa/confirm/route.ts) |
+| POST | `/api/auth/passkey/options` | [src/app/api/auth/passkey/options/route.ts](../../src/app/api/auth/passkey/options/route.ts) |
+| POST | `/api/auth/passkey` | [src/app/api/auth/passkey/route.ts](../../src/app/api/auth/passkey/route.ts) |
 
 
 ## Session, permissions and errors

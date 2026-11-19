@@ -6,6 +6,7 @@ import RecoveryLayout from "../RecoveryLayout";
 import { CredentialsFields } from "./components/CredentialsFields";
 import { LoginFeedback } from "./components/LoginFeedback";
 import { LoginSubmit } from "./components/LoginSubmit";
+import { PasskeySignIn } from "./components/PasskeySignIn";
 import { PasswordChangeFields } from "./components/PasswordChangeFields";
 import { SecureAccountStep } from "./components/SecureAccountStep";
 import { TwoFactorStep } from "./components/TwoFactorStep";
@@ -14,7 +15,7 @@ import { useLoginForm } from "./use-login-form";
 type LoginProps = {
   redirectUrl?: string;
   navigate?: (url: string) => void;
-  /** Passkey sign-in button (MAIR-811), shown under the main action after an « ou » separator. */
+  /** Replaces the passkey sign-in (`PasskeySignIn`) under the main action; mostly for tests. */
   passkeySlot?: ReactNode;
 };
 
@@ -65,7 +66,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, passkey
         {!form.isPasswordChange && <LinkButton label="Mot de passe oublié ?" href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} size="s" className="self-start" />}
         <LoginFeedback error={form.errorMessage} errorDescription={form.errorDescription} success={form.successMessage} onDismissError={form.dismissError} />
         <LoginSubmit loading={form.isLoading} passwordChange={form.isPasswordChange} />
-        {!form.isPasswordChange && passkeySlot && <><Divider label="ou" />{passkeySlot}</>}
+        {!form.isPasswordChange && (passkeySlot ? <><Divider label="ou" />{passkeySlot}</> : <PasskeySignIn onSuccess={form.completeTwoFactor} />)}
       </form>
     </RecoveryLayout>
   );

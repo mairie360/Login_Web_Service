@@ -121,6 +121,8 @@ test('server-side BFF calls go through bffUserUrl to operations declared in the 
     'src/app/api/auth/forgot-password/route.ts POST /auth/forgot_password',
     'src/app/api/auth/login/2fa/route.ts POST /auth/login/2fa',
     'src/app/api/auth/login/route.ts POST /auth/login',
+    'src/app/api/auth/passkey/options/route.ts POST /auth/passkey/options',
+    'src/app/api/auth/passkey/route.ts POST /auth/passkey',
     'src/app/api/auth/reset-password/route.ts POST /auth/reset_password',
   ]);
 });
@@ -140,6 +142,8 @@ test('browser calls stay same-origin and land on an existing route handler or a 
   }
   assert.deepEqual(browserCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/components/ForgotPassword/ForgotPassword.tsx POST /api/auth/forgot-password',
+    'src/components/Login/components/PasskeySignIn/use-passkey-sign-in.ts POST /api/auth/passkey',
+    'src/components/Login/components/PasskeySignIn/use-passkey-sign-in.ts POST /api/auth/passkey/options',
     'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/2fa/confirm',
     'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/2fa/setup',
     'src/components/Login/components/TwoFactorStep/use-two-factor-step.ts POST /api/auth/login/2fa',

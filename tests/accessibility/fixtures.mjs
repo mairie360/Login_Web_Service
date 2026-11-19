@@ -116,6 +116,16 @@ export const test = base.extend({
       problems.push({ type: 'unexpected-network', method: request.method(), url: request.url() });
       return route.abort();
     });
+    // The sign-in card asks for a passkey challenge as soon as it is shown (mock-up F5): a fixed one, never a real ceremony.
+    await page.route(`${frontend.origin}/api/auth/passkey/options`, (route) => route.fulfill({
+      status: 200,
+      json: { id: 'a11y-ceremony', options: { publicKey: { challenge: 'cTF3MmUzcjQ', rpId: 'localhost', userVerification: 'required', timeout: 60000 } } },
+    }));
+    // Headless Chromium has no authenticator: the autofill ceremony would fail, so the browser reports no conditional mediation
+    // (the passkey button stays, which is what is checked here).
+    await page.addInitScript(() => {
+      if (window.PublicKeyCredential) window.PublicKeyCredential.isConditionalMediationAvailable = async () => false;
+    });
     if (mode.spacing) {
       // Preserve the real nonce CSP. Override only text spacing in the test DOM,
       // including the product's margin utility, without modifying production CSS.

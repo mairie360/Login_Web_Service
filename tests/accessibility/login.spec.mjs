@@ -22,20 +22,20 @@ for (const mode of modes) {
         await page.keyboard.press('Tab');
         await expect(page.getByRole('link', { name: 'Mot de passe oublié ?' })).toBeFocused();
         await page.keyboard.press('Tab');
-        await expect(page.getByRole('button', { name: 'Se connecter' })).toBeFocused();
+        await expect(page.getByRole('button', { name: 'Se connecter', exact: true })).toBeFocused();
         await page.keyboard.press('Enter');
         await expect(page.getByLabel('Email professionnel')).toBeFocused();
         expect(await page.getByLabel('Email professionnel').evaluate((input) => input.validity.valueMissing)).toBe(true);
         expect(calls).toEqual([]);
         await enterCredentials(page);
-        await page.getByRole('button', { name: 'Se connecter' }).press('Enter');
+        await page.getByRole('button', { name: 'Se connecter', exact: true }).press('Enter');
         await expect(page.getByRole('button', { name: 'Connexion…' })).toBeDisabled();
         await inspect(page, mode, info, 'sign-in-pending');
         gate.release();
         await expect(page.getByRole('main').getByRole('alert')).toHaveText('Identifiants refusés.');
         await inspect(page, mode, info, 'sign-in-refused');
         expect(calls).toEqual([credentials]);
-        await expect(page.getByRole('button', { name: 'Se connecter' })).toBeEnabled();
+        await expect(page.getByRole('button', { name: 'Se connecter', exact: true })).toBeEnabled();
       } finally { gate.release(); }
     });
 
@@ -49,7 +49,7 @@ for (const mode of modes) {
       try {
         await page.goto(frontend.origin);
         await enterCredentials(page);
-        await page.getByRole('button', { name: 'Se connecter' }).click();
+        await page.getByRole('button', { name: 'Se connecter', exact: true }).click();
         await expect(page.getByRole('heading', { name: 'Nouveau mot de passe' })).toBeVisible();
         await inspect(page, mode, info, 'mandatory-password');
         await expect(page.getByLabel('Nouveau mot de passe', { exact: true })).toHaveAttribute('autocomplete', 'new-password');
@@ -96,7 +96,7 @@ for (const mode of modes) {
       try {
         await page.goto(frontend.origin);
         await enterCredentials(page);
-        await page.getByRole('button', { name: 'Se connecter' }).click();
+        await page.getByRole('button', { name: 'Se connecter', exact: true }).click();
         await expect(page.getByRole('heading', { name: 'Nouveau mot de passe' })).toBeVisible();
         await page.getByLabel('Nouveau mot de passe', { exact: true }).fill(updatedPassword);
         await page.getByLabel('Confirmer le mot de passe').fill(updatedPassword);
@@ -116,7 +116,7 @@ for (const mode of modes) {
       await responses(page, frontend.origin, '/api/auth/login', [{ abort: true }]);
       await page.goto(frontend.origin);
       await enterCredentials(page);
-      await page.getByRole('button', { name: 'Se connecter' }).click();
+      await page.getByRole('button', { name: 'Se connecter', exact: true }).click();
       await expect(page.getByRole('main').getByRole('alert')).toHaveText('Impossible de joindre le service de connexion.');
       await inspect(page, mode, info, 'transport-unavailable');
     });
