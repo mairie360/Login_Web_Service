@@ -1,12 +1,13 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { attestationToJson, creationOptionsFromJson, isCancellation, isWebAuthnSupported } from "../PasskeySignIn";
 import type { AuthenticatorEnrolment, EnrolmentAlert } from "./components/AuthenticatorSetup";
 
 /** What the administrator allows, relayed by the sign-in route. Missing: the application, which every instance supports. */
 export type SetupPolicy = { totp: boolean; passkey: boolean; backupCodes: boolean };
 export type SecureAccountMethod = "app" | "passkey";
-export type SecureAccountStage = "choice" | "app" | "codes" | "secured" | "passkey-only";
+export type SecureAccountStage = "choice" | "app" | "codes" | "secured" | "passkey" | "passkey-unsupported";
 
 export type SecureAccountOptions = {
   policy?: SetupPolicy;
@@ -25,12 +26,30 @@ const TOTP_LENGTH = 6;
 // Short pause on « Compte sécurisé » so the message is read before the module opens.
 const SECURED_DELAY_MS = 1500;
 
+type PasskeyOptionsResponse = { options?: Record<string, unknown>; message?: string; reason?: string; restartLogin?: boolean; retryAfter?: number };
+type PasskeySetupResponse = { message?: string; reason?: string; restartLogin?: boolean; retryAfter?: number };
+
+const PASSKEY_FAILED = "La création de la passkey a échoué. Veuillez réessayer.";
+
 const DEFAULT_POLICY: SetupPolicy = { totp: true, passkey: false, backupCodes: true };
+
+/** Refusals of the two passkey routes: the French message of the route, or one chosen by status. */
+function failureAlert(status: number, body: { message?: string; reason?: string; retryAfter?: number }): EnrolmentAlert {
+  if (status === 429) {
+    const seconds = body.retryAfter ?? DEFAULT_RETRY_SECONDS;
+    return { title: TOO_MANY_ATTEMPTS, description: `Réessayez dans ${seconds} seconde${seconds > 1 ? "s" : ""}.` };
+  }
+  if (body.reason === "refused") return { title: "La passkey n’a pas pu être vérifiée.", description: "Recommencez la création de la passkey." };
+  return { title: body.message ?? PASSKEY_FAILED };
+}
 
 /** Mandatory enrolment of a second factor, F7 of the Login mockup: choice → application → backup codes → secured. */
 export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSessionOver }: SecureAccountOptions) {
-  const both = policy.totp && policy.passkey;
-  const firstStage: SecureAccountStage = both ? "choice" : policy.totp ? "app" : "passkey-only";
+  // A browser that cannot create a passkey is not offered one: the application stays, or the agent is told (F7, case 3).
+  const passkeyUsable = policy.passkey && isWebAuthnSupported();
+  const both = policy.totp && passkeyUsable;
+  const passkeyStage: SecureAccountStage = passkeyUsable ? "passkey" : "passkey-unsupported";
+  const firstStage: SecureAccountStage = both ? "choice" : policy.totp ? "app" : passkeyStage;
   const [stage, setStage] = useState<SecureAccountStage>(firstStage);
   const [method, setMethod] = useState<SecureAccountMethod>("app");
   const [enrolment, setEnrolment] = useState<AuthenticatorEnrolment | null>(null);
@@ -44,6 +63,8 @@ export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSes
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [acknowledged, setAcknowledged] = useState(false);
   const [acknowledgeError, setAcknowledgeError] = useState("");
+  const [label, setLabel] = useState("");
+  const [labelError, setLabelError] = useState("");
   const pending = useRef(false);
   const started = useRef(false);
   const locked = secondsLeft > 0;
@@ -92,7 +113,7 @@ export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSes
   const chooseMethod = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (method === "app" && !started.current) setIsStarting(true);
-    setStage(method === "app" ? "app" : "passkey-only");
+    setStage(method === "app" ? "app" : "passkey");
   };
 
   const changeCode = (value: string) => {
@@ -150,6 +171,50 @@ export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSes
     }
   };
 
+  const createPasskey = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending.current) return;
+    setAlert(null);
+    const name = label.trim();
+    if (!name) {
+      setLabelError("Donnez un nom à votre passkey.");
+      return;
+    }
+    setLabelError("");
+    pending.current = true;
+    setIsSubmitting(true);
+    try {
+      const optionsResponse = await fetch("/api/auth/passkey/setup/options", { method: "POST", headers: { Accept: "application/json" } });
+      const started = (await optionsResponse.json().catch(() => ({}))) as PasskeyOptionsResponse;
+      if (!optionsResponse.ok || !started.options) {
+        if (started.restartLogin) return onSessionOver();
+        setAlert(failureAlert(optionsResponse.status, started));
+        return;
+      }
+      const credential = (await navigator.credentials.create({ publicKey: creationOptionsFromJson(started.options) })) as PublicKeyCredential | null;
+      // The browser window was closed (« Annuler »): back to the name, with no error.
+      if (!credential) return;
+      const response = await fetch("/api/auth/passkey/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: name, credential: attestationToJson(credential) }),
+      });
+      if (response.ok) {
+        setStage("secured");
+        return;
+      }
+      const result = (await response.json().catch(() => ({}))) as PasskeySetupResponse;
+      if (result.restartLogin) return onSessionOver();
+      setAlert(failureAlert(response.status, result));
+    } catch (cause) {
+      if (isCancellation(cause)) return;
+      setAlert({ title: cause instanceof TypeError ? "Impossible de joindre le service de connexion." : PASSKEY_FAILED });
+    } finally {
+      pending.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
   const finish = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!acknowledged) {
@@ -160,6 +225,7 @@ export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSes
   };
 
   return {
+    passkeyUsable,
     stage, method, setMethod, onChoose: chooseMethod,
     showSteps: policy.backupCodes,
     enrolment, isStarting, code, setCode: changeCode, fieldError, alert, dismissAlert: () => setAlert(null),
@@ -167,6 +233,7 @@ export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSes
     backupCodes, acknowledged, acknowledgeError,
     setAcknowledged: (checked: boolean) => { setAcknowledged(checked); setAcknowledgeError(""); },
     onFinish: finish,
+    label, setLabel: (value: string) => { setLabel(value); setLabelError(""); }, labelError, onCreatePasskey: createPasskey,
     hasChoice: both,
     backToChoice: () => setStage("choice"),
   };

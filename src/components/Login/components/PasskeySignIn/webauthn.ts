@@ -67,3 +67,35 @@ export function credentialToJson(credential: PublicKeyCredential): JsonObject {
 export function isCancellation(error: unknown): boolean {
   return error instanceof DOMException && (error.name === "NotAllowedError" || error.name === "AbortError");
 }
+
+/** The `options` of BFF User for a creation are either the whole `CredentialCreationOptions` or the bare `publicKey`. */
+export function creationOptionsFromJson(options: JsonObject): PublicKeyCredentialCreationOptions {
+  const source = (typeof options.publicKey === "object" && options.publicKey !== null ? options.publicKey : options) as JsonObject;
+  const user = source.user as JsonObject;
+  const withBinaryIds = (list: unknown) =>
+    Array.isArray(list) ? (list as CredentialDescriptorJson[]).map((descriptor) => ({ ...descriptor, id: base64UrlToBuffer(String(descriptor.id)) })) : undefined;
+  const excludeCredentials = withBinaryIds(source.excludeCredentials);
+  return {
+    ...source,
+    challenge: base64UrlToBuffer(String(source.challenge)),
+    user: { ...user, id: base64UrlToBuffer(String(user.id)) },
+    ...(excludeCredentials ? { excludeCredentials } : {}),
+  } as PublicKeyCredentialCreationOptions;
+}
+
+/** The new `PublicKeyCredential` as its WebAuthn JSON form, which BFF User forwards to Core as is. */
+export function attestationToJson(credential: PublicKeyCredential): JsonObject {
+  const response = credential.response as AuthenticatorAttestationResponse;
+  return {
+    id: credential.id,
+    rawId: bufferToBase64Url(credential.rawId),
+    type: credential.type,
+    ...(credential.authenticatorAttachment ? { authenticatorAttachment: credential.authenticatorAttachment } : {}),
+    clientExtensionResults: credential.getClientExtensionResults(),
+    response: {
+      attestationObject: bufferToBase64Url(response.attestationObject),
+      clientDataJSON: bufferToBase64Url(response.clientDataJSON),
+      ...(typeof response.getTransports === "function" ? { transports: response.getTransports() } : {}),
+    },
+  };
+}

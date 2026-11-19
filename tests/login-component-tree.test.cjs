@@ -34,7 +34,7 @@ test('MAIR-809 the secure-account step is a component folder with its hook, sub-
   for (const file of ['index.ts', 'SecureAccountStep.tsx', 'SecureAccountStep.test.jsx', 'use-secure-account-step.ts']) {
     assert.ok(fs.existsSync(path.join(root, dir, file)), file);
   }
-  for (const part of ['AuthenticatorSetup', 'BackupCodes', 'AccountSecured', 'PasskeyOnlyNotice']) {
+  for (const part of ['AuthenticatorSetup', 'BackupCodes', 'AccountSecured', 'PasskeySetup', 'PasskeyUnsupported']) {
     assert.ok(read(`${dir}/SecureAccountStep.tsx`).includes(`./components/${part}"`), `composes ${part}`);
     assert.ok(fs.existsSync(path.join(root, dir, 'components', part, 'index.ts')), `${part}/index.ts`);
   }

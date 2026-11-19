@@ -16,7 +16,7 @@ const type = (value) => fireEvent.change(screen.getByLabelText(/Code affiché pa
 const submit = () => fireEvent.submit(document.querySelector('form'));
 const ALL = { totp: true, passkey: false, backupCodes: true };
 
-afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); delete navigator.credentials; });
 
 describe('SecureAccountStep (F7)', () => {
   it('application only: starts the enrolment once and shows the QR code, the key and the code field', async () => {
@@ -32,6 +32,8 @@ describe('SecureAccountStep (F7)', () => {
 
   it('both methods allowed: shows the choice first, and the application leads to the enrolment', async () => {
     const fetchMock = route({ '/api/auth/2fa/setup': () => reply(200, START) });
+    vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {});
+    Object.defineProperty(navigator, 'credentials', { configurable: true, value: {} });
     setup(fetchMock, { totp: true, passkey: true, backupCodes: true });
     expect(screen.getByRole('heading', { name: 'Sécurisez votre compte' })).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -39,13 +41,19 @@ describe('SecureAccountStep (F7)', () => {
     expect(await screen.findByText('Ajoutez Mairie 360 à votre application')).toBeTruthy();
   });
 
-  it('passkey only: tells the agent instead of offering the application', () => {
+  it('passkey only, browser without WebAuthn: tells the agent instead of offering a method it cannot run', () => {
     const fetchMock = vi.fn();
     const { onBack } = setup(fetchMock, { totp: false, passkey: true, backupCodes: true });
-    expect(screen.getByText('La création d’une passkey n’est pas encore disponible.')).toBeTruthy();
+    expect(screen.getByText('Votre navigateur ne permet pas de créer une passkey.')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Retour à la connexion' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('both methods allowed but no WebAuthn: the choice is skipped and the application leads', async () => {
+    const fetchMock = route({ '/api/auth/2fa/setup': () => reply(200, START) });
+    setup(fetchMock, { totp: true, passkey: true, backupCodes: true });
+    expect(await screen.findByText('Ajoutez Mairie 360 à votre application')).toBeTruthy();
   });
 
   it('an incomplete code is refused under the field with no request', async () => {
@@ -120,5 +128,100 @@ describe('SecureAccountStep (F7)', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('indisponible');
     fireEvent.click(screen.getByRole('button', { name: 'Retour à la connexion' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  describe('passkey creation (MAIR-809)', () => {
+    const OPTIONS = { options: { publicKey: { challenge: 'AQID', rp: { name: 'Mairie 360' }, user: { id: 'BAUG', name: 'a@b.test', displayName: 'A' }, pubKeyCredParams: [{ type: 'public-key', alg: -7 }] } } };
+    const attestation = () => ({
+      id: 'cred', rawId: new Uint8Array([1]).buffer, type: 'public-key',
+      getClientExtensionResults: () => ({}),
+      response: { attestationObject: new Uint8Array([2]).buffer, clientDataJSON: new Uint8Array([3]).buffer, getTransports: () => ['internal'] },
+    });
+    const BOTH = { totp: true, passkey: true, backupCodes: true };
+    const withWebAuthn = (create) => {
+      vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {});
+      Object.defineProperty(navigator, 'credentials', { configurable: true, value: { create } });
+    };
+    const name = (value) => fireEvent.change(screen.getByLabelText(/Nom de la passkey/), { target: { value } });
+    const goToPasskey = () => {
+      fireEvent.click(screen.getByLabelText(/Passkey/));
+      fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+    };
+    afterEach(() => { delete navigator.credentials; });
+
+    it('the choice offers the passkey, which leads to the name screen with a way back to the choice', () => {
+      withWebAuthn(vi.fn());
+      setup(vi.fn(), BOTH);
+      goToPasskey();
+      expect(screen.getByRole('heading', { name: 'Créer une passkey' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Choisir une autre méthode' }));
+      expect(screen.getByRole('heading', { name: 'Sécurisez votre compte' })).toBeTruthy();
+    });
+
+    it('an empty name is refused under the field with no request', () => {
+      const fetchMock = vi.fn();
+      withWebAuthn(vi.fn());
+      setup(fetchMock, BOTH);
+      goToPasskey();
+      submit();
+      expect(screen.getByText('Donnez un nom à votre passkey.')).toBeTruthy();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('creates the passkey: options, browser ceremony, then the answer with the name, and the account is secured', async () => {
+      const create = vi.fn(() => Promise.resolve(attestation()));
+      withWebAuthn(create);
+      const fetchMock = route({ '/api/auth/passkey/setup/options': () => reply(200, OPTIONS), '/api/auth/passkey/setup': () => reply(200, { success: true }) });
+      setup(fetchMock, { totp: false, passkey: true, backupCodes: true });
+      name('  Ordinateur du bureau ');
+      submit();
+      expect(await screen.findByText('Votre compte est sécurisé.')).toBeTruthy();
+      const sent = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(sent.label).toBe('Ordinateur du bureau');
+      expect(sent.credential.response).toEqual({ attestationObject: 'Ag', clientDataJSON: 'Aw', transports: ['internal'] });
+      const publicKey = create.mock.calls[0][0].publicKey;
+      expect(new Uint8Array(publicKey.challenge)).toEqual(new Uint8Array([1, 2, 3]));
+      expect(new Uint8Array(publicKey.user.id)).toEqual(new Uint8Array([4, 5, 6]));
+    });
+
+    it('cancelling the browser window leaves the name screen with no error and nothing sent to the BFF', async () => {
+      const create = vi.fn(() => Promise.reject(new DOMException('cancelled', 'NotAllowedError')));
+      withWebAuthn(create);
+      const fetchMock = route({ '/api/auth/passkey/setup/options': () => reply(200, OPTIONS) });
+      setup(fetchMock, { totp: false, passkey: true, backupCodes: true });
+      name('Téléphone');
+      submit();
+      await waitFor(() => expect(create).toHaveBeenCalled());
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Créer la passkey' })).toBeTruthy());
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect((screen.getByLabelText(/Nom de la passkey/)).value).toBe('Téléphone');
+    });
+
+    it('an expired enrolment token (401 with restartLogin) sends the agent back to the password', async () => {
+      withWebAuthn(vi.fn());
+      const fetchMock = route({ '/api/auth/passkey/setup/options': () => reply(401, { message: 'x', restartLogin: true }) });
+      const { onSessionOver } = setup(fetchMock, { totp: false, passkey: true, backupCodes: true });
+      name('Téléphone');
+      submit();
+      await waitFor(() => expect(onSessionOver).toHaveBeenCalledTimes(1));
+    });
+
+    it('a refused answer (400) and a rate limit (429) show their French message and keep the name', async () => {
+      withWebAuthn(vi.fn(() => Promise.resolve(attestation())));
+      let status = 400;
+      const fetchMock = route({
+        '/api/auth/passkey/setup/options': () => reply(200, OPTIONS),
+        '/api/auth/passkey/setup': () => (status === 400 ? reply(400, { message: 'La passkey n’a pas pu être vérifiée.', reason: 'refused' }) : reply(429, { message: 'Trop de tentatives.', retryAfter: 12 })),
+      });
+      setup(fetchMock, { totp: false, passkey: true, backupCodes: true });
+      name('Téléphone');
+      submit();
+      expect(await screen.findByText('La passkey n’a pas pu être vérifiée.')).toBeTruthy();
+      status = 429;
+      submit();
+      expect(await screen.findByText('Réessayez dans 12 secondes.')).toBeTruthy();
+      expect((screen.getByLabelText(/Nom de la passkey/)).value).toBe('Téléphone');
+    });
   });
 });
