@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseFrontUrl } from "./front-url";
+import { parseFrontUrl } from "@mairie360/lib-components/shared";
 
 /** Browser authentication mutations must originate from the Login frontend. */
 export function rejectUnsafeAuthRequest(request: NextRequest, requireJson = false) {

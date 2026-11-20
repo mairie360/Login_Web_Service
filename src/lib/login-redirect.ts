@@ -1,4 +1,4 @@
-import { parseFrontUrl } from "./front-url";
+import { parseFrontUrl } from "@mairie360/lib-components/shared";
 
 const FRONT_URL_KEYS = [
   "LOGIN_FRONT_URL",
