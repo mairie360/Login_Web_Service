@@ -1,17 +1,18 @@
 import { NextRequest } from 'next/server';
 import { proxyPublishedBffRequest } from '@mairie360/lib-components/next';
-import contract from '../../contracts/openapi.json';
 import { POST as login } from '../app/api/auth/login/route';
 import { POST as changePassword } from '../app/api/auth/force-change-password/route';
 import { POST as forgotPassword } from '../app/api/auth/forgot-password/route';
 import { POST as resetPassword } from '../app/api/auth/reset-password/route';
 import { POST as logout } from '../app/api/auth/logout/route';
 import { configuredBffUrl } from './bff-user';
+import { relayedPaths } from './relayed-paths';
 import { trustedClientIpHeaders } from './trusted-client-ip';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 export { configuredBffUrl } from './bff-user';
+export { isRelayedPath, relayedPaths } from './relayed-paths';
 
 /** Authentication aliases use the same guarded handlers and cookie owner as the UI. */
 export async function proxyBffRequest(request: NextRequest, context: RouteContext) {
@@ -25,7 +26,7 @@ export async function proxyBffRequest(request: NextRequest, context: RouteContex
   }
   return proxyPublishedBffRequest(request, path, {
     baseUrl: configuredBffUrl,
-    paths: contract.paths,
+    paths: relayedPaths,
     loginUrl: () => process.env.LOGIN_FRONT_URL?.trim() ?? '',
     frontUrl: () => process.env.LOGIN_FRONT_URL?.trim() ?? '',
     trustedHeaders: trustedClientIpHeaders,

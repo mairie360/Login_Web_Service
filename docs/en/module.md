@@ -43,7 +43,7 @@ Core supplies identity and session operations. The BFF SQL repositories also rea
 
 Monitoring, backups, application logs and system policy described in administration requirements are not guaranteed by this contract. SQL access requires a compatible schema, including `group_members`; this name differs from `group_users` used in other contracts.
 
-The portal does not manage users or permissions. BFF User routes being present in the proxy does not mean the portal includes the corresponding administration screens.
+The portal does not manage users or permissions. The proxy relays only the sign-in routes, the current user, the passkey creation and the probes (MAIR-700): the BFF User administration routes are not reachable through this portal, only through the administration console.
 
 ## Developing or operating this module
 

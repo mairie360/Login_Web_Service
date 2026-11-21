@@ -43,7 +43,7 @@ Core fournit les opérations d’identité et de session. Les dépôts SQL du BF
 
 Les fonctions de supervision, sauvegarde, journaux applicatifs et politique système décrites dans les besoins d’administration ne sont pas garanties par ce contrat. Les accès SQL exigent un schéma compatible, notamment `group_members`; ne pas confondre ce nom avec `group_users` utilisé dans d’autres contrats.
 
-Le portail ne gère pas les utilisateurs ni les habilitations. La présence de routes BFF User dans le proxy ne signifie pas que le portail possède les écrans d’administration correspondants.
+Le portail ne gère pas les utilisateurs ni les habilitations. Le proxy ne relaie que les routes de connexion, l’utilisateur courant, la création de passkey et les sondes (MAIR-700) : les routes d’administration de BFF User ne sont pas joignables par ce portail, seulement par la console d’administration.
 
 ## Pour développer ou exploiter ce module
 
