@@ -52,7 +52,7 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
       if (!current()) return;
       if (!response.ok || result?.success !== true) {
         if (response.status === 401 || response.status === 403) { setExpired(true); setPassword(""); setConfirmation(""); }
-        else setError(response.status === 429 ? "Trop de demandes. Veuillez réessayer plus tard." : "Le mot de passe n’a pas pu être modifié. Veuillez réessayer.");
+        else setError(response.status === 429 ? "Trop de demandes. Veuillez réessayer plus tard." : response.status === 400 && typeof result?.message === "string" ? result.message : "Le mot de passe n’a pas pu être modifié. Veuillez réessayer.");
         return;
       }
       setComplete(true); setPassword(""); setConfirmation("");

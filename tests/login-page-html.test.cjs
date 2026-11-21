@@ -303,7 +303,8 @@ test('a refused first-password mutation keeps the draft, and an expired token re
   await typeInto('new-password', 'N3w-secret-pass');
   await typeInto('new-password-confirmation', 'N3w-secret-pass');
   await submit();
-  assert.match(view.text(), /Le nouveau mot de passe est invalide\./);
+  // MAIR-757: the BFF does not say which rule Core API refused, so the whole policy is shown.
+  assert.match(view.text(), /au moins 12 caractères, évitez les mots de passe courants et n’y mettez ni votre adresse e-mail, ni votre prénom, ni votre nom/);
   assert.match(view.html, /role="alert"/);
   assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.value, 'N3w-secret-pass');
   assert.equal(view.hostElements((props) => props.id === 'new-password-confirmation')[0].props.value, 'N3w-secret-pass');
