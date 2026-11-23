@@ -4,6 +4,7 @@ import { checkNewPassword } from "@mairie360/lib-components/shared";
 import { FormEvent, useRef, useState } from "react";
 import { shouldOfferPasskey, type PasskeyOfferFlags } from "./components/PasskeyOffer";
 import type { SetupPolicy } from "./components/SecureAccountStep";
+import { acknowledgeAlert, fetchPendingAlert, type SecurityAlert } from "./components/UnusualActivity";
 
 type LoginResponse = {
   success?: boolean;
@@ -38,6 +39,9 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [isTwoFactorSetup, setIsTwoFactorSetup] = useState(false);
   const [errorDescription, setErrorDescription] = useState("");
   const [isPasskeyOffer, setIsPasskeyOffer] = useState(false);
+  const [unusualAlert, setUnusualAlert] = useState<SecurityAlert | null>(null);
+  const [pendingOffer, setPendingOffer] = useState<PasskeyOfferFlags | undefined>(undefined);
+  const [isAcknowledging, setIsAcknowledging] = useState(false);
   const submissionPending = useRef(false);
 
   const redirectAfterLogin = () => {
@@ -55,6 +59,39 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
       return;
     }
     redirectAfterLogin();
+  };
+
+  // MAIR-773 (F9): once a session is open (password, second step, passkey), a pending alert about a use of one of the
+  // agent's sessions from another device comes first, before the passkey proposal or the module.
+  const afterSignIn = async (offer?: PasskeyOfferFlags) => {
+    const alert = await fetchPendingAlert();
+    if (alert) {
+      setIsTwoFactor(false);
+      setIsTwoFactorSetup(false);
+      setPendingOffer(offer);
+      setUnusualAlert(alert);
+      return;
+    }
+    finishPasswordSignIn(offer);
+  };
+
+  const continueAfterAlert = async () => {
+    if (!unusualAlert) return;
+    setIsAcknowledging(true);
+    await acknowledgeAlert(unusualAlert.id);
+    setIsAcknowledging(false);
+    setUnusualAlert(null);
+    finishPasswordSignIn(pendingOffer);
+  };
+
+  // « Ce n’était pas moi » : the alert is read, and the forgotten-password page opens with the e-mail prefilled.
+  const notMeAfterAlert = async () => {
+    if (!unusualAlert) return;
+    setIsAcknowledging(true);
+    await acknowledgeAlert(unusualAlert.id);
+    const query = new URLSearchParams({ email: email.trim() });
+    if (redirectUrl) query.set("redirect", redirectUrl);
+    navigate(`/forgot-password?${query.toString()}`);
   };
 
   const loginWithPassword = async (passwordValue: string) => {
@@ -100,7 +137,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
 
     setPassword("");
     setSuccessMessage("Connexion réussie.");
-    finishPasswordSignIn(result.passkeyOffer);
+    await afterSignIn(result.passkeyOffer);
   };
 
   // The login token is over (expired, or burnt by five wrong codes): the password is asked again.
@@ -208,9 +245,10 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   return {
     email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation, setNewPasswordConfirmation,
     isLoading, errorMessage, errorDescription, successMessage, isTwoFactor, isTwoFactorSetup, setupPolicy, isPasskeyOffer,
+    unusualAlert, isAcknowledging, continueAfterAlert, notMeAfterAlert,
     dismissError: () => { setErrorMessage(""); setErrorDescription(""); },
-    completeTwoFactor: redirectAfterLogin,
-    completePasswordSecondStep: finishPasswordSignIn,
+    completeTwoFactor: () => { void afterSignIn(); },
+    completePasswordSecondStep: (offer?: PasskeyOfferFlags) => { void afterSignIn(offer); },
     finishPasskeyOffer: redirectAfterLogin,
     restartAfterExpiredSession,
     backToCredentials: () => { setIsTwoFactor(false); setIsTwoFactorSetup(false); },
