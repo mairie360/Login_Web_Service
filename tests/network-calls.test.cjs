@@ -115,10 +115,20 @@ test('server-side BFF calls go through bffUserUrl to operations declared in the 
     assert.ok(!call.file.startsWith('src/components/'), `${call.where}: appel au BFF depuis un composant navigateur`);
   }
   assert.deepEqual(serverCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
+    'src/app/api/auth/2fa/confirm/route.ts POST /auth/2fa/confirm',
+    'src/app/api/auth/2fa/setup/route.ts POST /auth/2fa/setup',
     'src/app/api/auth/force-change-password/route.ts POST /auth/force_change_password',
     'src/app/api/auth/forgot-password/route.ts POST /auth/forgot_password',
+    'src/app/api/auth/login/2fa/route.ts POST /auth/login/2fa',
     'src/app/api/auth/login/route.ts POST /auth/login',
+    'src/app/api/auth/passkey/options/route.ts POST /auth/passkey/options',
+    'src/app/api/auth/passkey/route.ts POST /auth/passkey',
+    'src/app/api/auth/passkey/setup/options/route.ts POST /auth/passkey/setup/options',
+    'src/app/api/auth/passkey/setup/route.ts POST /auth/passkey/setup',
     'src/app/api/auth/reset-password/route.ts POST /auth/reset_password',
+    'src/app/api/passkeys/name/route.ts PATCH /user/me/passkeys/${passkeyId}',
+    'src/app/api/passkeys/options/route.ts POST /user/me/passkeys/options',
+    'src/app/api/passkeys/route.ts POST /user/me/passkeys',
   ]);
 });
 
@@ -137,6 +147,16 @@ test('browser calls stay same-origin and land on an existing route handler or a 
   }
   assert.deepEqual(browserCalls.map(({ file, method, url }) => `${file} ${method} ${url}`).sort(), [
     'src/components/ForgotPassword/ForgotPassword.tsx POST /api/auth/forgot-password',
+    'src/components/Login/components/PasskeyOffer/use-passkey-offer.ts POST /api/passkeys',
+    'src/components/Login/components/PasskeyOffer/use-passkey-offer.ts POST /api/passkeys/name',
+    'src/components/Login/components/PasskeyOffer/use-passkey-offer.ts POST /api/passkeys/options',
+    'src/components/Login/components/PasskeySignIn/use-passkey-sign-in.ts POST /api/auth/passkey',
+    'src/components/Login/components/PasskeySignIn/use-passkey-sign-in.ts POST /api/auth/passkey/options',
+    'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/2fa/confirm',
+    'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/2fa/setup',
+    'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/passkey/setup',
+    'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/passkey/setup/options',
+    'src/components/Login/components/TwoFactorStep/use-two-factor-step.ts POST /api/auth/login/2fa',
     'src/components/Login/use-login-form.ts POST /api/auth/force_change_password',
     'src/components/Login/use-login-form.ts POST /api/auth/login',
     'src/components/ResetPassword/ResetPassword.tsx POST /api/auth/reset-password',
@@ -160,7 +180,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   assert.ok(ts.isObjectLiteralExpression(config));
   const properties = new Map(config.properties.filter(ts.isPropertyAssignment).map(p => [policy.propertyName(p.name), p.initializer.getText(source)]));
   assert.equal(properties.get('baseUrl'), 'configuredBffUrl');
-  assert.equal(properties.get('paths'), 'contract.paths');
+  assert.equal(properties.get('paths'), 'relayedPaths'); // MAIR-700: the allow-list of src/lib/relayed-paths.ts
   assert.equal(properties.get('trustedHeaders'), 'trustedClientIpHeaders');
   assert.match(properties.get('loginUrl'), /process\.env\.LOGIN_FRONT_URL/);
   assert.match(properties.get('frontUrl'), /process\.env\.LOGIN_FRONT_URL/);

@@ -458,7 +458,8 @@ test('the page renders the sign-in form, ready to post to the same origin', asyn
   assert.match(view.html, /<input[^>]*id="password"[^>]*type="password"/);
   assert.match(view.html, /<input[^>]*autoComplete="current-password"[^>]*required=""[^>]*name="password" value=""/);
   assert.match(view.html, /<a[^>]*href="\/forgot-password\?redirect=[^"]*"[^>]*>Mot de passe oublié \?<\/a>/);
-  assert.doesNotMatch(view.html, /<hr|role="separator"/, 'no « ou » separator without a passkey button');
+  // The lib Divider under the brand block (MAIR-1102) is the only separator: none inside the form.
+  assert.doesNotMatch(/<form[\s\S]*<\/form>/.exec(view.html)[0], /<hr|role="separator"/, 'no « ou » separator without a passkey button');
   assert.match(view.html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
   assert.doesNotMatch(view.html, /role="(alert|status)"/);
 });

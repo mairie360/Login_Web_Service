@@ -8,13 +8,12 @@ const root = join(__dirname, '..');
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 test('third-party workflow actions use immutable commits', () => {
-  const workflows = ['auto-approve.yml', 'contracts.yml'];
+  const workflows = ['contracts.yml'];
   const actions = workflows.flatMap((file) => [...read(`.github/workflows/${file}`)
     .matchAll(/uses:\s*([^\s@]+)@([^\s#]+)/g)]);
   assert.deepEqual(actions.map((match) => match[1]).sort(), [
     'actions/checkout',
-    'actions/setup-node',
-    'hmarr/auto-approve-action',
+    'actions/setup-node'
   ]);
   for (const [, name, ref] of actions) {
     assert.match(ref, /^[a-f0-9]{40}$/, `${name} must use a full commit SHA`);
@@ -28,9 +27,6 @@ test('the reusable frontend workflow receives only its declared named secrets', 
   assert.deepEqual(mappings.map(([, name, source]) => [name, source]), [
     ['CODECOV_TOKEN', 'CODECOV_TOKEN'],
     ['N8N_WEBHOOK_SECRET', 'N8N_WEBHOOK_SECRET'],
-    ['ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY'],
-    ['RELEASE_APP_ID', 'RELEASE_APP_ID'],
-    ['RELEASE_APP_PK', 'RELEASE_APP_PK'],
   ]);
   assert.doesNotMatch(workflow, /semgrep_fail_on_findings:\s*false|semgrep_config:|continue-on-error:/);
 });
@@ -171,7 +167,7 @@ test('MAIR-316: promote-prod passes the secrets of the RGAA AI pre-audit by name
   const workflow = read('.github/workflows/promote-prod.yml');
   assert.doesNotMatch(workflow, /secrets:\s*inherit/);
   assert.match(workflow, /^\s+stack: fronts\s*$/m);
-  for (const name of ['ANTHROPIC_API_KEY', 'ANTHROPIC_WORKSPACE_ID']) {
+  for (const name of ['ANTHROPIC_API_KEY', 'ANTHROPIC_REVIEW_API_KEY', 'ANTHROPIC_WORKSPACE_ID']) {
     assert.match(workflow, new RegExp(`^ {6}${name}: \\$\\{\\{ secrets\\.${name} \\}\\}\\s*$`, 'm'), name);
   }
 });

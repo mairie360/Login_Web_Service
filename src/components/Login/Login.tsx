@@ -6,13 +6,17 @@ import RecoveryLayout from "../RecoveryLayout";
 import { CredentialsFields } from "./components/CredentialsFields";
 import { LoginFeedback } from "./components/LoginFeedback";
 import { LoginSubmit } from "./components/LoginSubmit";
+import { PasskeyOffer } from "./components/PasskeyOffer";
+import { PasskeySignIn } from "./components/PasskeySignIn";
 import { PasswordChangeFields } from "./components/PasswordChangeFields";
+import { SecureAccountStep } from "./components/SecureAccountStep";
+import { TwoFactorStep } from "./components/TwoFactorStep";
 import { useLoginForm } from "./use-login-form";
 
 type LoginProps = {
   redirectUrl?: string;
   navigate?: (url: string) => void;
-  /** Passkey sign-in button (MAIR-811), shown under the main action after an « ou » separator. */
+  /** Replaces the passkey sign-in (`PasskeySignIn`) under the main action; mostly for tests. */
   passkeySlot?: ReactNode;
 };
 
@@ -20,6 +24,30 @@ const navigateToFront = (url: string) => window.location.assign(url);
 
 export default function Login({ redirectUrl, navigate = navigateToFront, passkeySlot }: LoginProps) {
   const form = useLoginForm({ redirectUrl, navigate });
+
+  if (form.isPasskeyOffer) {
+    return (
+      <RecoveryLayout>
+        <PasskeyOffer onDone={form.finishPasskeyOffer} />
+      </RecoveryLayout>
+    );
+  }
+
+  if (form.isTwoFactorSetup) {
+    return (
+      <RecoveryLayout>
+        <SecureAccountStep policy={form.setupPolicy} onSuccess={form.completeTwoFactor} onSessionOver={form.restartAfterExpiredSession} onBack={form.backToCredentials} />
+      </RecoveryLayout>
+    );
+  }
+
+  if (form.isTwoFactor) {
+    return (
+      <RecoveryLayout>
+        <TwoFactorStep onSuccess={form.completePasswordSecondStep} onSessionOver={form.restartAfterExpiredSession} onBack={form.backToCredentials} />
+      </RecoveryLayout>
+    );
+  }
 
   return (
     <RecoveryLayout>
@@ -45,9 +73,9 @@ export default function Login({ redirectUrl, navigate = navigateToFront, passkey
           <CredentialsFields email={form.email} password={form.password} disabled={form.isLoading} onEmailChange={form.setEmail} onPasswordChange={form.setPassword} />
         )}
         {!form.isPasswordChange && <LinkButton label="Mot de passe oublié ?" href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} size="s" className="self-start" />}
-        <LoginFeedback error={form.errorMessage} success={form.successMessage} onDismissError={form.dismissError} />
+        <LoginFeedback error={form.errorMessage} errorDescription={form.errorDescription} success={form.successMessage} onDismissError={form.dismissError} />
         <LoginSubmit loading={form.isLoading} passwordChange={form.isPasswordChange} />
-        {!form.isPasswordChange && passkeySlot && <><Divider label="ou" />{passkeySlot}</>}
+        {!form.isPasswordChange && (passkeySlot ? <><Divider label="ou" />{passkeySlot}</> : <PasskeySignIn onSuccess={form.completeTwoFactor} />)}
       </form>
     </RecoveryLayout>
   );

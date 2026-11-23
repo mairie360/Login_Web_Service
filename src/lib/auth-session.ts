@@ -1,3 +1,4 @@
+import type { PasskeyOffer } from "./passkey-offer";
 import { NextResponse } from "next/server";
 
 import { accessCookieMaxAge, setSessionCookies } from '@mairie360/lib-components/next';
@@ -15,8 +16,9 @@ export function setAuthSessionCookies(response: NextResponse, accessToken: strin
 }
 
 /** The Login frontend owns the shared cookie attributes for login and recovery. */
-export function createAuthSessionResponse(accessToken: string, refreshToken: string, upstreamMaxAge = Infinity) {
-  const response = NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } });
+export function createAuthSessionResponse(accessToken: string, refreshToken: string, upstreamMaxAge = Infinity, passkeyOffer?: PasskeyOffer) {
+  // MAIR-811: the password sign-ins tell the screen whether to propose a passkey (never a credential).
+  const response = NextResponse.json({ success: true, ...(passkeyOffer ? { passkeyOffer } : {}) }, { headers: { "Cache-Control": "no-store" } });
   if (!setAuthSessionCookies(response, accessToken, refreshToken, upstreamMaxAge)) {
     return NextResponse.json({ message: "Le service de connexion a renvoyé une session expirée." }, { status: 502, headers: { "Cache-Control": "no-store" } });
   }

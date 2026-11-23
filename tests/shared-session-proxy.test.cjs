@@ -83,10 +83,15 @@ test('a second 401 stops after one replay',async()=>{
  assert.equal(response.status,401);assert.equal(response.headers.get('X-Mairie360-Login-Required'),'true');assert.equal(bff.calls('/me').length,2);assert.equal(bff.calls('/auth/refresh').length,1);
 });
 test('a published mutation retries with the exact original JSON body',async()=>{
- renewed();const body=contract.sample(contract.schema('AdminSessionRevokeBody'));
- bff.on('POST','/admin/sessions/revoke',req=>req.headers.authorization==='Bearer renewed-access'?{body:contract.sample(contract.schema('CoreResponse'))}:{status:401,body:{message:'Expired'},outOfContract:true});
- const response=await proxy.POST(new NextRequest(origin+'/admin/sessions/revoke',{method:'POST',headers:{Origin:origin,'Sec-Fetch-Site':'same-origin','Content-Type':'application/json',Cookie:`accessToken=expired-access; refreshToken=${token}`},body:JSON.stringify(body)}),{params:Promise.resolve({path:['admin','sessions','revoke']})});
- assert.equal(response.status,200);assert.deepEqual(bff.calls('/admin/sessions/revoke').map(x=>x.body),[body,body]);assert.equal(bff.calls('/auth/refresh').length,1);
+ renewed();const body=contract.sample(contract.schema('PasskeyRegisterView'));
+ bff.on('POST','/user/me/passkeys',req=>req.headers.authorization==='Bearer renewed-access'?{body:contract.sample(contract.schema('PasskeyResponse'))}:{status:401,body:{message:'Expired'},outOfContract:true});
+ const response=await proxy.POST(new NextRequest(origin+'/user/me/passkeys',{method:'POST',headers:{Origin:origin,'Sec-Fetch-Site':'same-origin','Content-Type':'application/json',Cookie:`accessToken=expired-access; refreshToken=${token}`},body:JSON.stringify(body)}),{params:Promise.resolve({path:['user','me','passkeys']})});
+ assert.equal(response.status,200);assert.deepEqual(bff.calls('/user/me/passkeys').map(x=>x.body),[body,body]);assert.equal(bff.calls('/auth/refresh').length,1);
+});
+// MAIR-700: an administration route published by the BFF is not relayed, even with a session to renew.
+test('MAIR-700 /admin/sessions/revoke answers 404 without renewing nor reaching the BFF',async()=>{
+ const response=await proxy.POST(new NextRequest(origin+'/admin/sessions/revoke',{method:'POST',headers:{Origin:origin,'Sec-Fetch-Site':'same-origin','Content-Type':'application/json',Cookie:`accessToken=expired-access; refreshToken=${token}`},body:'{}'}),{params:Promise.resolve({path:['admin','sessions','revoke']})});
+ assert.equal(response.status,404);assert.equal(bff.requests.length,0);assert.equal(ownerCalls.length,0);
 });
 test('foreign origins cannot reach User or the owner',async()=>{
  const response=await read({Origin:'https://foreign.test'});assert.equal(response.status,403);assert.equal(response.headers.get('set-cookie'),null);assert.equal(bff.requests.length,0);assert.equal(ownerCalls.length,0);

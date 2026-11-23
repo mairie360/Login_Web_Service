@@ -16,14 +16,19 @@ Business domain: Identity and administration.
 - Sign-in and mandatory-password-change inputs are frozen while a request is pending; duplicate submissions are ignored synchronously and failed replies clear stale success feedback.
 - Standalone sign-in, first-password-change, unavailable-configuration screens: no application AppShell, header, sidebar or footer before returning to an authenticated module.
 - First-sign-in flow with a temporary token and a new password. Since MAIR-875/MAIR-888 the front refuses, before any call, a new password under 12 characters or without a digit or a letter (`checkNewPassword` of lib-components); the API still accepts 8 characters until MAIR-757.
-- V2 screens (MAIR-826): every page is built from lib-components (`Logo`, `Card`, `Footer`, `EmailField`, `PasswordField`, `NewPasswordField`, `LinkButton`, `BackButton`, alerts), the forgot-password and reset-password pages follow the mock-up (F3, F4), and the unavailable screen is « Connexion indisponible » (F0). The product fronts are always light (MAIR-933). Two-factor authentication and passkeys are not part of this front yet (MAIR-806, MAIR-809, MAIR-811): `Login` only exposes a `passkeySlot`.
+- V2 screens (MAIR-826): every page is built from lib-components (`Logo`, `Card`, `Footer`, `EmailField`, `PasswordField`, `NewPasswordField`, `LinkButton`, `BackButton`, alerts), the forgot-password and reset-password pages follow the mock-up (F3, F4), and the unavailable screen is « Connexion indisponible » (F0). The product fronts are always light (MAIR-933). Passkey sign-in lives in this front (MAIR-811, see below). `Login` exposes a `passkeySlot` that replaces the passkey sign-in control in the sign-in form, before authentication; it is not a place for creating a passkey after sign-in (that is the proposal F8 below).
+- Second step of a protected account (MAIR-806, mock-up F6): « Code de vérification » (6 digits of the authenticator application) or « Code de secours » (`XXXX-XXXX`), with the mock-up states: incomplete code (no request), wrong code, too many attempts (field and button disabled for the `Retry-After` delay), spent backup code, and a login session that is over (back to the sign-in form with « Votre session de connexion a expiré. »).
+- Passkey sign-in (MAIR-811, mock-up F5): under « Se connecter », an « ou » separator then « Se connecter avec une passkey », and the passkey autofill of the e-mail field (`autocomplete="username webauthn"`, conditional mediation) when the browser has it. A passkey is a second factor on its own: no code step follows. Closing the browser window shows nothing; refused passkey (401), disabled account (403), too many attempts (429) have their own message; when the instance has no passkey service (503) the button is replaced by « Connexion par passkey indisponible pour le moment. Utilisez votre mot de passe. », and nothing is shown without WebAuthn or when the mairie does not accept passkeys (403).
+- Passkey proposal after a password sign-in (MAIR-811, mock-up F8): when the mairie accepts passkeys, the account has none, the browser can create one and the agent did not decline it on this device, the password sign-in (with or without the code step) shows « Connectez-vous plus vite avec une passkey » (three benefits, « Créer une passkey », « Plus tard », « Ne plus me le proposer sur cet appareil »). « Plus tard » opens the module and proposes it again at the next sign-in; « Ne plus me le proposer » is remembered on this browser only. « Créer une passkey » opens the browser window, then « Passkey enregistrée » proposes the name of the passkey manager (editable, required) and saves it before opening the module. A browser that creates the passkey by itself for the saved password (conditional creation) opens the module directly, the passkey named after its manager. Closing the browser window shows nothing; refusals have their own French message.
+- Passkey creation during the mandatory enrolment (mock-up F7, passkey branch): « Créer une passkey » asks for the name of the passkey (1 to 100 characters), then the browser creates it (`navigator.credentials.create`) and the session opens, with no backup codes, on « Compte sécurisé ». Closing the browser window returns to the name with no error; a refused answer (400), too many attempts (429) and an unreachable service have their own message; an enrolment session that is over (expired, or the account got a factor meanwhile) goes back to the password. A browser without WebAuthn is not offered the passkey: the application stays, or, when the mairie only allows passkeys, « Votre navigateur ne permet pas de créer une passkey. » is shown.
 - Access cookie creation followed by a return to the requested page when its URL belongs to a configured Mairie360 front; otherwise, redirection to the configured Dashboard module.
 
 ## Typical workflow
 
 1. Enter credentials and submit the form.
 2. If the server requires a password change, complete that flow and sign in again.
-3. Access the configured module after the session cookie is created.
+3. If the account is protected by a second factor, type the code of the authenticator application or a backup code.
+4. Access the configured module after the session cookie is created.
 
 ## Role within Mairie360
 
@@ -39,7 +44,7 @@ Core supplies identity and session operations. The BFF SQL repositories also rea
 
 Monitoring, backups, application logs and system policy described in administration requirements are not guaranteed by this contract. SQL access requires a compatible schema, including `group_members`; this name differs from `group_users` used in other contracts.
 
-The portal does not manage users or permissions. BFF User routes being present in the proxy does not mean the portal includes the corresponding administration screens.
+The portal does not manage users or permissions. The proxy relays only the sign-in routes, the current user, the passkey creation and the probes (MAIR-700): the BFF User administration routes are not reachable through this portal, only through the administration console.
 
 ## Developing or operating this module
 

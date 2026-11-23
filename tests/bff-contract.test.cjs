@@ -328,6 +328,7 @@ describe('POST /api/auth/force-change-password → BFF POST /auth/force_change_p
 });
 
 describe('catch-all proxy → every BFF operation of the contract', () => {
+  const { isRelayedPath } = requireTs('src/lib/relayed-paths.ts');
   const context = (pathname) => ({ params: Promise.resolve({ path: pathname.split('/').filter(Boolean).map(decodeURIComponent) }) });
 
   function concretePath({ template, operation }) {
@@ -347,7 +348,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   });
 
   // Authentication aliases are verified separately against their guarded UI handlers.
-  for (const operation of contract.operations().filter(x => !['/auth/login','/auth/force_change_password','/auth/forgot_password','/auth/reset_password','/auth/logout'].includes(x.template))) {
+  for (const operation of contract.operations().filter(x => isRelayedPath(x.template) && !['/auth/login','/auth/force_change_password','/auth/forgot_password','/auth/reset_password','/auth/logout'].includes(x.template))) {
     test(`${operation.method} ${operation.template} reaches the BFF unchanged and its response comes back`, async () => {
       const [code, response] = Object.entries(operation.operation.responses).find(([candidate]) => candidate.startsWith('2'));
       const status = code === '2XX' ? 200 : Number(code);
@@ -382,7 +383,7 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
   }
 
   test('methods absent from the contract are refused with Allow before reaching the BFF', async () => {
-    for (const [template, item] of Object.entries(contract.document.paths)) {
+    for (const [template, item] of Object.entries(contract.document.paths).filter(([template]) => isRelayedPath(template))) {
       const declared = Object.keys(item).map((method) => method.toUpperCase());
       const { pathname } = concretePath({ template, operation: Object.values(item)[0] });
       for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].filter((candidate) => !declared.includes(candidate))) {
@@ -402,6 +403,30 @@ describe('catch-all proxy → every BFF operation of the contract', () => {
     const traversal = await catchAll.GET(new NextRequest('http://localhost:5000/me'), { params: Promise.resolve({ path: ['user', '..', 'me'] }) });
     assert.equal(traversal.status, 400);
     assert.equal(bff.requests.length, 0);
+  });
+
+  // MAIR-700: the relay only accepts its allow-list; the administration routes stay with the administration console.
+  test('MAIR-700 every /admin route of the contract, and /auth/keycloak, answer 404 without reaching the BFF', async () => {
+    const refused = contract.operations().filter((operation) => !isRelayedPath(operation.template));
+    assert.ok(refused.some((operation) => operation.template === '/admin/sessions/revoke'));
+    assert.ok(refused.filter((operation) => operation.template.startsWith('/admin/')).length >= 14);
+    for (const operation of refused) {
+      const { pathname, search } = concretePath(operation);
+      const result = await catchAll[operation.method](new NextRequest(`http://localhost:5000${pathname}${search}`, {
+        method: operation.method,
+        headers: { 'Sec-Fetch-Site': 'same-origin', cookie: 'accessToken=admin-session', 'Content-Type': 'application/json' },
+        ...(operation.method === 'GET' || operation.method === 'HEAD' ? {} : { body: '{}' }),
+      }), context(pathname));
+      assert.equal(result.status, 404, `${operation.method} ${operation.template}`);
+    }
+    assert.equal(bff.requests.length, 0);
+  });
+
+  test('MAIR-700 the allow-list is the sign-in, the current user, the passkey creation and the probes only', () => {
+    const relayed = Object.keys(contract.document.paths).filter((template) => isRelayedPath(template));
+    assert.deepEqual(relayed.filter((template) => !template.startsWith('/auth/')).sort(), ['/check_apis', '/health', '/me', '/session/me', '/user/me/passkeys', '/user/me/passkeys/options']);
+    assert.equal(relayed.some((template) => template.startsWith('/admin')), false);
+    assert.equal(relayed.includes('/user/{userId}/about'), false);
   });
 
   test('HEAD is forwarded as the declared GET without a body', async () => {

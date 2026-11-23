@@ -44,3 +44,10 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 ## Mise à jour et validation
 
 Le paquet est épinglé à une version exacte : une release `X.Y.Z` de BFF_user, ou, tant qu'aucune release n'est coupée, le paquet `0.0.0-dev.<sha>` publié par la CICD pour le commit courant de son `main` (MAIR-509), ou, une fois ce commit livré en staging, le paquet `0.0.0-staging.<sha40>` du même commit, préféré lors d’une release staging pour la lisibilité (MAIR-600 ; jamais `0.0.0-staging.<sha court>` ni une plage, jamais une copie du checkout local du BFF). Mise à jour : `npm install --save-exact @mairie360/bff-user-openapi@<version>`, puis `npm run contracts:sync`, `npm run contracts:check` et `npm test`. Le paquet est une sortie orval sans `openapi.json` : `scripts/orval-contract.mjs` en reconstruit le contrat. Seuls les succès (`2XX`) et les réponses modélisées par statut (`412`) y figurent ; erreurs, formats et en-têtes de réponse n’y sont pas. Le tag de l’image `bff-user` des fichiers `docker-compose*.yml` doit être construit depuis le même commit : `X.Y.Z` pour une release, `dev-<sha7>` pour un paquet dev, `staging-<sha7>` pour un paquet staging (`scripts/contract-version.mjs`).
+
+## Besoins proposés
+
+La connexion par passkey (F5) utilise `/auth/passkey/options` et `/auth/passkey`. Il manque côté BFF User, pour la proposition après une connexion par mot de passe (F8) et pour la branche passkey de « Sécurisez votre compte » (F7) :
+
+- le relais de la création d’une passkey d’un agent connecté : options puis enregistrement (Core expose `/user/me/passkeys/options/` et `/user/me/passkeys/`) ;
+- pour F7, une création possible avec le jeton d’inscription (`twoFactorSetupToken`) quand l’agent n’a pas encore de session.
