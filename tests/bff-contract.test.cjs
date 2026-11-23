@@ -295,7 +295,7 @@ describe('POST /api/auth/force-change-password → BFF POST /auth/force_change_p
     });
   }
 
-  for (const [status, message] of [[400, 'Le nouveau mot de passe est invalide.'], [500, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.'], [502, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.']]) {
+  for (const [status, message] of [[400, 'Ce mot de passe n’est pas accepté : utilisez au moins 12 caractères, évitez les mots de passe courants et n’y mettez ni votre adresse e-mail, ni votre prénom, ni votre nom.'], [500, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.'], [502, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.']]) {
     test(`${status} errors keep their status, show a French message and keep the cookie for a retry`, async () => {
       bff.on('POST', '/auth/force_change_password', apiError(status, 'Invalid password-change payload'));
 
