@@ -280,6 +280,9 @@
       },
       "AdminUserListQuery": {
         "properties": {
+          "account_status": {
+            "$ref": "#/components/schemas/AdminUserListQueryAccountStatus"
+          },
           "page": {
             "exclusiveMinimum": 0,
             "type": "number"
@@ -289,13 +292,36 @@
             "minimum": 1,
             "type": "number"
           },
+          "role_id": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
           "search": {
             "maxLength": 100,
             "type": "string"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/AdminUserListQuerySort"
           }
         },
         "required": [],
         "type": "object"
+      },
+      "AdminUserListQueryAccountStatus": {
+        "enum": [
+          "active",
+          "invited",
+          "inactive",
+          "suspended"
+        ],
+        "type": "string"
+      },
+      "AdminUserListQuerySort": {
+        "enum": [
+          "name",
+          "-name"
+        ],
+        "type": "string"
       },
       "AdminUserPasswordResetBody": {
         "properties": {
@@ -561,6 +587,13 @@
       },
       "AdministrationUser": {
         "properties": {
+          "account_status": {
+            "$ref": "#/components/schemas/AdministrationUserAccountStatus"
+          },
+          "active_sessions": {
+            "minimum": 0,
+            "type": "number"
+          },
           "email": {
             "type": "string"
           },
@@ -572,6 +605,12 @@
           },
           "is_archived": {
             "type": "boolean"
+          },
+          "last_login_at": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "last_name": {
             "type": "string"
@@ -596,6 +635,9 @@
           },
           "status": {
             "type": "string"
+          },
+          "two_factor": {
+            "$ref": "#/components/schemas/AdministrationUserTwoFactor"
           }
         },
         "required": [
@@ -606,9 +648,22 @@
           "phone_number",
           "status",
           "is_archived",
-          "roles"
+          "roles",
+          "account_status",
+          "active_sessions",
+          "last_login_at",
+          "two_factor"
         ],
         "type": "object"
+      },
+      "AdministrationUserAccountStatus": {
+        "enum": [
+          "active",
+          "invited",
+          "inactive",
+          "suspended"
+        ],
+        "type": "string"
       },
       "AdministrationUserRolesItem": {
         "properties": {
@@ -624,6 +679,49 @@
           "name"
         ],
         "type": "object"
+      },
+      "AdministrationUserSessions": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationSession"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sessions"
+        ],
+        "type": "object"
+      },
+      "AdministrationUserTwoFactor": {
+        "properties": {
+          "last_verified_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "methods": {
+            "items": {
+              "$ref": "#/components/schemas/AdministrationUserTwoFactorMethodsItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "methods",
+          "last_verified_at"
+        ],
+        "type": "object"
+      },
+      "AdministrationUserTwoFactorMethodsItem": {
+        "enum": [
+          "totp",
+          "passkey",
+          "backup_codes"
+        ],
+        "type": "string"
       },
       "AdministrationUsersPage": {
         "properties": {
@@ -913,8 +1011,20 @@
         "required": [],
         "type": "object"
       },
+      "GetAdminUsersAccountStatus": {
+        "enum": [
+          "active",
+          "invited",
+          "inactive",
+          "suspended"
+        ],
+        "type": "string"
+      },
       "GetAdminUsersParams": {
         "properties": {
+          "account_status": {
+            "$ref": "#/components/schemas/GetAdminUsersAccountStatus"
+          },
           "page": {
             "exclusiveMinimum": 0,
             "type": "number"
@@ -924,63 +1034,27 @@
             "minimum": 1,
             "type": "number"
           },
+          "role_id": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
           "search": {
             "maxLength": 100,
             "type": "string"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/GetAdminUsersSort"
           }
         },
         "required": [],
         "type": "object"
       },
-      "KeycloakConsoleAccess": {
-        "properties": {
-          "expires_in": {
-            "exclusiveMinimum": 0,
-            "type": "number"
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "url",
-          "expires_in"
+      "GetAdminUsersSort": {
+        "enum": [
+          "name",
+          "-name"
         ],
-        "type": "object"
-      },
-      "KeycloakLoginView": {
-        "properties": {
-          "code": {
-            "minLength": 1,
-            "type": "string"
-          },
-          "code_verifier": {
-            "minLength": 1,
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "device_info": {
-            "type": "string"
-          },
-          "nonce": {
-            "minLength": 1,
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "redirect_uri": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "redirect_uri",
-          "device_info"
-        ],
-        "type": "object"
+        "type": "string"
       },
       "LoginSessionResponse": {
         "properties": {
@@ -1037,9 +1111,6 @@
       },
       "LogoutResponse": {
         "properties": {
-          "logout_url": {
-            "type": "string"
-          },
           "message": {
             "type": "string"
           },
@@ -1055,9 +1126,6 @@
       },
       "LogoutView": {
         "properties": {
-          "post_logout_redirect_uri": {
-            "type": "string"
-          },
           "refresh_token": {
             "minLength": 1,
             "type": "string"
@@ -1164,6 +1232,19 @@
       "PasskeyRegisterViewCredential": {
         "properties": {},
         "required": [],
+        "type": "object"
+      },
+      "PasskeyRenameView": {
+        "properties": {
+          "label": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
         "type": "object"
       },
       "PasskeyResponse": {
@@ -1580,7 +1661,7 @@
   "info": {
     "title": "bff_user",
     "version": "1.0.0",
-    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.50bc20ccaa49c7112a4debc9049f4b34aaeb8978"
+    "x-source-package": "@mairie360/bff-user-openapi@0.0.0-dev.dea8f70f3f2be8c9d817a677bc9692f902486ac8"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1849,24 +1930,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CoreResponse"
-                }
-              }
-            },
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/admin/keycloak/console-access": {
-      "post": {
-        "operationId": "postAdminKeycloakConsoleAccess",
-        "parameters": [],
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KeycloakConsoleAccess"
                 }
               }
             },
@@ -2232,6 +2295,31 @@
               "maxLength": 100,
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "account_status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/GetAdminUsersAccountStatus"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role_id",
+            "required": false,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/GetAdminUsersSort"
+            }
           }
         ],
         "responses": {
@@ -2407,6 +2495,33 @@
         }
       }
     },
+    "/admin/users/{userId}/reactivate": {
+      "post": {
+        "operationId": "postAdminUsersUserIdReactivate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
     "/admin/users/{userId}/roles": {
       "post": {
         "operationId": "postAdminUsersUserIdRoles",
@@ -2459,6 +2574,127 @@
           {
             "in": "path",
             "name": "roleId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/sessions": {
+      "delete": {
+        "operationId": "deleteAdminUsersUserIdSessions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      },
+      "get": {
+        "operationId": "getAdminUsersUserIdSessions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AdministrationUserSessions"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CoreResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/sessions/{sessionId}": {
+      "delete": {
+        "operationId": "deleteAdminUsersUserIdSessionsSessionId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoreResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/suspend": {
+      "post": {
+        "operationId": "postAdminUsersUserIdSuspend",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
             "required": true,
             "schema": {
               "type": "number"
@@ -2572,34 +2808,6 @@
         },
         "responses": {
           "2XX": {
-            "description": "Succès (seul statut typé par orval)"
-          }
-        }
-      }
-    },
-    "/auth/keycloak": {
-      "post": {
-        "operationId": "postAuthKeycloak",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/KeycloakLoginView"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "2XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponse"
-                }
-              }
-            },
             "description": "Succès (seul statut typé par orval)"
           }
         }
@@ -2974,6 +3182,43 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PasskeyRegisterOptionsResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
+    },
+    "/user/me/passkeys/{passkeyId}": {
+      "patch": {
+        "operationId": "patchUserMePasskeysPasskeyId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "passkeyId",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRenameView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
                 }
               }
             },
