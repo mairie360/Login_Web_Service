@@ -4,6 +4,7 @@ import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../lib
 import { trustedClientIpHeaders } from "../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../lib/auth-request";
 import { createAuthSessionResponse } from "../../../../lib/auth-session";
+import { readPasskeyOffer } from "../../../../lib/passkey-offer";
 import { readBffCookieSession } from "../../../../lib/bff-session-cookies";
 import { setTwoFactorSetupToken, setTwoFactorToken } from "../../../../lib/two-factor-token";
 
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return createAuthSessionResponse(accessToken, refreshToken, cookieSession?.maxAge);
+    return createAuthSessionResponse(accessToken, refreshToken, cookieSession?.maxAge, readPasskeyOffer(upstreamBody));
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "TimeoutError";
 

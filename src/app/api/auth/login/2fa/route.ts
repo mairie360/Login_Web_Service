@@ -4,6 +4,7 @@ import { bffUserOperations, bffUserUrl, configuredBffUrl } from "../../../../../
 import { trustedClientIpHeaders } from "../../../../../lib/trusted-client-ip";
 import { rejectUnsafeAuthRequest } from "../../../../../lib/auth-request";
 import { createAuthSessionResponse } from "../../../../../lib/auth-session";
+import { readPasskeyOffer } from "../../../../../lib/passkey-offer";
 import { readBffCookieSession } from "../../../../../lib/bff-session-cookies";
 import { clearTwoFactorToken, TWO_FACTOR_TOKEN_COOKIE } from "../../../../../lib/two-factor-token";
 import { bffFailure, bffUnreachable, NO_STORE, refusalPath, tooManyAttempts } from "../../../../../lib/bff-refusal";
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
     if (!cookieSession?.accessToken || !cookieSession.refreshToken) {
       return NextResponse.json({ message: "Le service de connexion a renvoyé une réponse invalide." }, { status: 502, headers: NO_STORE });
     }
-    const response = createAuthSessionResponse(cookieSession.accessToken, cookieSession.refreshToken, cookieSession.maxAge);
+    const upstreamBody: unknown = await upstreamResponse.json().catch(() => null);
+    const response = createAuthSessionResponse(cookieSession.accessToken, cookieSession.refreshToken, cookieSession.maxAge, readPasskeyOffer(upstreamBody));
     clearTwoFactorToken(response);
     return response;
   } catch (error) {

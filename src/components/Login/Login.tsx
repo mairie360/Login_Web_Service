@@ -6,6 +6,7 @@ import RecoveryLayout from "../RecoveryLayout";
 import { CredentialsFields } from "./components/CredentialsFields";
 import { LoginFeedback } from "./components/LoginFeedback";
 import { LoginSubmit } from "./components/LoginSubmit";
+import { PasskeyOffer } from "./components/PasskeyOffer";
 import { PasskeySignIn } from "./components/PasskeySignIn";
 import { PasswordChangeFields } from "./components/PasswordChangeFields";
 import { SecureAccountStep } from "./components/SecureAccountStep";
@@ -24,6 +25,14 @@ const navigateToFront = (url: string) => window.location.assign(url);
 export default function Login({ redirectUrl, navigate = navigateToFront, passkeySlot }: LoginProps) {
   const form = useLoginForm({ redirectUrl, navigate });
 
+  if (form.isPasskeyOffer) {
+    return (
+      <RecoveryLayout>
+        <PasskeyOffer onDone={form.finishPasskeyOffer} />
+      </RecoveryLayout>
+    );
+  }
+
   if (form.isTwoFactorSetup) {
     return (
       <RecoveryLayout>
@@ -35,7 +44,7 @@ export default function Login({ redirectUrl, navigate = navigateToFront, passkey
   if (form.isTwoFactor) {
     return (
       <RecoveryLayout>
-        <TwoFactorStep onSuccess={form.completeTwoFactor} onSessionOver={form.restartAfterExpiredSession} onBack={form.backToCredentials} />
+        <TwoFactorStep onSuccess={form.completePasswordSecondStep} onSessionOver={form.restartAfterExpiredSession} onBack={form.backToCredentials} />
       </RecoveryLayout>
     );
   }
