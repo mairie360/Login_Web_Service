@@ -68,7 +68,7 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
       <Button label="Demander un nouveau lien" href={recoveryUrl} fullWidth />
       <BackButton label="Retour à la connexion" href={loginUrl} />
     </> : <form method="post" aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
-      <Body>Choisissez un mot de passe d’au moins 12 caractères, avec des chiffres et des lettres.</Body>
+      <Body>Choisissez un mot de passe d’au moins 12 caractères, qui ne soit ni un mot de passe courant, ni votre e-mail, votre prénom ou votre nom.</Body>
       <NewPasswordField id="reset-password" name="new-password" required maxLength={255} value={password} onChange={event => setPassword(event.target.value)} disabled={pending || complete} />
       <PasswordField id="reset-confirmation" name="password-confirmation" label="Confirmer le mot de passe" autoComplete="new-password" required maxLength={255} value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={pending || complete} />
       {error && <ErrorAlert title={error} onDismiss={() => setError("")} />}
