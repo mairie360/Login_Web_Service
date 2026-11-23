@@ -49,6 +49,9 @@ beforeEach(() => {
   process.env.DASHBOARD_FRONT_URL = 'https://dashboard.mairie.test/';
   process.env.PROJECT_FRONT_URL = 'https://projects.mairie.test/';
   bff.reset();
+  // MAIR-773: every session opened by the page first asks for a pending security alert; none by default.
+  // The package only types the 2XX alert: the 204 "none" is out of the orval contract.
+  bff.on('GET', '/user/me/security-alert', { status: 204, outOfContract: true });
   front.reset();
   window = { location: { assigned: [], assign(href) { this.assigned.push(href); } } };
   global.window = window;
@@ -172,8 +175,8 @@ test('pending sign-in locks credentials, ignores repeated submissions and allows
   assert.deepEqual(window.location.assigned, []);
   bff.on('POST', '/auth/login', sessionReply('access-token'));
   await submit();
-  assert.equal(front.browserCalls.length, 2);
-  assert.equal(bff.requests.length, 2);
+  assert.equal(front.browserCalls.length, 3);
+  assert.equal(bff.requests.length, 3);
   assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
 });
 
@@ -202,8 +205,8 @@ test('a browser transport failure releases sign-in and supports a subsequent exp
   }
   bff.on('POST', '/auth/login', sessionReply('access-token'));
   await submit();
-  assert.equal(front.browserCalls.length, 2);
-  assert.equal(bff.requests.length, 1);
+  assert.equal(front.browserCalls.length, 3);
+  assert.equal(bff.requests.length, 2);
   assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
 });
 
@@ -286,8 +289,8 @@ test('first-password refusal without a message keeps the draft for an explicit r
   bff.on('POST', '/auth/force_change_password', { status: 204 });
   bff.on('POST', '/auth/login', sessionReply('fresh-access-token'));
   await submit();
-  assert.equal(front.browserCalls.length, 4);
-  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.equal(front.browserCalls.length, 5);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login', '/user/me/security-alert']);
   assert.equal(front.cookies.get('passwordChangeToken'), undefined);
   assert.match(view.text(), /Connexion réussie\./);
   assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
@@ -374,9 +377,9 @@ test('one lock spans first-password confirmation and lost reconnection without s
   }
   bff.on('POST', '/auth/login', sessionReply('fresh-access-token'));
   await submit();
-  assert.equal(front.browserCalls.length, 4);
-  assert.equal(bff.requests.length, 3);
-  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login']);
+  assert.equal(front.browserCalls.length, 5);
+  assert.equal(bff.requests.length, 4);
+  assert.deepEqual(bff.requests.map((request) => request.template), ['/auth/login', '/auth/force_change_password', '/auth/login', '/user/me/security-alert']);
   assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
 });
 
@@ -596,11 +599,53 @@ test('valid credentials sign the user in: the cookie is set, the success is rend
   assert.match(html, /<div[^>]*role="status" data-tone="success"[\s\S]*?Connexion réussie\./);
   assert.match(html, /<input[^>]*id="password"[^>]*value=""/, 'the password is cleared once sent');
   assert.match(html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
-  assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }]);
-  assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
+  assert.deepEqual(front.browserCalls, [{ method: 'POST', path: '/api/auth/login' }, { method: 'GET', path: '/api/security-alert' }]);
+  assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'GET /user/me/security-alert no-cookie']);
   assert.deepEqual(bff.requests[0].body, { email: 'alice@mairie.test', password: 'S3cret!', device_info: USER_AGENT });
   assert.equal(front.cookies.get('accessToken'), 'access-token');
   assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+// MAIR-773 F9: a session of the agent was used from another device; the next sign-in shows it before the module.
+const pendingAlert = (level) => ({ id: 12, level, ip_address: '92.184.10.1', device_info: USER_AGENT, created_at: '2026-11-23T08:12:00+00:00' });
+
+test('MAIR-773 a pending alert shows « Activité inhabituelle », then « J’ai compris » marks it read and opens the module', async () => {
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
+  bff.on('GET', '/user/me/security-alert', { body: pendingAlert('certain') });
+  bff.on('POST', '/user/me/security-alert/{alertId}/acknowledge', { status: 204, outOfContract: true });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'S3cret!');
+  await submit();
+
+  const html = await view.waitFor((current) => current.includes('Activité inhabituelle sur votre compte'));
+  assert.match(html, /Quelqu’un a essayé d’utiliser votre session depuis un autre appareil\./);
+  assert.match(html, /92\.184\.xxx\.xxx/);
+  assert.doesNotMatch(html, /92\.184\.10\.1/);
+  assert.deepEqual(window.location.assigned, [], 'the module waits until the alert is read');
+
+  await view.click((props, text, tag) => tag === 'button' && text.includes('J’ai compris, continuer'));
+  await view.waitFor(() => window.location.assigned.length > 0);
+  assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'GET /user/me/security-alert no-cookie', 'POST /user/me/security-alert/{alertId}/acknowledge no-cookie']);
+  assert.equal(bff.requests[2].headers.authorization, 'Bearer access-token');
+  assert.deepEqual(window.location.assigned, ['https://dashboard.mairie.test/']);
+});
+
+test('MAIR-773 « Ce n’était pas moi » marks the alert read and opens the forgotten-password page with the e-mail', async () => {
+  bff.on('POST', '/auth/login', sessionReply('access-token'));
+  bff.on('GET', '/user/me/security-alert', { body: pendingAlert('possible') });
+  bff.on('POST', '/user/me/security-alert/{alertId}/acknowledge', { status: 204, outOfContract: true });
+  await renderLogin();
+  await typeInto('email', 'alice@mairie.test');
+  await typeInto('password', 'S3cret!');
+  await submit();
+
+  const html = await view.waitFor((current) => current.includes('Activité inhabituelle sur votre compte'));
+  assert.match(html, /peut-être vous après un changement de réseau/);
+  await view.click((props, text, tag) => tag === 'button' && text.includes('Ce n’était pas moi'));
+  await view.waitFor(() => window.location.assigned.length > 0);
+  assert.equal(bff.requests.at(-1).template, '/user/me/security-alert/{alertId}/acknowledge');
+  assert.deepEqual(window.location.assigned, ['/forgot-password?email=alice%40mairie.test&redirect=https%3A%2F%2Fdashboard.mairie.test%2F']);
 });
 
 test('refused credentials are rendered as the page message, without a session', async () => {
@@ -664,8 +709,8 @@ test('a first connection switches to the password change form, then signs in wit
 
   assert.match(html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(html, /<div[^>]*role="status" data-tone="success"[\s\S]*?Connexion réussie\./);
-  assert.deepEqual(front.browserCalls.map((call) => call.path), ['/api/auth/login', '/api/auth/force_change_password', '/api/auth/login']);
-  assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie']);
+  assert.deepEqual(front.browserCalls.map((call) => call.path), ['/api/auth/login', '/api/auth/force_change_password', '/api/auth/login', '/api/security-alert']);
+  assert.deepEqual(upstream(), ['POST /auth/login no-cookie', 'POST /auth/force_change_password no-cookie', 'POST /auth/login no-cookie', 'GET /user/me/security-alert no-cookie']);
   assert.equal(bff.requests[2].body.password, 'N3w-secret-pass');
   assert.equal(front.cookies.get('accessToken'), 'fresh-access-token');
   assert.deepEqual(window.location.assigned, ['https://projects.mairie.test/projects?view=board']);

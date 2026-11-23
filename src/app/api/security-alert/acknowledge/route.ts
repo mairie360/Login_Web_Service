@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
     const upstreamResponse = await fetch(bffUserUrl(bffUserOperations.getPostUserMeSecurityAlertAlertIdAcknowledgeUrl(id)), {
       method: "POST",
       headers: session.headers,
-      body: "{}",
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
     });

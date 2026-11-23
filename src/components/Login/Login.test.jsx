@@ -59,7 +59,7 @@ describe('Login', () => {
       fireEvent.change(screen.getByLabelText(/Code de vérification/), { target: { value: '492039' } });
       fireEvent.submit(document.querySelector('form'));
       await waitFor(() => expect(navigate).toHaveBeenCalledWith('https://projects.example.test/'));
-      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/auth/login', '/api/auth/login/2fa']);
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/auth/login', '/api/auth/login/2fa', '/api/security-alert']);
       vi.unstubAllGlobals();
     });
 
@@ -117,7 +117,7 @@ describe('Login', () => {
       fireEvent.click(screen.getByLabelText('J’ai enregistré mes codes de secours en lieu sûr.'));
       fireEvent.submit(document.querySelector('form'));
       await waitFor(() => expect(navigate).toHaveBeenCalledWith('https://projects.example.test/'), { timeout: 3000 });
-      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/auth/login', '/api/auth/2fa/setup', '/api/auth/2fa/confirm']);
+      expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(['/api/auth/login', '/api/auth/2fa/setup', '/api/auth/2fa/confirm', '/api/security-alert']);
       vi.unstubAllGlobals();
     });
 
@@ -167,7 +167,8 @@ describe('MAIR-811 F5 journey: sign in with a passkey from the sign-in card', ()
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('https://projects.example.test/'));
     const called = fetchMock.mock.calls.map(([url]) => url);
     // One challenge when the card loads (is the passkey available?) and a fresh single-use one for the click.
-    expect(called).toEqual(['/api/auth/passkey/options', '/api/auth/passkey/options', '/api/auth/passkey']);
+    // MAIR-773: then the pending security alert of the account (none here).
+    expect(called).toEqual(['/api/auth/passkey/options', '/api/auth/passkey/options', '/api/auth/passkey', '/api/security-alert']);
     expect(called).not.toContain('/api/auth/login');
     expect(screen.queryByText('Code de vérification')).toBeNull();
     expect(screen.queryByText('Sécurisez votre compte')).toBeNull();
