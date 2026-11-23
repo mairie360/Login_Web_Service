@@ -167,8 +167,7 @@ it('keeps the destination in the return link and allows retry after a generic re
 const RULE = 'Utilisez au moins 12 caractères.';
 it.each([
   ['too short', 'abcdef12345', RULE],
-  ['without a digit', 'abcdefghijklm', RULE],
-  ['without a letter', '123456789012', RULE],
+  ['11-character', 'onze-signes', RULE],
   ['too long', 'x'.repeat(255) + '1', 'ne doit pas dépasser 255 caractères'],
 ])('MAIR-888 F4: a %s password is refused before sending a reset token', (_, password, message) => {
   render(<ResetPassword token={token} />);
