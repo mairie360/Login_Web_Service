@@ -333,6 +333,34 @@
           }
         }
       }
+    },
+    "/user/me/passkeys": {
+      "post": {
+        "operationId": "postUserMePasskeys",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyRegisterView"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "2XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
+                }
+              }
+            },
+            "description": "Succès (seul statut typé par orval)"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -574,6 +602,61 @@
           "groups",
           "roles"
         ]
+      },
+      "PasskeyResponse": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "id": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "provider",
+          "created_at",
+          "last_used_at"
+        ],
+        "type": "object"
+      },
+      "PasskeyRegisterView": {
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/PasskeyRegisterViewCredential"
+          },
+          "label": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "credential"
+        ],
+        "type": "object"
+      },
+      "PasskeyRegisterViewCredential": {
+        "properties": {},
+        "required": [],
+        "type": "object"
       }
     }
   }

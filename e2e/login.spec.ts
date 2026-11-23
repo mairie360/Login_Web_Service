@@ -74,20 +74,21 @@ test('a sign-in posted from another site is refused', async ({ request }) => {
   expect(response.headers()['set-cookie'] ?? '').not.toMatch(/accessToken=/);
 });
 
-test('the session of an agent without the admin role is refused on the admin routes', async ({ page, request }) => {
+// MAIR-700: the relay of Login only accepts its allow-list; the administration routes are not reachable through it.
+test('the admin routes are not relayed by Login, even with a session, while the current user still is', async ({ page, request }) => {
   const response = await signIn(page, RETURNING_AGENT, PASSWORD);
   expect(response.status()).toBe(200);
   // The token Login issued, sent explicitly: the check does not depend on the browser cookie jar.
   const token = /accessToken=([^;]+)/.exec((await response.headerValue('set-cookie')) ?? '')?.[1];
   expect(token).toBeTruthy();
 
-  // The proxy relays the session as a Bearer token: BFF User refuses a plain agent the roles admin.
-  const denied = await request.get('/admin/roles', {
-    headers: { Cookie: `accessToken=${token}`, Accept: 'application/json' },
-    maxRedirects: 0,
-  });
-  expect(denied.status()).toBe(403);
-  // Without any session the same route is refused as unauthenticated.
-  const anonymous = await request.get('/admin/roles', { headers: { Accept: 'application/json' }, maxRedirects: 0 });
-  expect(anonymous.status()).toBe(401);
+  for (const route of ['/admin/roles', '/admin/users', '/admin/sessions']) {
+    const withSession = await request.get(route, { headers: { Cookie: `accessToken=${token}`, Accept: 'application/json' }, maxRedirects: 0 });
+    expect(withSession.status()).toBe(404);
+    const anonymous = await request.get(route, { headers: { Accept: 'application/json' }, maxRedirects: 0 });
+    expect(anonymous.status()).toBe(404);
+  }
+  // The other fronts read the current user through this relay: /me keeps working.
+  const me = await request.get('/me', { headers: { Cookie: `accessToken=${token}`, Accept: 'application/json' }, maxRedirects: 0 });
+  expect(me.status()).toBe(200);
 });

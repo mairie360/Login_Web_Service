@@ -174,7 +174,7 @@ test('BFF User is the only BFF: one URL module, and the proxy forwards to it', (
   assert.ok(ts.isObjectLiteralExpression(config));
   const properties = new Map(config.properties.filter(ts.isPropertyAssignment).map(p => [policy.propertyName(p.name), p.initializer.getText(source)]));
   assert.equal(properties.get('baseUrl'), 'configuredBffUrl');
-  assert.equal(properties.get('paths'), 'contract.paths');
+  assert.equal(properties.get('paths'), 'relayedPaths'); // MAIR-700: the allow-list of src/lib/relayed-paths.ts
   assert.equal(properties.get('trustedHeaders'), 'trustedClientIpHeaders');
   assert.match(properties.get('loginUrl'), /process\.env\.LOGIN_FRONT_URL/);
   assert.match(properties.get('frontUrl'), /process\.env\.LOGIN_FRONT_URL/);
