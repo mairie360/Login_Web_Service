@@ -164,7 +164,7 @@ it('keeps the destination in the return link and allows retry after a generic re
   expect((await screen.findByRole('alert')).textContent).toContain('n’a pas pu être envoyée');
 });
 
-const RULE = 'Utilisez au moins 12 caractères, avec des chiffres et des lettres.';
+const RULE = 'Utilisez au moins 12 caractères.';
 it.each([
   ['too short', 'abcdef12345', RULE],
   ['without a digit', 'abcdefghijklm', RULE],
@@ -182,8 +182,8 @@ it.each([
 it('MAIR-888 F4: the rule is shown as help text, then the confirmation is checked, and a 12-character password is accepted', async () => {
   fetchMock.mockResolvedValue(reply({ success: true }));
   render(<ResetPassword token={token} navigate={vi.fn()} />);
-  expect(document.body.textContent).toContain('Choisissez un mot de passe d’au moins 12 caractères, avec des chiffres et des lettres.');
-  expect(document.body.textContent).toContain('12 caractères minimum, avec chiffres et lettres.');
+  expect(document.body.textContent).toContain('Choisissez un mot de passe d’au moins 12 caractères, qui ne soit ni un mot de passe courant, ni votre e-mail, votre prénom ou votre nom.');
+  expect(document.body.textContent).toContain('12 caractères minimum. Évitez les mots de passe courants, votre e-mail, votre prénom et votre nom.');
   fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'abcdefghij12' } });
   fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'abcdefghij13' } });
   fireEvent.submit(document.querySelector('form'));

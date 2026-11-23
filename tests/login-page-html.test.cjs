@@ -642,12 +642,12 @@ test('a first connection switches to the password change form, then signs in wit
   assert.equal(front.cookies.get('accessToken'), undefined);
 
   // MAIR-875 F2: the 12-character rule (digits and letters) is checked before the confirmation and before any call.
-  assert.match(change, /12 caractères minimum, avec chiffres et lettres\./);
+  assert.match(change, /12 caractères minimum\. Évitez les mots de passe courants, votre e-mail, votre prénom et votre nom\./);
   for (const weak of ['court1', 'sans-chiffre-du-tout', '123456789012']) {
     await typeInto('new-password', weak);
     await typeInto('new-password-confirmation', weak);
     await submit();
-    assert.match(view.text(), /Utilisez au moins 12 caractères, avec des chiffres et des lettres\./);
+    assert.match(view.text(), /Utilisez au moins 12 caractères\./);
     assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
   }
 
