@@ -16,7 +16,7 @@ describe('RecoveryLayout', () => {
     expect(card.className).toContain('[overflow-wrap:anywhere]');
   });
 
-  it('opens the card with the « Marque de la commune » block: logo, commune line, border under it', () => {
+  it('opens the card with the « Marque de la commune » block: lib Logo, lib Help with the commune line, lib Divider', () => {
     const { container } = render(
       <InstanceBrandProvider line={brandLine('Saint-André')}>
         <RecoveryLayout><h1>Connexion</h1></RecoveryLayout>
@@ -25,10 +25,8 @@ describe('RecoveryLayout', () => {
     const brand = container.querySelector('[data-brand]');
     expect(brand.parentElement.getAttribute('data-m360-component')).toContain('Card');
     expect(brand.parentElement.firstElementChild).toBe(brand);
-    expect(brand.className).toContain('border-b');
-    const line = brand.querySelector('[data-m360-component~="Help"]');
-    expect(line.textContent).toBe('Mairie de Saint-André,  · espace agents et élus');
-    expect(line.querySelector('[aria-hidden="true"]').textContent).toBe(' · ');
+    expect(brand.nextElementSibling.getAttribute('data-m360-component')).toBe('Divider');
+    expect(brand.querySelector('[data-m360-component~="Help"]').textContent).toBe('Mairie de Saint-André · espace agents et élus');
   });
 
   it('shows the audience alone while the instance names no commune', () => {

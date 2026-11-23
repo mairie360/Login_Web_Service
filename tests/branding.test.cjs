@@ -58,7 +58,7 @@ test('MAIR-1102 the layout draws the lib PublicBackdrop behind the page and name
     assert.equal((body.match(/data-ribbon=/g) ?? []).length, 4, 'the four ribbons of lib-components 2.3');
     assert.match(body, /<main id="login-content"[^>]*class="[^"]*relative z-\[1\]/, 'the content sits above the ribbons');
     assert.match(body, /<footer[^>]*class="[^"]*relative z-\[1\]/, 'the Footer sits above the ribbons');
-    assert.match(body, /Mairie de Saint-André<span class="sr-only">, <\/span><span aria-hidden="true"> · <\/span>espace agents et élus/);
+    assert.match(body, /data-brand[^>]*>[\s\S]*?Mairie de Saint-André · espace agents et élus<\/p><\/div><hr[^>]*data-m360-component="Divider"/, 'the brand block is made of lib components');
     assert.doesNotMatch(html, /dark:|prefers-color-scheme/, 'light mode only (MAIR-933)');
     assert.match(html, /<html[^>]*data-theme="light"/);
 
