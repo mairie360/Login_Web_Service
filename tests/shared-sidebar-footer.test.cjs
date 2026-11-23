@@ -16,6 +16,7 @@ test('sidebar information keeps copyright without creating a nested contentinfo 
   const html = renderToStaticMarkup(React.createElement(AppShell, {
     user: { name: '' },
     hrefs: { projects: 'https://projects.example/' },
+    showFooter: true, // lib 2.3 (MAIR-1092): the footer is no longer part of the page base
     footerProps: { year: 2026 },
   }, React.createElement('p', null, 'Contenu du module')));
   const dom = new JSDOM(html);
@@ -31,6 +32,17 @@ test('sidebar information keeps copyright without creating a nested contentinfo 
   assert.match(html, /Contenu du module/);
 });
 
+test('lib 2.3 (MAIR-1092): the shell renders no footer unless asked', () => {
+  const html = renderToStaticMarkup(React.createElement(AppShell, {
+    user: { name: '' },
+    hrefs: { projects: 'https://projects.example/' },
+    footerProps: { year: 2026 },
+  }, React.createElement('p', null, 'Contenu du module')));
+  assert.doesNotMatch(html, /© 2026 Mairie360/);
+  assert.doesNotMatch(html, /<footer\b/);
+  assert.match(html, /Contenu du module/);
+});
+
 test('standalone Footer retains horizontal compatibility', () => {
   const html = renderToStaticMarkup(React.createElement(Footer, { year: 2026 }));
   assert.match(html, /<footer\b/);
@@ -41,6 +53,7 @@ test('supplied product, year, real version and actionable links remain in sideba
   const html = renderToStaticMarkup(React.createElement(AppShell, {
     user: { name: '' },
     hrefs: { projects: 'https://projects.example/' },
+    showFooter: true, // lib 2.3 (MAIR-1092): the footer is no longer part of the page base
     footerProps: {
       productName: 'Produit fourni',
       year: 2024,
@@ -64,6 +77,7 @@ test('an explicitly requested legacy content footer remains supported', () => {
   const html = renderToStaticMarkup(React.createElement(AppShell, {
     user: { name: '' },
     hrefs: { projects: 'https://projects.example/' },
+    showFooter: true, // lib 2.3 (MAIR-1092): the footer is no longer part of the page base
     footerPlacement: 'content',
     footerProps: { year: 2026 },
   }, React.createElement('p', null, 'Contenu du module')));
