@@ -17,11 +17,13 @@ describe('Login', () => {
   });
 
   it('MAIR-866 F1: forgot-password is a lib link that keeps the requested module, and no « ou » appears without a passkey', () => {
-    render(<Login redirectUrl="https://projects.example.test/?p=1" />);
+    const { container } = render(<Login redirectUrl="https://projects.example.test/?p=1" />);
     const link = screen.getByRole('link', { name: 'Mot de passe oublié ?' });
     expect(link.getAttribute('href')).toBe('/forgot-password?redirect=https%3A%2F%2Fprojects.example.test%2F%3Fp%3D1');
     expect(link.getAttribute('data-m360-component')).toContain('LinkButton');
-    expect(screen.queryByRole('separator')).toBeNull();
+    // The only separator is the lib Divider under the brand block (MAIR-1102), never an « ou » in the form.
+    expect(container.querySelector('form').querySelector('hr, [role="separator"]')).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'ou' })).toBeNull();
   });
 
   it('MAIR-866 F1: the passkey slot sits under the main action after an « ou » separator', () => {

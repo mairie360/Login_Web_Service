@@ -28,3 +28,9 @@ body {
 input, textarea {
   color: var(--foreground);
 }
+
+/* MAIR-1102: the lib paints every `main` with the page background (body.mairie-ui main); on the public pages
+   the page background is the body's, so the PublicBackdrop ribbons drawn behind `main` stay visible. */
+body.mairie-ui main.login-page {
+  background: transparent;
+}
