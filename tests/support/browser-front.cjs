@@ -13,6 +13,9 @@ const ROUTES = {
   '/api/auth/force-change-password': 'src/app/api/auth/force-change-password/route.ts',
   '/api/auth/force_change_password': 'src/app/api/auth/force_change_password/route.ts',
   '/api/auth/refresh': 'src/app/api/auth/refresh/route.ts',
+  // MAIR-773: the pending security alert read right after a sign-in, and its acknowledgement.
+  '/api/security-alert': 'src/app/api/security-alert/route.ts',
+  '/api/security-alert/acknowledge': 'src/app/api/security-alert/acknowledge/route.ts',
 };
 
 class BrowserFront {

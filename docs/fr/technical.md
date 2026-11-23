@@ -155,6 +155,8 @@ Ces chemins de données sont exposés à la même origine par le proxy; les page
 | POST | `/api/passkeys/options` | [src/app/api/passkeys/options/route.ts](../../src/app/api/passkeys/options/route.ts) |
 | POST | `/api/passkeys` | [src/app/api/passkeys/route.ts](../../src/app/api/passkeys/route.ts) |
 | POST | `/api/passkeys/name` | [src/app/api/passkeys/name/route.ts](../../src/app/api/passkeys/name/route.ts) |
+| GET | `/api/security-alert` | [src/app/api/security-alert/route.ts](../../src/app/api/security-alert/route.ts) |
+| POST | `/api/security-alert/acknowledge` | [src/app/api/security-alert/acknowledge/route.ts](../../src/app/api/security-alert/acknowledge/route.ts) |
 
 
 ## Session, permissions et erreurs

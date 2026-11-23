@@ -52,7 +52,8 @@ describe("Login form", () => {
     fetchMock.mockResolvedValueOnce(authResponse({ success: true }));
     await user.click(screen.getByRole("button", { name: "Se connecter" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith(requestedFront));
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // The second sign-in, then its pending security alert (MAIR-773).
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("keeps one lock across password confirmation and reconnection, clearing stale pending feedback on transport failure", async () => {
@@ -185,6 +186,7 @@ describe("Login form", () => {
       "/api/auth/login",
       "/api/auth/force_change_password",
       "/api/auth/login",
+      "/api/security-alert",
     ]);
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ newPassword: "updated-test-password-1" });
     expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toEqual({

@@ -5,8 +5,9 @@ import { RECOVERY_EMAIL_PATTERN, RECOVERY_SENT_MESSAGE } from '../../lib/passwor
 import { BackButton, Body, Button, EmailField, ErrorAlert, PageTitle, SuccessAlert } from '@mairie360/lib-components/primitives';
 import RecoveryLayout from '../RecoveryLayout';
 
-export default function ForgotPassword({ redirectUrl }: { redirectUrl?: string }) {
-  const [email, setEmail] = useState("");
+export default function ForgotPassword({ redirectUrl, initialEmail = "" }: { redirectUrl?: string; initialEmail?: string }) {
+  // MAIR-773: « Ce n’était pas moi » of the unusual-activity screen opens this page with the e-mail prefilled.
+  const [email, setEmail] = useState(initialEmail);
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");

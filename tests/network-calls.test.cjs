@@ -129,6 +129,8 @@ test('server-side BFF calls go through bffUserUrl to operations declared in the 
     'src/app/api/passkeys/name/route.ts PATCH /user/me/passkeys/${passkeyId}',
     'src/app/api/passkeys/options/route.ts POST /user/me/passkeys/options',
     'src/app/api/passkeys/route.ts POST /user/me/passkeys',
+    'src/app/api/security-alert/acknowledge/route.ts POST /user/me/security-alert/${alertId}/acknowledge',
+    'src/app/api/security-alert/route.ts GET /user/me/security-alert',
   ]);
 });
 
@@ -157,6 +159,8 @@ test('browser calls stay same-origin and land on an existing route handler or a 
     'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/passkey/setup',
     'src/components/Login/components/SecureAccountStep/use-secure-account-step.ts POST /api/auth/passkey/setup/options',
     'src/components/Login/components/TwoFactorStep/use-two-factor-step.ts POST /api/auth/login/2fa',
+    'src/components/Login/components/UnusualActivity/security-alert.ts GET /api/security-alert',
+    'src/components/Login/components/UnusualActivity/security-alert.ts POST /api/security-alert/acknowledge',
     'src/components/Login/use-login-form.ts POST /api/auth/force_change_password',
     'src/components/Login/use-login-form.ts POST /api/auth/login',
     'src/components/ResetPassword/ResetPassword.tsx POST /api/auth/reset-password',

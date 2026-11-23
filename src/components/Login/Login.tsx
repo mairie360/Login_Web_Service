@@ -11,6 +11,7 @@ import { PasskeySignIn } from "./components/PasskeySignIn";
 import { PasswordChangeFields } from "./components/PasswordChangeFields";
 import { SecureAccountStep } from "./components/SecureAccountStep";
 import { TwoFactorStep } from "./components/TwoFactorStep";
+import { UnusualActivity } from "./components/UnusualActivity";
 import { useLoginForm } from "./use-login-form";
 
 type LoginProps = {
@@ -24,6 +25,14 @@ const navigateToFront = (url: string) => window.location.assign(url);
 
 export default function Login({ redirectUrl, navigate = navigateToFront, passkeySlot }: LoginProps) {
   const form = useLoginForm({ redirectUrl, navigate });
+
+  if (form.unusualAlert) {
+    return (
+      <RecoveryLayout>
+        <UnusualActivity alert={form.unusualAlert} email={form.email} isContinuing={form.isAcknowledging} onContinue={() => void form.continueAfterAlert()} onNotMe={() => void form.notMeAfterAlert()} />
+      </RecoveryLayout>
+    );
+  }
 
   if (form.isPasskeyOffer) {
     return (
