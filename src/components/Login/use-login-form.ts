@@ -2,6 +2,7 @@
 
 import { checkNewPassword } from "@mairie360/lib-components/shared";
 import { FormEvent, useRef, useState } from "react";
+import { shouldOfferPasskey, type PasskeyOfferFlags } from "./components/PasskeyOffer";
 import type { SetupPolicy } from "./components/SecureAccountStep";
 
 type LoginResponse = {
@@ -12,6 +13,8 @@ type LoginResponse = {
   requiresTwoFactor?: boolean;
   requiresTwoFactorSetup?: boolean;
   policy?: SetupPolicy;
+  /** MAIR-811: whether to propose a passkey once signed in (password sign-ins only). */
+  passkeyOffer?: PasskeyOfferFlags;
 };
 
 export type LoginFormOptions = {
@@ -34,12 +37,24 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [setupPolicy, setSetupPolicy] = useState<SetupPolicy | undefined>(undefined);
   const [isTwoFactorSetup, setIsTwoFactorSetup] = useState(false);
   const [errorDescription, setErrorDescription] = useState("");
+  const [isPasskeyOffer, setIsPasskeyOffer] = useState(false);
   const submissionPending = useRef(false);
 
   const redirectAfterLogin = () => {
     if (redirectUrl) {
       navigate(redirectUrl);
     }
+  };
+
+  // MAIR-811 (F8): after a password sign-in, propose a passkey when the mairie accepts them, the account has none, the
+  // browser can create one and the agent did not decline it on this device; otherwise open the module.
+  const finishPasswordSignIn = (offer?: PasskeyOfferFlags) => {
+    if (shouldOfferPasskey(offer)) {
+      setIsTwoFactor(false);
+      setIsPasskeyOffer(true);
+      return;
+    }
+    redirectAfterLogin();
   };
 
   const loginWithPassword = async (passwordValue: string) => {
@@ -85,7 +100,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
 
     setPassword("");
     setSuccessMessage("Connexion réussie.");
-    redirectAfterLogin();
+    finishPasswordSignIn(result.passkeyOffer);
   };
 
   // The login token is over (expired, or burnt by five wrong codes): the password is asked again.
@@ -192,9 +207,11 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
 
   return {
     email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation, setNewPasswordConfirmation,
-    isLoading, errorMessage, errorDescription, successMessage, isTwoFactor, isTwoFactorSetup, setupPolicy,
+    isLoading, errorMessage, errorDescription, successMessage, isTwoFactor, isTwoFactorSetup, setupPolicy, isPasskeyOffer,
     dismissError: () => { setErrorMessage(""); setErrorDescription(""); },
     completeTwoFactor: redirectAfterLogin,
+    completePasswordSecondStep: finishPasswordSignIn,
+    finishPasskeyOffer: redirectAfterLogin,
     restartAfterExpiredSession,
     backToCredentials: () => { setIsTwoFactor(false); setIsTwoFactorSetup(false); },
     onSubmit: isPasswordChange ? handlePasswordChange : handleLogin,

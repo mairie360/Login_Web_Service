@@ -11,11 +11,13 @@ type SecondStepResponse = {
   reason?: "wrong-code" | "spent-backup-code";
   restartLogin?: boolean;
   retryAfter?: number;
+  /** MAIR-811: whether to propose a passkey once the session is open. */
+  passkeyOffer?: { allowed: boolean; registered: boolean };
 };
 
 export type SecondStepOptions = {
-  /** The session is open: the sign-in is over. */
-  onSuccess: () => void;
+  /** The session is open: the sign-in is over (with the passkey offer of the sign-in, MAIR-811). */
+  onSuccess: (passkeyOffer?: { allowed: boolean; registered: boolean }) => void;
   /** The login token is over (expired, or burnt by five wrong codes): back to the password. */
   onSessionOver: () => void;
 };
@@ -91,7 +93,7 @@ export function useTwoFactorStep({ onSuccess, onSessionOver }: SecondStepOptions
       const result = (await response.json()) as SecondStepResponse;
 
       if (response.ok) {
-        onSuccess();
+        onSuccess(result.passkeyOffer);
         return;
       }
       if (result.restartLogin) {
