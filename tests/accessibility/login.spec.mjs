@@ -90,6 +90,8 @@ for (const mode of modes) {
         { json: { requiresPasswordChange: true } }, { gate: signInGate, json: { success: true } },
       ]);
       const changes = await responses(page, frontend.origin, '/api/auth/force_change_password', [{ json: { success: true } }]);
+      // MAIR-773: the session opened, the Login asks for a pending security alert (none here).
+      await page.route(`${frontend.origin}/api/security-alert`, (route) => route.fulfill({ json: { alert: null } }));
       await page.route(destination, async (route) => {
         await route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="fr"><title>Destination isolée</title><main><h1>Destination de test</h1></main></html>' });
       });
