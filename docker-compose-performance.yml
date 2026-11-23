@@ -78,7 +78,7 @@ services:
       - backend
 
   seeder:
-    image: postgres:18-alpine
+    image: postgres:19-alpine@sha256:cac45fb483caee3668946088a1c0532db89d5285c28dbfeac889b4068296e06f
     container_name: login-front-perf-seeder
     depends_on:
       liquibase:
