@@ -6,10 +6,11 @@ version: 1
 # origin is trustworthy and Chromium sends the Sec-Fetch-Site header the sign-in routes require.
 target: http://localhost:5000
 
-# Same JWT_SECRET as the services of docker-compose-accessibility.yml. The login page is public:
-# no state logs in, the session is only needed by the other fronts.
+# Sessions (MAIR-680): the engine signs an EdDSA accessToken for the user of a state (as:), like Core
+# API, with the run's JWT_PRIVATE_KEY that docker-compose-accessibility.yml hands to the runner
+# (accessibility_test.sh generates the key pair). No secret is committed here.
 session:
-  jwt_secret: b"secret"
+  jwt_timeout: 3600
 
 criteria:
   # Images: the logo (informative). 1.2: no decorative image; 1.4-1.9: no CAPTCHA, chart,
