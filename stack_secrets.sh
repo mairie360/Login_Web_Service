@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Sourced by security_test.sh and performance_test.sh (MAIR-680), same as BFF_user's stack_secrets.sh.
+# Sourced by every *_test.sh of this front (MAIR-680), same as BFF_user's stack_secrets.sh.
 #
 # Only Core_API signs session JWTs: Core gets the run's Ed25519 key pair (JWT_PRIVATE_KEY +
 # JWT_PUBLIC_KEY), BFF User only the public key and no JWT_SECRET, so the stack refuses every HS256

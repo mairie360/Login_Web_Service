@@ -42,15 +42,13 @@ if [ -z "${IMAGE_REF:-}" ]; then
 fi
 echo "==> Front under test: $IMAGE_REF"
 
-# Session of the run: an HS256 JWT {sub, role, exp} for the seeded user 1, signed with the
-# stack's JWT_SECRET (docker-compose-gdpr-simulation.yml), like the RGAA engine's sessions.
-JWT_SECRET='b"secret"'
-b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-jwt_header="$(printf '{"alg":"HS256","typ":"JWT"}' | b64url)"
-jwt_payload="$(printf '{"sub":"1","role":"admin","exp":%s}' "$(( $(date +%s) + 3600 ))" | b64url)"
-jwt_signature="$(printf '%s.%s' "$jwt_header" "$jwt_payload" | openssl dgst -sha256 -hmac "$JWT_SECRET" -binary | b64url)"
-[ -n "$jwt_signature" ] || { echo "Could not sign the session of the run (openssl)."; exit 1; }
-export ADMIN_JWT="$jwt_header.$jwt_payload.$jwt_signature"
+# Session of the run (MAIR-680): a fresh Ed25519 key pair (stack_secrets.sh), Core signs the session
+# JWTs with it and the other services only get the public key. ADMIN_JWT is an EdDSA JWT for the
+# seeded user 1, signed like Core signs it. Nothing is committed.
+# shellcheck source=stack_secrets.sh
+source ./stack_secrets.sh || exit 1
+ADMIN_JWT="$(sign_jwt 1 admin 3600)" || { echo "Could not sign the session of the run (openssl)."; exit 1; }
+export ADMIN_JWT
 
 # Engine at the cicd_version pinned in .github/workflows/cicd.yml (override with CICD_VERSION), fetched
 # like accessibility_test.sh does (a SHA, a tag or a branch; .rgaa-ref records the ref of a copy

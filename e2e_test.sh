@@ -16,6 +16,11 @@ mkdir -p e2e-report
 # The Playwright service runs as the caller, so the report stays theirs (and the CI runner's).
 export E2E_UID="$(id -u)" E2E_GID="$(id -g)"
 
+# Fresh Ed25519 key pair for this run (MAIR-680): Core signs the session JWTs with it, the other
+# services only get the public key and the journeys sign their sessions with the private one. Nothing is committed.
+# shellcheck source=stack_secrets.sh
+source ./stack_secrets.sh || exit 1
+
 # The journeys expect a fresh seed: drop what an interrupted run may have left behind, and tear
 # the stack down whatever happens next (Ctrl-C, CI cancellation, a step that fails).
 if ! docker compose -f "$COMPOSE_FILE" down -v --remove-orphans; then
