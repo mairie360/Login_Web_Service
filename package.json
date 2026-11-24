@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@mairie360/bff-user-openapi": "0.0.0-dev.873be3f495abc2132475d3d780a00db064ee9c60",
-    "@mairie360/lib-components": "2.3.2",
+    "@mairie360/lib-components": "2.3.3",
     "lucide-react": "1.46.0",
     "next": "16.4.2",
     "react": "^19.0.0",
