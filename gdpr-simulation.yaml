@@ -20,6 +20,9 @@ erase:
     expect: [204]
 browser:
   target: http://localhost:5000
+  # The sign-in page never reaches network idle in this stack (page.goto timed out after 30 s): the
+  # pages are read once loaded, after the engine's settle delay.
+  wait_until: load
   # Public pages: no session.
   pages:
     - name: sign-in
