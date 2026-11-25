@@ -175,8 +175,8 @@ for that commit. `cicd.yml`, `promote-staging.yml` and `promote-prod.yml` pin th
 ./agent_dev.sh logs login-front 100        # last 100 log lines (compile errors show up here)
 ./agent_dev.sh sql "SELECT id, email FROM users LIMIT 5"
 ./agent_dev.sh redis KEYS '*'
-./agent_dev.sh http GET /path     # authenticated call (admin JWT, sub=1, signed with the dev secret)
+./agent_dev.sh http GET /path     # authenticated call (admin EdDSA JWT, sub=1, signed with the stack's Ed25519 key)
 ./agent_dev.sh status | restart | down [-v]
 ```
 
-The loop is: edit, `wait`, `http`/`sql` to check the behaviour, `logs` when it fails. The watcher state lives in `.agent/` (gitignored). Needs `NODE_AUTH_TOKEN` exported (GitHub Packages). The page is on http://localhost:3001; BFF User on 4000, Core API on 3000. `http GET /` returns the rendered HTML.
+The loop is: edit, `wait`, `http`/`sql` to check the behaviour, `logs` when it fails. The watcher state and the stack's Ed25519 key pair (from `stack_secrets.sh`, reused until `down -v`) live in `.agent/` (gitignored). Needs `NODE_AUTH_TOKEN` exported (GitHub Packages). The page is on http://localhost:3001; BFF User on 4000, Core API on 3000. `http GET /` returns the rendered HTML.
