@@ -2,28 +2,32 @@
 # tests/gdpr/simulation for every persona of gdpr-simulation.yaml (gdpr-marker.yaml format of
 # MAIR-290).
 #
-# The account and sign-in part of BFF_user's log marker journey, sent to the front's own origin: an
-# administrator creates the persona's account through the same-origin proxy (src/lib/bff-proxy.ts),
-# then the persona signs in through the front's own routes (src/app/api/auth/*), wrong password,
+# The account and sign-in part of BFF_user's log marker journey. The front's proxy no longer relays
+# the administration routes, so an administrator creates the persona's account on BFF User directly
+# (`target: bff`, Bearer token), then the persona signs in through the front's own routes (src/app/api/auth/*), wrong password,
 # invalid e-mail and first-connection password change included. The logs of the front see the
 # persona's e-mail and passwords in the bodies and the errors. The login routes only accept
 # same-origin requests (Origin and Sec-Fetch-Site), the proxy turns the accessToken cookie into a
 # Bearer token.
 version: 1
 target: http://localhost:5000
+targets:
+  bff: http://bff-user:4000
 wait: /
 # Session of the administrator of the run (the seeded admin), signed by gdpr_simulation_test.sh.
 env: [ADMIN_JWT]
 steps:
   # There is no public sign-up: an administrator creates the account.
   - name: create the persona's account (admin)
+    target: bff
     request:
       method: POST
       path: /admin/users
-      headers: &admin {Cookie: "accessToken={{env.ADMIN_JWT}}", Origin: "http://localhost:5000"}
+      headers: &admin {Authorization: "Bearer {{env.ADMIN_JWT}}"}
       json: {first_name: "{{marker.first_name}}", last_name: "{{marker.last_name}}", email: "{{marker.email}}", password: "{{marker.password}}", phone_number: "{{marker.phone}}", phone_country: "FR"}
     expect: [201]
   - name: search the persona in the admin list (query string)
+    target: bff
     request: {method: GET, path: "/admin/users?search={{marker.email}}", headers: *admin}
     capture:
       user_id: body.users.0.id
