@@ -164,3 +164,19 @@ A push to `main` only releases dev (`cicd.yml` stops at `release-dev`). Staging 
 (environments `Staging` / `Prod`). Staging refuses a commit without `dev-<sha>` and a green main run, and runs
 the ZAP and k6 stacks on that image; prod refuses one without `staging-<sha>` and tags the version semantic-release computes
 for that commit. `cicd.yml`, `promote-staging.yml` and `promote-prod.yml` pin the same mairie360/CICD release.
+
+## Agent dev loop
+
+`./agent_dev.sh` lets an agent run and observe the dev stack from a shell, without attaching to a terminal. `compose.agent.yml` is the overlay it adds (Postgres on `127.0.0.1:5432`, Redis on `127.0.0.1:6379`, bounded logs).
+
+```bash
+./agent_dev.sh up                 # build + start detached, wait for healthy, start `docker compose watch` in the background
+./agent_dev.sh wait               # after an edit: block until http://localhost:3001/ answers again (prints the app logs on timeout)
+./agent_dev.sh logs login-front 100        # last 100 log lines (compile errors show up here)
+./agent_dev.sh sql "SELECT id, email FROM users LIMIT 5"
+./agent_dev.sh redis KEYS '*'
+./agent_dev.sh http GET /path     # authenticated call (admin EdDSA JWT, sub=1, signed with the stack's Ed25519 key)
+./agent_dev.sh status | restart | down [-v]
+```
+
+The loop is: edit, `wait`, `http`/`sql` to check the behaviour, `logs` when it fails. The watcher state and the stack's Ed25519 key pair (from `stack_secrets.sh`, reused until `down -v`) live in `.agent/` (gitignored). Needs `NODE_AUTH_TOKEN` exported (GitHub Packages). The page is on http://localhost:3001; BFF User on 4000, Core API on 3000. `http GET /` returns the rendered HTML.
