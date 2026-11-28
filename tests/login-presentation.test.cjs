@@ -37,9 +37,9 @@ function loginDocument(t) {
   return document.window;
 }
 
-test('Login applies the reference 17px root scale to its document', (t) => {
+test('MAIR-1261 Login keeps the 16px root size of the artifact', (t) => {
   const window = loginDocument(t);
-  assert.equal(window.getComputedStyle(window.document.documentElement).fontSize, '17px');
+  assert.equal(window.getComputedStyle(window.document.documentElement).fontSize, '16px'); // MAIR-1261: root size of the artifacts
 });
 
 test('MAIR-526: the stylesheet uses the shared Geist font stack, not a forced Arial', () => {
