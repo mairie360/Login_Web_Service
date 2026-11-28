@@ -253,7 +253,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   return {
     email, setEmail: (value: string) => { setEmailError(""); setEmail(value); }, password, setPassword: (value: string) => { setCredentialPasswordError(""); setPassword(value); },
     emailError, credentialPasswordError, confirmationError,
-    isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation,
+    isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setConfirmationError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation,
     setNewPasswordConfirmation: (value: string) => { setConfirmationError(""); setNewPasswordConfirmation(value); },
     isLoading, errorMessage, errorDescription, successMessage, isTwoFactor, isTwoFactorSetup, setupPolicy, isPasskeyOffer,
     unusualAlert, isAcknowledging, continueAfterAlert, notMeAfterAlert,
