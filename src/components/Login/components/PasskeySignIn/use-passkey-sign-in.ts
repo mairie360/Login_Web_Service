@@ -24,11 +24,19 @@ async function startCeremony(): Promise<Started> {
   }
 }
 
+/** MAIR-1261: second line of the refusals of the mock-up (F5 « Passkey refusée »), by status of the sign-in route. */
+const PASSKEY_ERROR_DESCRIPTIONS: Record<number, string> = {
+  401: "Utilisez votre mot de passe ou une autre passkey enregistrée pour Mairie 360.",
+  403: "Contactez votre administrateur pour le réactiver.",
+  429: "Patientez quelques minutes avant de réessayer.",
+};
+
 // Passkey sign-in of the sign-in card (mock-up F5): the button, and the autofill of the e-mail field when the browser has it.
 export function usePasskeySignIn(onSuccess: () => void) {
   const [availability, setAvailability] = useState<PasskeyAvailability>("checking");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [errorDescription, setErrorDescription] = useState("");
   const conditional = useRef<AbortController | null>(null);
   const pending = useRef(false);
   // `Login` passes a function recreated on every render: read it through a ref so a keystroke in the e-mail field
@@ -51,7 +59,7 @@ export function usePasskeySignIn(onSuccess: () => void) {
     }
     const body = (await response.json().catch(() => ({}))) as { message?: string; reason?: string };
     if (response.status === 503) setAvailability("unavailable");
-    else setError(body.message ?? START_FAILED);
+    else { setError(body.message ?? START_FAILED); setErrorDescription(PASSKEY_ERROR_DESCRIPTIONS[response.status] ?? ""); }
   }, []);
 
   const ask = useCallback(async (ceremony: Ceremony, mediation?: CredentialMediationRequirement, signal?: AbortSignal) => {
@@ -74,7 +82,7 @@ export function usePasskeySignIn(onSuccess: () => void) {
       try {
         await ask(started.ceremony, "conditional", controller.signal);
       } catch (cause) {
-        if (!isCancellation(cause)) setError(START_FAILED);
+        if (!isCancellation(cause)) { setError(START_FAILED); setErrorDescription(""); }
       }
     })();
     return () => {
@@ -86,21 +94,21 @@ export function usePasskeySignIn(onSuccess: () => void) {
   const signIn = useCallback(async () => {
     if (pending.current) return;
     pending.current = true;
-    setError("");
+    setError(""); setErrorDescription("");
     setBusy(true);
     conditional.current?.abort();
     try {
       const started = await startCeremony();
       if ("availability" in started) return setAvailability(started.availability);
-      if ("error" in started) return setError(started.error);
+      if ("error" in started) { setErrorDescription(""); return setError(started.error); }
       await ask(started.ceremony);
     } catch (cause) {
-      if (!isCancellation(cause)) setError(START_FAILED);
+      if (!isCancellation(cause)) { setError(START_FAILED); setErrorDescription(""); }
     } finally {
       pending.current = false;
       setBusy(false);
     }
   }, [ask]);
 
-  return { availability, busy, error, signIn, dismissError: () => setError("") };
+  return { availability, busy, error, errorDescription, signIn, dismissError: () => { setError(""); setErrorDescription(""); } };
 }

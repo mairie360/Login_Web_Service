@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { RESET_TOKEN_PATTERN, RESET_EXPIRED_MESSAGE } from '../../lib/password-recovery-validation';
+import { confirmationFieldError, focusField, PASSWORD_POLICY_MESSAGE, PASSWORD_REFUSED_TITLE, RESET_DONE_DESCRIPTION, RESET_DONE_TITLE, RESET_EXPIRED_DESCRIPTION, RESET_EXPIRED_TITLE, RESET_TOKEN_PATTERN } from '../../lib/password-recovery-validation';
 import { checkNewPassword } from '@mairie360/lib-components/shared';
 import { BackButton, Body, Button, ErrorAlert, LinkButton, NewPasswordField, PageTitle, PasswordField, SuccessAlert } from '@mairie360/lib-components/primitives';
 import RecoveryLayout from '../RecoveryLayout';
@@ -17,6 +17,9 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
   const [complete, setComplete] = useState(false);
   const [expired, setExpired] = useState(false);
   const [error, setError] = useState("");
+  const [errorDescription, setErrorDescription] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmationError, setConfirmationError] = useState("");
   const submitting = useRef(false);
   const mounted = useRef(false);
   const activeRequest = useRef<AbortController | null>(null);
@@ -36,10 +39,12 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current || !validToken || expired || complete) return;
-    setError("");
-    const ruleError = checkNewPassword(password);
-    if (ruleError || password.length > 255) { setError(ruleError ?? "Le mot de passe ne doit pas dépasser 255 caractères."); return; }
-    if (password !== confirmation) { setError("Les mots de passe ne correspondent pas."); return; }
+    setError(""); setErrorDescription("");
+    // MAIR-1261: both rules are shown under their field at once, as in the mock-up (F4 Cas 2 and Cas 3).
+    const ruleError = checkNewPassword(password) ?? (password.length > 255 ? "Le mot de passe ne doit pas dépasser 255 caractères." : "");
+    const matchError = confirmationFieldError(password, confirmation);
+    setPasswordError(ruleError); setConfirmationError(matchError);
+    if (ruleError || matchError) { focusField(event.currentTarget, ruleError ? "reset-password" : "reset-confirmation"); return; }
     submitting.current = true; setPending(true);
     const request = new AbortController();
     activeRequest.current = request;
@@ -52,7 +57,8 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
       if (!current()) return;
       if (!response.ok || result?.success !== true) {
         if (response.status === 401 || response.status === 403) { setExpired(true); setPassword(""); setConfirmation(""); }
-        else setError(response.status === 429 ? "Trop de demandes. Veuillez réessayer plus tard." : response.status === 400 && typeof result?.message === "string" ? result.message : "Le mot de passe n’a pas pu être modifié. Veuillez réessayer.");
+        else if (response.status === 400) { setError(PASSWORD_REFUSED_TITLE); setErrorDescription(PASSWORD_POLICY_MESSAGE); }
+        else setError(response.status === 429 ? "Trop de demandes. Veuillez réessayer plus tard." : "Le mot de passe n’a pas pu être modifié. Veuillez réessayer.");
         return;
       }
       setComplete(true); setPassword(""); setConfirmation("");
@@ -64,15 +70,17 @@ function ResetPasswordForm({ token, redirectUrl, navigate = navigateToFront }: P
   return <RecoveryLayout>
     <PageTitle>Réinitialiser le mot de passe</PageTitle>
     {!validToken || expired ? <>
-      <ErrorAlert title={RESET_EXPIRED_MESSAGE} />
+      <ErrorAlert title={RESET_EXPIRED_TITLE} description={RESET_EXPIRED_DESCRIPTION} />
       <Button label="Demander un nouveau lien" href={recoveryUrl} fullWidth />
       <BackButton label="Retour à la connexion" href={loginUrl} />
-    </> : <form method="post" aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
+    </> : <form method="post" noValidate aria-busy={pending} onSubmit={submit} className="flex flex-col gap-4">
       <Body>Choisissez un mot de passe d’au moins 12 caractères, qui ne soit ni un mot de passe courant, ni votre e-mail, votre prénom ou votre nom.</Body>
-      <NewPasswordField id="reset-password" name="new-password" required maxLength={255} value={password} onChange={event => setPassword(event.target.value)} disabled={pending || complete} />
-      <PasswordField id="reset-confirmation" name="password-confirmation" label="Confirmer le mot de passe" autoComplete="new-password" required maxLength={255} value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={pending || complete} />
-      {error && <ErrorAlert title={error} onDismiss={() => setError("")} />}
-      {complete && <SuccessAlert title="Mot de passe modifié. Vous êtes connecté." />}
+      <NewPasswordField id="reset-password" name="new-password" required maxLength={255} value={password} error={passwordError || undefined}
+        onChange={event => { setPassword(event.target.value); if (passwordError) setPasswordError(""); }} disabled={pending || complete} />
+      <PasswordField id="reset-confirmation" name="password-confirmation" label="Confirmer le mot de passe" autoComplete="new-password" required maxLength={255} value={confirmation} error={confirmationError || undefined}
+        onChange={event => { setConfirmation(event.target.value); if (confirmationError) setConfirmationError(""); }} disabled={pending || complete} />
+      {error && <ErrorAlert title={error} description={errorDescription || undefined} onDismiss={() => { setError(""); setErrorDescription(""); }} />}
+      {complete && <SuccessAlert title={RESET_DONE_TITLE} description={RESET_DONE_DESCRIPTION} />}
       <Button type="submit" label={pending ? "Modification…" : "Modifier le mot de passe"} loading={pending} disabled={pending || complete} fullWidth />
       <LinkButton label="Demander un nouveau lien" href={recoveryUrl} />
     </form>}

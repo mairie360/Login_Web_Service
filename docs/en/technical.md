@@ -1,5 +1,9 @@
 # Login_Web_Service — Technical documentation
 
+## Shared UI 2.9.0 — MAIR-1261
+
+The front pins `@mairie360/lib-components@2.9.0` (entries 2.8.0 and 2.9.0 added to `tests/fixtures/shared-ui-releases.json`). The 2.7 → 2.9 changes touch none of the components Login renders, except the shared `municipal-theme.css`. The login and force-change routes now answer a `description` next to `message` for a refused sign-in (401) and a refused new password (400); `use-login-form.ts` shows it as the second line of the `ErrorAlert`.
+
 ## Shared footer — MAIR-180
 
 The package is pinned to published `@mairie360/lib-components@0.6.8` from

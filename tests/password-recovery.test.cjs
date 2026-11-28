@@ -31,7 +31,7 @@ const session = (cookies = ['accessToken=fixture-access; Path=/; HttpOnly; Max-A
 test('forgot password forwards only the email and returns a neutral message for the published empty response', async () => {
   const result = await handle('forgot_password', { email: ' agent@example.test ', token: 'must-not-forward' });
   assert.equal(result.status, 200);
-  assert.deepEqual(await result.json(), { success: true, message: 'Si un compte existe, un e-mail a été envoyé.' });
+  assert.deepEqual(await result.json(), { success: true, message: 'Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé.' });
   assert.equal(calls[0].url, 'https://bff.example.test/auth/forgot_password');
   assert.deepEqual(JSON.parse(calls[0].init.body), { email: 'agent@example.test' });
   assert.equal(result.headers.get('cache-control'), 'no-store');
@@ -87,7 +87,7 @@ test('invalid reset tokens and password boundaries never reach the BFF', async (
 test('expired or reused reset tokens produce a safe retry message without setting any cookie', async () => {
   global.fetch = async () => Response.json({ error: { message: token } }, { status: 401, headers: { 'set-cookie': 'accessToken=untrusted; Path=/' } });
   const result = await handle('reset_password', valid);
-  assert.equal(result.status, 401); assert.match((await result.json()).message, /expiré ou déjà utilisé/); assert.equal(result.headers.get('set-cookie'), null);
+  assert.equal(result.status, 401); assert.match((await result.json()).message, /^Lien invalide ou expiré\. Demandez un nouveau lien pour continuer\.$/); assert.equal(result.headers.get('set-cookie'), null);
 });
 for (const [name, cookies, body] of [
   ['missing session', [], { message: 'Signed in' }], ['partial session', ['accessToken=partial; Path=/'], { message: 'Signed in' }],
@@ -130,7 +130,7 @@ test('the public reset endpoint rejects a cookie session whose success body is n
 });
 
 test('the public reset endpoint translates refusal and throttling without accepting upstream cookies', async () => {
-  for (const [status, message] of [[401, /expiré ou déjà utilisé/], [403, /expiré ou déjà utilisé/], [429, /Trop de demandes/], [503, /n’a pas pu être modifié/]]) {
+  for (const [status, message] of [[401, /^Lien invalide ou expiré\. Demandez un nouveau lien pour continuer\.$/], [403, /^Lien invalide ou expiré\. Demandez un nouveau lien pour continuer\.$/], [429, /Trop de demandes/], [503, /n’a pas pu être modifié/]]) {
     global.fetch = async () => Response.json({ message: 'sensitive upstream detail' }, { status, headers: session().headers });
     const result = await resetPassword(request('/api/auth/reset-password', valid));
     assert.equal(result.status, status);
@@ -150,4 +150,22 @@ test('the public reset endpoint supplies a bounded device description with its p
       device_info: userAgent === undefined ? 'Navigateur inconnu' : userAgent.slice(0, 512),
     });
   }
+});
+
+// MAIR-1261: the field messages of the mock-up (F1 to F4), shared by the sign-in, the first connection and the recovery.
+test('MAIR-1261 field rules give the mock-up message per field, and nothing for a valid value', () => {
+  const { emailFieldError, confirmationFieldError, focusField } = requireTs('src/lib/password-recovery-validation.ts');
+  assert.equal(emailFieldError(''), 'Renseignez votre email professionnel.');
+  assert.equal(emailFieldError('   '), 'Renseignez votre email professionnel.');
+  assert.equal(emailFieldError('pas-un-email'), 'Saisissez une adresse e-mail valide, par exemple prenom.nom@mairie.fr.');
+  assert.equal(emailFieldError(`${'a'.repeat(311)}@mairie.fr`), 'Saisissez une adresse e-mail valide, par exemple prenom.nom@mairie.fr.');
+  assert.equal(emailFieldError(' camille.martin@mairie.fr '), '');
+  assert.equal(confirmationFieldError('Rempart-Lagon-74', ''), 'Confirmez le mot de passe.');
+  assert.equal(confirmationFieldError('Rempart-Lagon-74', 'Rempart-Lagon-75'), 'Les deux mots de passe ne correspondent pas.');
+  assert.equal(confirmationFieldError('Rempart-Lagon-74', 'Rempart-Lagon-74'), '');
+  const focused = [];
+  focusField({ querySelector: selector => ({ focus: () => focused.push(selector) }) }, 'email');
+  focusField(undefined, 'email');
+  focusField({ querySelector: () => null }, 'email');
+  assert.deepEqual(focused, ['#email']);
 });

@@ -1,5 +1,9 @@
 # Login_Web_Service — Documentation technique
 
+## UI partagée 2.9.0 — MAIR-1261
+
+Le front épingle `@mairie360/lib-components@2.9.0` (entrées 2.8.0 et 2.9.0 ajoutées à `tests/fixtures/shared-ui-releases.json`). Les changements 2.7 → 2.9 ne touchent aucun composant rendu par Login, hormis le `municipal-theme.css` partagé. Les routes de connexion et de changement forcé renvoient désormais une `description` à côté de `message` pour une connexion refusée (401) et un nouveau mot de passe refusé (400) ; `use-login-form.ts` l’affiche en seconde ligne de l’`ErrorAlert`.
+
 ## Pied de page partagé — MAIR-180
 
 Le paquet est épinglé à `@mairie360/lib-components@0.6.8`, publié par

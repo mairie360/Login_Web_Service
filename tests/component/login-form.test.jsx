@@ -92,7 +92,7 @@ describe("Login form", () => {
     fireEvent.submit(document.querySelector("form"));
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert").textContent).toContain("Veuillez renseigner");
+    expect(screen.getAllByRole("alert").map((node) => node.textContent)).toEqual(["Renseignez votre email professionnel.", "Renseignez votre mot de passe."]);
   });
 
   it("shows a refused login without navigating or reporting success", async () => {
@@ -174,7 +174,7 @@ describe("Login form", () => {
     await user.type(password, "updated-test-password-1");
     await user.type(confirmation, "different-test-password-2");
     await user.click(screen.getByRole("button", { name: "Modifier le mot de passe" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Les mots de passe ne correspondent pas.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Les deux mots de passe ne correspondent pas.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await user.clear(confirmation);

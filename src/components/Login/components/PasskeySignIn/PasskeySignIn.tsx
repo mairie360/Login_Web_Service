@@ -25,7 +25,7 @@ export const PasskeySignIn = ({ onSuccess }: PasskeySignInProps) => {
   return (
     <>
       <Divider label="ou" />
-      {passkey.error && <ErrorAlert title={passkey.error} onDismiss={passkey.dismissError} className="w-full" />}
+      {passkey.error && <ErrorAlert title={passkey.error} description={passkey.errorDescription || undefined} onDismiss={passkey.dismissError} className="w-full" />}
       <PasskeyButton type="button" loading={passkey.busy} onClick={passkey.signIn} className="w-full" />
     </>
   );

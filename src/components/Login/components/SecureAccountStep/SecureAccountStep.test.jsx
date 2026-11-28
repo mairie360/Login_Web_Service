@@ -37,8 +37,25 @@ describe('SecureAccountStep (F7)', () => {
     setup(fetchMock, { totp: true, passkey: true, backupCodes: true });
     expect(screen.getByRole('heading', { name: 'Sécurisez votre compte' })).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('radio', { name: /Application d’authentification/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
     expect(await screen.findByText('Ajoutez Mairie 360 à votre application')).toBeTruthy();
+  });
+
+  it('MAIR-1261 F7: the passkey comes first and is selected, and « Encore une étape. » says the modules wait', () => {
+    const fetchMock = route({});
+    vi.stubGlobal('PublicKeyCredential', function PublicKeyCredential() {});
+    Object.defineProperty(navigator, 'credentials', { configurable: true, value: {} });
+    setup(fetchMock, { totp: true, passkey: true, backupCodes: true });
+    const radios = screen.getAllByRole('radio');
+    expect(radios.map((radio) => radio.value)).toEqual(['passkey', 'app']);
+    expect(radios[0].checked).toBe(true);
+    expect(screen.getByRole('group', { name: /Méthode de vérification/ })).toBeTruthy();
+    expect(screen.getByText('Encore une étape.')).toBeTruthy();
+    expect(screen.getByText('Vous accéderez à vos modules dès que votre compte sera sécurisé.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+    expect(screen.getByRole('textbox', { name: /Nom de la passkey/ })).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('passkey only, browser without WebAuthn: tells the agent instead of offering a method it cannot run', () => {

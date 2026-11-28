@@ -24,7 +24,7 @@ it('submits a recovery request once and shows only neutral feedback', async () =
   expect(fetchMock.mock.calls[0][0]).toBe('/api/auth/forgot-password');
   expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ email: 'agent@example.test' });
   await act(async () => resolve(reply({ success: true, message: 'sensitive registration detail' })));
-  expect(screen.getByRole('status').textContent).toBe('Si un compte existe, un e-mail a été envoyé.');
+  expect(screen.getByRole('status').textContent).toBe('Lien envoyé.Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé.');
   expect(document.body.textContent).not.toContain('sensitive registration detail');
   expect(screen.getByRole('link', { name: 'Retour à la connexion' }).getAttribute('href')).toBe('/');
 });
@@ -44,7 +44,7 @@ it('refuses empty recovery email before a request', () => {
 });
 it.each([undefined, 'invalid-token'])('offers a new link when the reset token is absent or invalid: %s', token => {
   render(<ResetPassword token={token} />);
-  expect(screen.getByRole('alert').textContent).toContain('expiré ou déjà utilisé');
+  expect(screen.getByRole('alert').textContent).toBe('Lien invalide ou expiré.Demandez un nouveau lien pour continuer.');
   expect(screen.getByRole('link', { name: 'Demander un nouveau lien' }).getAttribute('href')).toBe('/forgot-password');
   expect(screen.queryByLabelText('Nouveau mot de passe')).toBeNull();
   expect(fetchMock).not.toHaveBeenCalled();
@@ -79,7 +79,7 @@ it('reports expired/reused tokens and offers another link without navigation', a
   await user.type(screen.getByLabelText('Nouveau mot de passe'), 'updated-password-1');
   await user.type(screen.getByLabelText('Confirmer le mot de passe'), 'updated-password-1');
   await user.click(screen.getByRole('button', { name: 'Modifier le mot de passe' }));
-  expect((await screen.findByRole('alert')).textContent).toContain('expiré ou déjà utilisé');
+  expect((await screen.findByRole('alert')).textContent).toBe('Lien invalide ou expiré.Demandez un nouveau lien pour continuer.');
   expect(screen.getByRole('link', { name: 'Demander un nouveau lien' })).toBeTruthy();
   expect(navigate).not.toHaveBeenCalled(); expect(document.body.textContent).not.toContain('secret backend detail');
 });
@@ -191,14 +191,14 @@ it('MAIR-888 F4: the rule is shown as help text, then the confirmation is checke
   fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'abcdefghij12' } });
   fireEvent.submit(document.querySelector('form'));
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Mot de passe modifié. Vous êtes connecté.'));
+  await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Mot de passe modifié.Vous pouvez vous connecter.'));
   expect(screen.getByLabelText('Nouveau mot de passe').disabled).toBe(true);
   expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(true);
 });
 
 it('MAIR-888 F4: an invalid link offers a new link as the main action and a way back to sign-in', () => {
   render(<ResetPassword redirectUrl="https://dashboard.example.test/" />);
-  expect(screen.getByRole('alert').textContent).toBe('Ce lien est expiré ou déjà utilisé. Demandez un nouveau lien.');
+  expect(screen.getByRole('alert').textContent).toBe('Lien invalide ou expiré.Demandez un nouveau lien pour continuer.');
   expect(screen.getByRole('link', { name: 'Demander un nouveau lien' }).getAttribute('href')).toBe('/forgot-password?redirect=https%3A%2F%2Fdashboard.example.test%2F');
   expect(screen.getByRole('link', { name: 'Retour à la connexion' }).getAttribute('href')).toBe('/?redirect=https%3A%2F%2Fdashboard.example.test%2F');
 });
@@ -214,7 +214,7 @@ it('recovers from reset throttling and confirms an accepted reset without a dest
   expect(document.body.textContent).not.toContain('sensitive upstream detail');
   expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(false);
   fireEvent.submit(document.querySelector('form'));
-  expect((await screen.findByRole('status')).textContent).toBe('Mot de passe modifié. Vous êtes connecté.');
+  expect((await screen.findByRole('status')).textContent).toBe('Mot de passe modifié.Vous pouvez vous connecter.');
   expect(navigate).not.toHaveBeenCalled();
   expect(screen.getByLabelText('Nouveau mot de passe').value).toBe('');
   expect(screen.getByRole('button', { name: 'Modifier le mot de passe' }).disabled).toBe(true);

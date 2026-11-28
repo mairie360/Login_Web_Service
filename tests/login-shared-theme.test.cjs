@@ -58,18 +58,29 @@ for (const theme of ['light', 'dark']) {
     style.textContent = style.textContent.replace(/var\((--[\w-]+)\)/g, (match, name) => token(name) || match);
     // Lib components set their tone colours inline with tokens; JSDOM does not resolve var() there either.
     for (const node of document.querySelectorAll('[style*="var("]')) node.setAttribute('style', node.getAttribute('style').replace(/var\((--[\w-]+)\)/g, (match, name) => token(name) || match));
-    const field = computed(document.getElementById('email'));
-    const error = computed(document.querySelector('[role="alert"]'));
-    const primary = computed(document.querySelector('button[type="submit"]'));
     const probe = document.createElement('span');
     document.body.append(probe);
     const resolved = name => { probe.style.color = token(name); return computed(probe).color; };
+    const field = computed(document.getElementById('email'));
+    // MAIR-1261: an empty submission now shows the mock-up's field messages (one per field), on the card's surface.
+    const errorNode = document.querySelector('#email-error[role="alert"]');
+    assert.ok(errorNode, 'the e-mail field explains what is missing');
+    const error = computed(errorNode);
+    const transparent = colour => !colour || colour === 'transparent' || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(colour);
+    const backgroundBehind = node => {
+      for (let current = node; current && current.nodeType === 1; current = current.parentElement) {
+        const background = computed(current).backgroundColor;
+        if (!transparent(background)) return background;
+      }
+      return resolved('--mairie-background');
+    };
+    const primary = computed(document.querySelector('button[type="submit"]'));
     sameColour(field.color, resolved('--mairie-text'));
     sameColour(primary.backgroundColor, resolved('--mairie-action-background'));
     sameColour(primary.color, resolved('--mairie-on-action'));
-    for (const [label, foreground, background] of [['field', field.color, field.backgroundColor], ['error', error.color, error.backgroundColor], ['primary', primary.color, primary.backgroundColor]]) {
+    for (const [label, foreground, background] of [['field', field.color, field.backgroundColor], ['error', error.color, backgroundBehind(errorNode)], ['primary', primary.color, primary.backgroundColor]]) {
       assert.ok(contrast(foreground, background) >= 4.5, `${theme} ${label} contrast ${contrast(foreground, background).toFixed(2)} (${foreground} on ${background})`);
     }
-    assert.equal(document.querySelectorAll('[role="alert"]').length, 1);
+    assert.deepEqual([...document.querySelectorAll('[role="alert"]')].map(node => node.textContent), ['Renseignez votre email professionnel.', 'Renseignez votre mot de passe.']);
   });
 }

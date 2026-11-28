@@ -192,14 +192,15 @@ describe('POST /api/auth/login → BFF POST /auth/login', () => {
     assert.equal(response.cookies.get('accessToken'), undefined);
   });
 
-  for (const [status, message] of [[400, 'Les informations saisies sont invalides.'], [401, 'Email ou mot de passe incorrect.'], [500, 'Le service de connexion est indisponible. Veuillez réessayer.'], [502, 'Le service de connexion est indisponible. Veuillez réessayer.']]) {
+  // MAIR-1261: the refused sign-in carries the mock-up's title and hint (F1 « Identifiants incorrects »).
+  for (const [status, message, description] of [[400, 'Les informations saisies sont invalides.'], [401, 'Identifiants incorrects.', 'Vérifiez votre email et votre mot de passe.'], [500, 'Le service de connexion est indisponible. Veuillez réessayer.'], [502, 'Le service de connexion est indisponible. Veuillez réessayer.']]) {
     test(`${status} errors keep their status, show a French message instead of the BFF one, and open no session`, async () => {
       bff.on('POST', '/auth/login', apiError(status, 'Upstream service error'));
 
       const response = await login.POST(loginRequest({ email: 'alice.dupont@mairie360.fr', password: 'mauvais' }));
 
       assert.equal(response.status, status);
-      assert.deepEqual(await response.json(), { message });
+      assert.deepEqual(await response.json(), description ? { message, description } : { message });
       assert.equal(response.cookies.get('accessToken'), undefined);
     });
   }
@@ -295,14 +296,15 @@ describe('POST /api/auth/force-change-password → BFF POST /auth/force_change_p
     });
   }
 
-  for (const [status, message] of [[400, 'Ce mot de passe n’est pas accepté : utilisez au moins 12 caractères, évitez les mots de passe courants et n’y mettez ni votre adresse e-mail, ni votre prénom, ni votre nom.'], [500, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.'], [502, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.']]) {
+  // MAIR-1261: a password Core refused is « Mot de passe refusé. » with the whole policy as description (F2 Cas 4).
+  for (const [status, message, description] of [[400, 'Mot de passe refusé.', 'Ce mot de passe n’est pas accepté : utilisez au moins 12 caractères, évitez les mots de passe courants et n’y mettez ni votre adresse e-mail, ni votre prénom, ni votre nom.'], [500, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.'], [502, 'Le service de changement de mot de passe est indisponible. Veuillez réessayer.']]) {
     test(`${status} errors keep their status, show a French message and keep the cookie for a retry`, async () => {
       bff.on('POST', '/auth/force_change_password', apiError(status, 'Invalid password-change payload'));
 
       const response = await forceChangePassword.POST(changeRequest({ newPassword: 'NouveauMotDePasse123' }));
 
       assert.equal(response.status, status);
-      assert.deepEqual(await response.json(), { message });
+      assert.deepEqual(await response.json(), description ? { message, description } : { message });
       assert.equal(response.cookies.get('passwordChangeToken'), undefined);
     });
   }
@@ -498,7 +500,7 @@ describe('recovery handlers → published BFF User contract', () => {
         ? await catchAll.POST(request, { params: Promise.resolve({ path: ['auth', 'forgot_password'] }) })
         : await requireTs('src/app/api/auth/forgot-password/route.ts').POST(request);
       assert.equal(result.status, 200);
-      assert.deepEqual(await result.json(), { success: true, message: 'Si un compte existe, un e-mail a été envoyé.' });
+      assert.deepEqual(await result.json(), { success: true, message: 'Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé.' });
       assert.deepEqual(bff.calls('/auth/forgot_password')[0].body, { email: 'agent@example.test' });
       assert.equal(result.headers.get('set-cookie'), null);
     });

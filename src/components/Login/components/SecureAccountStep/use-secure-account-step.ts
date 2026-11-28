@@ -51,7 +51,8 @@ export function useSecureAccountStep({ policy = DEFAULT_POLICY, onSuccess, onSes
   const passkeyStage: SecureAccountStage = passkeyUsable ? "passkey" : "passkey-unsupported";
   const firstStage: SecureAccountStage = both ? "choice" : policy.totp ? "app" : passkeyStage;
   const [stage, setStage] = useState<SecureAccountStage>(firstStage);
-  const [method, setMethod] = useState<SecureAccountMethod>("app");
+  // MAIR-1261: the mock-up puts the passkey first and selected (« Recommandé ») when the browser can create one.
+  const [method, setMethod] = useState<SecureAccountMethod>(passkeyUsable ? "passkey" : "app");
   const [enrolment, setEnrolment] = useState<AuthenticatorEnrolment | null>(null);
   // True from the first render when the application is the only method: the secret is being prepared.
   const [isStarting, setIsStarting] = useState(firstStage === "app");
