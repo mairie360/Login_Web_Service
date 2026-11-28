@@ -101,7 +101,10 @@ const assertErrorMessage = (html, expected) => {
   } finally { dom.window.close(); }
 };
 const assertStandalone = (html) => {
-  assert.match(html, /<main[^>]*min-h-dvh/);
+  // MAIR-1261 (artifact): the body is the full-height column and main grows in it, so the footer is on screen.
+  assert.match(html, /<body[^>]*flex min-h-dvh flex-col/);
+  assert.match(html, /<main[^>]*flex-1/);
+  assert.doesNotMatch(html, /<main[^>]*min-h-dvh/);
   assert.match(html, LEGAL_FOOTER);
   assert.doesNotMatch(html.replace(LEGAL_FOOTER, ''), /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
   assert.doesNotMatch(html, /Version undefined|Version null/);
