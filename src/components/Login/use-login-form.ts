@@ -1,6 +1,7 @@
 'use client';
 
 import { checkNewPassword } from "@mairie360/lib-components/shared";
+import { confirmationFieldError, emailFieldError, focusField, PASSWORD_REQUIRED_MESSAGE } from "../../lib/password-recovery-validation";
 import { FormEvent, useRef, useState } from "react";
 import { shouldOfferPasskey, type PasskeyOfferFlags } from "./components/PasskeyOffer";
 import type { SetupPolicy } from "./components/SecureAccountStep";
@@ -9,6 +10,8 @@ import { acknowledgeAlert, fetchPendingAlert, type SecurityAlert } from "./compo
 type LoginResponse = {
   success?: boolean;
   message?: string;
+  /** MAIR-1261: second line of the error alert (mock-up F1 / F2). */
+  description?: string;
   requiresPasswordChange?: boolean;
   restartLogin?: boolean;
   requiresTwoFactor?: boolean;
@@ -34,6 +37,10 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  // MAIR-1261: field messages of the mock-up, under the e-mail, the password and the confirmation.
+  const [emailError, setEmailError] = useState("");
+  const [credentialPasswordError, setCredentialPasswordError] = useState("");
+  const [confirmationError, setConfirmationError] = useState("");
   const [isTwoFactor, setIsTwoFactor] = useState(false);
   const [setupPolicy, setSetupPolicy] = useState<SetupPolicy | undefined>(undefined);
   const [isTwoFactorSetup, setIsTwoFactorSetup] = useState(false);
@@ -132,6 +139,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
     if (!response.ok) {
       setSuccessMessage("");
       setErrorMessage(result.message ?? "La connexion a échoué.");
+      setErrorDescription(result.description ?? "");
       return;
     }
 
@@ -157,8 +165,12 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
     setErrorDescription("");
     setSuccessMessage("");
 
-    if (!email.trim() || !password) {
-      setErrorMessage("Veuillez renseigner votre email et votre mot de passe.");
+    const emailMessage = emailFieldError(email);
+    const passwordMessage = password ? "" : PASSWORD_REQUIRED_MESSAGE;
+    setEmailError(emailMessage);
+    setCredentialPasswordError(passwordMessage);
+    if (emailMessage || passwordMessage) {
+      focusField(event.currentTarget, emailMessage ? "email" : "password");
       return;
     }
 
@@ -183,19 +195,14 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!newPassword) {
-      setErrorMessage("Veuillez renseigner votre nouveau mot de passe.");
-      return;
-    }
-
-    const ruleError = checkNewPassword(newPassword);
-    if (ruleError) {
-      setPasswordError(ruleError);
-      return;
-    }
-
-    if (newPassword !== newPasswordConfirmation) {
-      setErrorMessage("Les mots de passe ne correspondent pas.");
+    setErrorDescription("");
+    // Both fields are checked at once and each shows its own message, as in the mock-up (F2 Cas 2 and Cas 3).
+    const ruleError = checkNewPassword(newPassword) ?? "";
+    const matchError = confirmationFieldError(newPassword, newPasswordConfirmation);
+    setPasswordError(ruleError);
+    setConfirmationError(matchError);
+    if (ruleError || matchError) {
+      focusField(event.currentTarget, ruleError ? "new-password" : "new-password-confirmation");
       return;
     }
 
@@ -222,6 +229,7 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
         }
 
         setErrorMessage(result.message ?? "Le mot de passe n’a pas pu être modifié.");
+        setErrorDescription(result.description ?? "");
         return;
       }
 
@@ -243,7 +251,10 @@ export function useLoginForm({ redirectUrl, navigate }: LoginFormOptions) {
   };
 
   return {
-    email, setEmail, password, setPassword, isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation, setNewPasswordConfirmation,
+    email, setEmail: (value: string) => { setEmailError(""); setEmail(value); }, password, setPassword: (value: string) => { setCredentialPasswordError(""); setPassword(value); },
+    emailError, credentialPasswordError, confirmationError,
+    isPasswordChange, newPassword, setNewPassword: (value: string) => { setPasswordError(""); setConfirmationError(""); setNewPassword(value); }, passwordError, newPasswordConfirmation,
+    setNewPasswordConfirmation: (value: string) => { setConfirmationError(""); setNewPasswordConfirmation(value); },
     isLoading, errorMessage, errorDescription, successMessage, isTwoFactor, isTwoFactorSetup, setupPolicy, isPasskeyOffer,
     unusualAlert, isAcknowledging, continueAfterAlert, notMeAfterAlert,
     dismissError: () => { setErrorMessage(""); setErrorDescription(""); },

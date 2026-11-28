@@ -11,7 +11,11 @@ describe('Login', () => {
     expect(screen.getByRole('link', { name: 'Mot de passe oublié ?' }).getAttribute('href')).toBe('/forgot-password');
     expect(screen.queryByText('Se connecter avec le compte unique')).toBeNull();
     fireEvent.submit(document.querySelector('form'));
-    expect(screen.getByRole('alert').textContent).toContain('Veuillez renseigner votre email et votre mot de passe.');
+    // MAIR-1261 (F1 Cas 2): one message under each empty field.
+    expect(screen.getAllByRole('alert').map((node) => node.textContent)).toEqual(['Renseignez votre email professionnel.', 'Renseignez votre mot de passe.']);
+    expect(screen.getByLabelText(/Email professionnel/).getAttribute('aria-invalid')).toBe('true');
+    // The page validates the form (noValidate) and moves the focus like the browser would.
+    expect(document.activeElement).toBe(screen.getByLabelText(/Email professionnel/));
     expect(fetchMock).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });

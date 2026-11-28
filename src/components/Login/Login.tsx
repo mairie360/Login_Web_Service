@@ -64,6 +64,8 @@ export default function Login({ redirectUrl, navigate = navigateToFront, passkey
         // method="post": without JavaScript (robot, JS disabled) a native submission
         // must never place the credentials in the URL.
         method="post"
+        // MAIR-1261: the field rules are shown by the page under each field, as in the mock-up.
+        noValidate
         aria-busy={form.isLoading}
         onSubmit={form.onSubmit}
         className="flex w-full flex-col items-stretch gap-4"
@@ -74,12 +76,13 @@ export default function Login({ redirectUrl, navigate = navigateToFront, passkey
             password={form.newPassword}
             confirmation={form.newPasswordConfirmation}
             passwordError={form.passwordError}
+            confirmationError={form.confirmationError}
             disabled={form.isLoading}
             onPasswordChange={form.setNewPassword}
             onConfirmationChange={form.setNewPasswordConfirmation}
           />
         ) : (
-          <CredentialsFields email={form.email} password={form.password} disabled={form.isLoading} onEmailChange={form.setEmail} onPasswordChange={form.setPassword} />
+          <CredentialsFields email={form.email} password={form.password} emailError={form.emailError} passwordError={form.credentialPasswordError} disabled={form.isLoading} onEmailChange={form.setEmail} onPasswordChange={form.setPassword} />
         )}
         {!form.isPasswordChange && <LinkButton label="Mot de passe oublié ?" href={redirectUrl ? `/forgot-password?redirect=${encodeURIComponent(redirectUrl)}` : "/forgot-password"} size="s" className="self-start" />}
         <LoginFeedback error={form.errorMessage} errorDescription={form.errorDescription} success={form.successMessage} onDismissError={form.dismissError} />

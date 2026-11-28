@@ -136,16 +136,17 @@ describe('MAIR-811 F5 passkey sign-in', () => {
   });
 
   it.each([
-    [401, { message: 'Cette passkey n’est pas reconnue.', reason: 'unknown-passkey' }, 'Cette passkey n’est pas reconnue.'],
-    [403, { message: 'Ce compte est désactivé.', reason: 'disabled' }, 'Ce compte est désactivé.'],
-    [429, { message: 'Trop de tentatives.', retryAfter: 30 }, 'Trop de tentatives.'],
+    // MAIR-1261 (F5 « Passkey refusée »): the mock-up's title, then its hint as description.
+    [401, { message: 'Cette passkey n’est pas reconnue.', reason: 'unknown-passkey' }, 'Cette passkey n’est pas reconnue.Utilisez votre mot de passe ou une autre passkey enregistrée pour Mairie 360.'],
+    [403, { message: 'Ce compte est désactivé.', reason: 'disabled' }, 'Ce compte est désactivé.Contactez votre administrateur pour le réactiver.'],
+    [429, { message: 'Trop de tentatives.', retryAfter: 30 }, 'Trop de tentatives.Patientez quelques minutes avant de réessayer.'],
   ])('%i: the refusal is shown in an alert, the agent can retry and is not signed in', async (status, body, message) => {
     stubBrowser();
     routes['/api/auth/passkey'] = () => reply(status, body);
     const onSuccess = vi.fn();
     render(<PasskeySignIn onSuccess={onSuccess} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Se connecter avec une passkey' }));
-    expect((await screen.findByRole('alert')).textContent).toContain(message);
+    expect((await screen.findByRole('alert')).textContent).toBe(message);
     expect(onSuccess).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Se connecter avec une passkey' })).toBeTruthy();
   });
@@ -194,6 +195,17 @@ describe('MAIR-811 F5 passkey sign-in', () => {
     await screen.findByRole('alert');
     fireEvent.click(screen.getByRole('button', { name: /fermer|dismiss/i }));
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  });
+
+  it('MAIR-1261: a refusal without a known hint keeps no description from the previous one', async () => {
+    stubBrowser();
+    routes['/api/auth/passkey'] = () => reply(401, { message: 'Cette passkey n’est pas reconnue.' });
+    render(<PasskeySignIn onSuccess={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Se connecter avec une passkey' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Utilisez votre mot de passe ou une autre passkey');
+    routes['/api/auth/passkey'] = () => reply(500, { message: 'La connexion par passkey a échoué. Veuillez réessayer.' });
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter avec une passkey' }));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('La connexion par passkey a échoué. Veuillez réessayer.'));
   });
 
   describe('autofill of the e-mail field (conditional mediation)', () => {

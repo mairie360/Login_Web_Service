@@ -86,6 +86,11 @@ const submit = () => view.fire((props, text, tag) => tag === 'form', 'onSubmit')
 // The only footer is the legal one (MAIR-292): links to the legal notice and the privacy policy,
 // no application navigation.
 const LEGAL_FOOTER = /<footer\b[^>]*role="contentinfo"[^>]*>(?:(?!<\/footer>).)*<nav aria-label="Liens du pied de page"[^>]*><a href="\/mentions-legales"[^>]*>Mentions légales<\/a>(?:(?!<\/footer>).)*<a href="\/confidentialite"[^>]*>Politique de confidentialité<\/a><\/nav><\/footer>/s;
+const alertTexts = (html) => {
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM(html);
+  try { return [...dom.window.document.querySelectorAll('[role="alert"]')].map((node) => node.textContent); } finally { dom.window.close(); }
+};
 const assertErrorMessage = (html, expected) => {
   const { JSDOM } = require('jsdom');
   const dom = new JSDOM(html);
@@ -96,7 +101,10 @@ const assertErrorMessage = (html, expected) => {
   } finally { dom.window.close(); }
 };
 const assertStandalone = (html) => {
-  assert.match(html, /<main[^>]*min-h-dvh/);
+  // MAIR-1261 (artifact): the body is the full-height column and main grows in it, so the footer is on screen.
+  assert.match(html, /<body[^>]*flex min-h-dvh flex-col/);
+  assert.match(html, /<main[^>]*flex-1/);
+  assert.doesNotMatch(html, /<main[^>]*min-h-dvh/);
   assert.match(html, LEGAL_FOOTER);
   assert.doesNotMatch(html.replace(LEGAL_FOOTER, ''), /<(header|aside|nav|footer)\b|aria-label="(Navigation principale|Menu principal)"|data-slot="dropdown-menu"/);
   assert.doesNotMatch(html, /Version undefined|Version null/);
@@ -168,7 +176,7 @@ test('pending sign-in locks credentials, ignores repeated submissions and allows
     gate.release();
     try { await first; } finally { gate.restore(); }
   }
-  assert.match(view.html, /Email ou mot de passe incorrect/);
+  assert.match(view.html, /Identifiants incorrects\./);
   assert.match(view.html, /aria-busy="false"/);
   assert.equal(view.hostElements((props) => props.id === 'email')[0].props.disabled, false);
   assert.equal(bff.requests.length, 1);
@@ -217,7 +225,9 @@ test('an empty first-password submission is rejected without locking or sending 
   await typeInto('password', 'temporary');
   await submit();
   await submit();
-  assert.match(view.html, /Veuillez renseigner votre nouveau mot de passe/);
+  // MAIR-1261: each field says what is missing, under itself (F2 Cas 2 and Cas 3).
+  assert.match(view.text(), /Utilisez au moins 12 caractères\./);
+  assert.match(view.text(), /Confirmez le mot de passe\./);
   assert.match(view.html, /aria-busy="false"/);
   assert.equal(front.browserCalls.length, 1);
   assert.equal(bff.requests.length, 1);
@@ -307,8 +317,8 @@ test('a refused first-password mutation keeps the draft, and an expired token re
   await typeInto('new-password-confirmation', 'N3w-secret-pass');
   await submit();
   // MAIR-757: the BFF does not say which rule Core API refused, so the whole policy is shown.
-  assert.match(view.text(), /au moins 12 caractères, évitez les mots de passe courants et n’y mettez ni votre adresse e-mail, ni votre prénom, ni votre nom/);
-  assert.match(view.html, /role="alert"/);
+  // MAIR-1261 (F2 Cas 4): « Mot de passe refusé. » with the policy as description, announced once.
+  assertErrorMessage(view.html, 'Mot de passe refusé.Ce mot de passe n’est pas accepté : utilisez au moins 12 caractères, évitez les mots de passe courants et n’y mettez ni votre adresse e-mail, ni votre prénom, ni votre nom.');
   assert.equal(view.hostElements((props) => props.id === 'new-password')[0].props.value, 'N3w-secret-pass');
   assert.equal(view.hostElements((props) => props.id === 'new-password-confirmation')[0].props.value, 'N3w-secret-pass');
   assert.equal(front.cookies.get('passwordChangeToken'), 'first-connection-token');
@@ -319,6 +329,7 @@ test('a refused first-password mutation keeps the draft, and an expired token re
   assert.match(view.html, /<h1[^>]*>Connexion<\/h1>/);
   assert.match(view.html, /role="alert"/);
   assert.match(view.text(), /Le lien de changement de mot de passe est invalide ou expiré\. Reconnectez-vous\./);
+  assert.doesNotMatch(view.text(), /Mot de passe refusé|n’est pas accepté/, 'the previous refusal leaves no description behind');
   assert.doesNotMatch(view.html, /id="new-password"|N3w-secret-pass/);
   assert.equal(front.cookies.get('passwordChangeToken'), undefined);
   assert.equal(front.browserCalls.length, 3);
@@ -579,7 +590,9 @@ test('an empty submission is refused in the page without any network call', asyn
 
   await submit();
 
-  assertErrorMessage(view.html, 'Veuillez renseigner votre email et votre mot de passe.');
+  // MAIR-1261 (F1 Cas 2): the mock-up's field messages, one under each field, and no page alert.
+  assert.deepEqual(alertTexts(view.html), ['Renseignez votre email professionnel.', 'Renseignez votre mot de passe.']);
+  assert.match(view.html, /<input[^>]*id="email"[^>]*aria-invalid="true"/);
   assert.deepEqual(front.browserCalls, []);
   assert.deepEqual(bff.requests, []);
 });
@@ -657,7 +670,8 @@ test('refused credentials are rendered as the page message, without a session', 
   await submit();
   const html = await view.waitFor((current) => current.includes('role="alert"'));
 
-  assertErrorMessage(html, 'Email ou mot de passe incorrect.');
+  // MAIR-1261 (F1 Cas 1): « Identifiants incorrects. » with the hint as description, once.
+  assertErrorMessage(html, 'Identifiants incorrects.Vérifiez votre email et votre mot de passe.');
   assert.equal(front.cookies.get('accessToken'), undefined);
   assert.deepEqual(window.location.assigned, []);
   assert.match(html, /<button[^>]*type="submit" data-variant="solid" data-tone="primary"[^>]*>(?:(?!<\/button>)[\s\S])*?Se connecter(?:(?!<\/button>)[\s\S])*<\/button>/);
@@ -700,7 +714,9 @@ test('a first connection switches to the password change form, then signs in wit
   await typeInto('new-password', 'N3w-secret-pass');
   await typeInto('new-password-confirmation', 'other');
   await submit();
-  assertErrorMessage(view.html, 'Les mots de passe ne correspondent pas.');
+  // MAIR-1261 (F2 Cas 3): the mismatch is said under the confirmation field.
+  assert.deepEqual(alertTexts(view.html), ['Les deux mots de passe ne correspondent pas.']);
+  assert.match(view.html, /<input[^>]*id="new-password-confirmation"[^>]*aria-invalid="true"/);
   assert.deepEqual(upstream(), ['POST /auth/login no-cookie']);
 
   await typeInto('new-password-confirmation', 'N3w-secret-pass');

@@ -92,7 +92,7 @@ describe("Login form", () => {
     fireEvent.submit(document.querySelector("form"));
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert").textContent).toContain("Veuillez renseigner");
+    expect(screen.getAllByRole("alert").map((node) => node.textContent)).toEqual(["Renseignez votre email professionnel.", "Renseignez votre mot de passe."]);
   });
 
   it("shows a refused login without navigating or reporting success", async () => {
@@ -174,7 +174,7 @@ describe("Login form", () => {
     await user.type(password, "updated-test-password-1");
     await user.type(confirmation, "different-test-password-2");
     await user.click(screen.getByRole("button", { name: "Modifier le mot de passe" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Les mots de passe ne correspondent pas.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Les deux mots de passe ne correspondent pas.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await user.clear(confirmation);
@@ -193,6 +193,24 @@ describe("Login form", () => {
       email: "agent@example.invalid",
       password: "updated-test-password-1",
     });
+  });
+
+  it("MAIR-1261 clears the mismatch once the new password is edited to match the confirmation", async () => {
+    fetchMock.mockResolvedValueOnce(authResponse({ requiresPasswordChange: true }));
+    const user = userEvent.setup();
+    render(<Login redirectUrl={requestedFront} navigate={vi.fn()} />);
+    await enterCredentials(user);
+    await user.click(screen.getByRole("button", { name: "Se connecter" }));
+    await screen.findByRole("heading", { name: "Nouveau mot de passe" });
+    const password = screen.getByLabelText("Nouveau mot de passe", { exact: true });
+    await user.type(password, "updated-test-password-1");
+    await user.type(screen.getByLabelText("Confirmer le mot de passe"), "updated-test-password-2");
+    await user.click(screen.getByRole("button", { name: "Modifier le mot de passe" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Les deux mots de passe ne correspondent pas.");
+    await user.clear(password);
+    await user.type(password, "updated-test-password-2");
+    expect(screen.queryByText("Les deux mots de passe ne correspondent pas.")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("has labeled controls, keyboard focus and no serious axe violations", async () => {

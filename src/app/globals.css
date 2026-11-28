@@ -3,9 +3,9 @@
 
 @source "../../node_modules/@mairie360/lib-components/dist/";
 
-/* Preserve the reference form scale without loading demo preferences or AppShell. */
+/* MAIR-1261: the artifacts keep the browser root size (16 px); 17 px made every rem-based block 6 % larger. */
 html {
-  font-size: 17px;
+  font-size: 16px;
 }
 
 :root {

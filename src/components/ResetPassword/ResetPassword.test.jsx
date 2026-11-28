@@ -1,13 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PASSWORD_POLICY_MESSAGE, RESET_EXPIRED_MESSAGE } from '@/lib/password-recovery-validation';
+import { PASSWORD_POLICY_MESSAGE } from '@/lib/password-recovery-validation';
 import ResetPassword from './ResetPassword';
 import source from './ResetPassword.tsx?raw';
 
 describe('ResetPassword', () => {
   it('asks for a new link without a valid token', () => {
     render(<ResetPassword />);
-    expect(screen.getByRole('alert').textContent).toBe(RESET_EXPIRED_MESSAGE);
+    // MAIR-1261 (F4 Cas 1): the mock-up's title and description.
+    expect(screen.getByRole('alert').textContent).toBe('Lien invalide ou expiré.Demandez un nouveau lien pour continuer.');
     expect(screen.getByRole('link', { name: 'Demander un nouveau lien' }).getAttribute('href')).toBe('/forgot-password');
     expect(screen.queryByLabelText('Nouveau mot de passe')).toBeNull();
   });
@@ -17,7 +18,10 @@ describe('ResetPassword', () => {
     fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'motdepasse-12345' } });
     fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'motdepasse-67890' } });
     fireEvent.submit(document.querySelector('form'));
-    expect(screen.getByRole('alert').textContent).toBe('Les mots de passe ne correspondent pas.');
+    // MAIR-1261 (F4 Cas 3): the mismatch is said under the confirmation field.
+    expect(screen.getByRole('alert').textContent).toBe('Les deux mots de passe ne correspondent pas.');
+    expect(screen.getByLabelText('Confirmer le mot de passe').getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(screen.getByLabelText('Confirmer le mot de passe'));
     expect(fetchMock).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
@@ -28,7 +32,8 @@ describe('ResetPassword', () => {
     fireEvent.change(screen.getByLabelText('Nouveau mot de passe'), { target: { value: 'camille-mairie-2026' } });
     fireEvent.change(screen.getByLabelText('Confirmer le mot de passe'), { target: { value: 'camille-mairie-2026' } });
     fireEvent.submit(document.querySelector('form'));
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe(PASSWORD_POLICY_MESSAGE));
+    // MAIR-1261 (F4 Cas 4): « Mot de passe refusé. » with the whole policy as description.
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe(`Mot de passe refusé.${PASSWORD_POLICY_MESSAGE}`));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Nouveau mot de passe')).not.toBeNull();
     vi.unstubAllGlobals();

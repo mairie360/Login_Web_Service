@@ -20,14 +20,12 @@ test('dismissing a credential validation receipt preserves the form draft and se
 
   await view.fire(props => props.id === 'email', 'onChange', { target: { value: 'draft@example.invalid' } });
   await view.fire((_props, _text, tag) => tag === 'form', 'onSubmit');
-  assert.match(view.text(), /Veuillez renseigner votre email et votre mot de passe/);
-  assert.equal(view.hostElements(props => props.role === 'alert').length, 1, 'Validation is announced exactly once');
+  // MAIR-1261 (F1 Cas 2): the missing password is said under its field, with no dismissible page alert.
+  assert.deepEqual(view.hostElements(props => props.role === 'alert').map(node => node.text), ['Renseignez votre mot de passe.']);
+  assert.equal(view.hostElements((props, _text, tag) => tag === 'button' && props['aria-label'] === 'Fermer le message').length, 0);
 
-  // MAIR-608: the feedback is the lib ErrorAlert (a standalone lib Toast is not announced).
-  const close = view.hostElements((props, _text, tag) => tag === 'button' && props['aria-label'] === 'Fermer le message');
-  assert.equal(close.length, 1, 'The contextual feedback offers its keyboard-operable dismissal');
-  await view.fire(props => props['aria-label'] === 'Fermer le message', 'onClick');
-
+  // Typing in the field clears its message and keeps the draft.
+  await view.fire(props => props.id === 'password', 'onChange', { target: { value: 'x' } });
   assert.equal(view.hostElements(props => props.role === 'alert').length, 0);
   assert.equal(view.hostElements(props => props.id === 'email')[0].props.value, 'draft@example.invalid');
   // Children handed through RecoveryLayout and Card are reported once per wrapping instance: read the rendered HTML.

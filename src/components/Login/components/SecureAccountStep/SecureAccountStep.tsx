@@ -1,6 +1,6 @@
 "use client";
 
-import { BackButton, Body, Button, PageTitle, RadioGroup } from "@mairie360/lib-components/primitives";
+import { BackButton, Body, Button, InfoAlert, PageTitle, RadioGroup } from "@mairie360/lib-components/primitives";
 import { AccountSecured } from "./components/AccountSecured";
 import { AuthenticatorSetup } from "./components/AuthenticatorSetup";
 import { BackupCodes } from "./components/BackupCodes";
@@ -62,16 +62,17 @@ export function SecureAccountStep({ policy, onSuccess, onSessionOver, onBack }: 
       <PageTitle>Sécurisez votre compte</PageTitle>
       <Body>Votre mairie demande une double authentification. Choisissez comment confirmer que c’est bien vous à chaque connexion.</Body>
       <RadioGroup<SecureAccountMethod>
-        label="Méthode de double authentification"
+        label="Méthode de vérification"
         name="method"
         variant="card"
         value={step.method}
         onChange={step.setMethod}
         options={[
-          { value: "app", label: "Application d’authentification", hint: "Un code à 6 chiffres affiché par une application sur votre téléphone.", badge: "Recommandé" },
-          { value: "passkey", label: "Passkey", hint: "Empreinte, visage ou code de votre appareil, sans mot de passe à retenir." },
+          { value: "passkey", label: "Passkey", hint: "Votre empreinte, votre visage ou le code de votre appareil. Rien à recopier, et impossible à voler par un faux site.", badge: "Recommandé" },
+          { value: "app", label: "Application d’authentification", hint: "Un code à 6 chiffres affiché par une application comme FreeOTP, Google Authenticator ou Microsoft Authenticator." },
         ]}
       />
+      <InfoAlert title="Encore une étape." description="Vous accéderez à vos modules dès que votre compte sera sécurisé." className="w-full" />
       <Button fullWidth type="submit" label="Continuer" />
       <BackButton label="Retour à la connexion" type="button" onClick={onBack} className="self-start" />
     </form>

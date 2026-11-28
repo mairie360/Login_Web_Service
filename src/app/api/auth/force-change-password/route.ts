@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
         upstreamResponse.status === 401 || upstreamResponse.status === 403;
       const response = NextResponse.json(
         {
-          message: getErrorMessage(upstreamResponse.status),
+          message: upstreamResponse.status === 400 ? "Mot de passe refusé." : getErrorMessage(upstreamResponse.status),
+          ...(upstreamResponse.status === 400 ? { description: PASSWORD_POLICY_MESSAGE } : {}),
           ...(shouldRestartLogin ? { restartLogin: true } : {}),
         },
         { status: upstreamResponse.status },

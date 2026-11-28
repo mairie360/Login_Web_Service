@@ -77,7 +77,7 @@ states:
   - id: login
     route: /
   - id: login-empty-submit
-    description: Form submitted empty (browser validation of the required fields)
+    description: Form submitted empty (the page shows « Renseignez votre email professionnel. » and « Renseignez votre mot de passe. » under the fields, MAIR-1261)
     route: /
     steps:
       - click: { role: button, name: Se connecter }

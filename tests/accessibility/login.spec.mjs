@@ -25,7 +25,8 @@ for (const mode of modes) {
         await expect(page.getByRole('button', { name: 'Se connecter', exact: true })).toBeFocused();
         await page.keyboard.press('Enter');
         await expect(page.getByLabel('Email professionnel')).toBeFocused();
-        expect(await page.getByLabel('Email professionnel').evaluate((input) => input.validity.valueMissing)).toBe(true);
+        await expect(page.getByLabel('Email professionnel')).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.getByRole('main').getByRole('alert').first()).toHaveText('Renseignez votre email professionnel.');
         expect(calls).toEqual([]);
         await enterCredentials(page);
         await page.getByRole('button', { name: 'Se connecter', exact: true }).press('Enter');
@@ -66,7 +67,7 @@ for (const mode of modes) {
         await page.getByLabel('Nouveau mot de passe', { exact: true }).fill(updatedPassword);
         await page.getByLabel('Confirmer le mot de passe').fill('mismatching-test-password');
         await page.getByRole('button', { name: 'Modifier le mot de passe' }).press('Enter');
-        await expect(page.getByRole('main').getByRole('alert')).toHaveText('Les mots de passe ne correspondent pas.');
+        await expect(page.getByRole('main').getByRole('alert')).toHaveText('Les deux mots de passe ne correspondent pas.');
         expect(changes).toEqual([]);
         await inspect(page, mode, info, 'password-mismatch');
         await page.getByLabel('Confirmer le mot de passe').fill(updatedPassword);

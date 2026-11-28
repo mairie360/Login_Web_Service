@@ -40,11 +40,12 @@ export default async function RootLayout({
   const brand = brandLine(readLegalConfig().mairie.name);
   return (
     <html lang="fr" data-theme="light" data-density={appearance?.density ?? "normal"}>
-      <body className={`${geistSans.variable} mairie-ui antialiased bg-[var(--mairie-background)]`}>
+      {/* MAIR-1261 (artifact): the page is a full-height column, so the footer stays visible at the bottom of the screen. */}
+      <body className={`${geistSans.variable} mairie-ui antialiased flex min-h-dvh flex-col bg-[var(--mairie-background)]`}>
         {/* MAIR-1102: the ribbons of the public pages, fixed behind the card (PublicBackdrop of lib-components 2.3, MAIR-1103). */}
         <PublicBackdrop />
         <a href="#login-content" className="app-skip-link">Aller au contenu</a>
-        <main id="login-content" tabIndex={-1} className="login-page relative z-[1] flex min-h-dvh items-center justify-center">
+        <main id="login-content" tabIndex={-1} className="login-page relative z-[1] flex flex-1 items-center justify-center">
           <InstanceProvider role="Guest" timeZone={timeZone} appearance={appearance} appearanceCookieDomain={process.env.COOKIE_DOMAIN}>
             <InstanceBrandProvider line={brand}>{children}</InstanceBrandProvider>
           </InstanceProvider>

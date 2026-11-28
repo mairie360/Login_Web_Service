@@ -60,7 +60,7 @@ test('wrong credentials are refused without a session', async ({ page }) => {
   expect(response.status()).toBeGreaterThanOrEqual(400);
   expect((await response.headerValue('set-cookie')) ?? '').not.toMatch(/accessToken=/);
 
-  await expect(page.getByText('Email ou mot de passe incorrect.')).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'Identifiants incorrects.' })).toContainText('Vérifiez votre email et votre mot de passe.');
   await expect(page.getByRole('heading', { name: 'Connexion', level: 1 })).toBeVisible();
 });
 

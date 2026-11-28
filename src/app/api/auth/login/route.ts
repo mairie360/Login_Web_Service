@@ -30,7 +30,7 @@ function getErrorMessage(status: number) {
   }
 
   if (status === 401) {
-    return "Email ou mot de passe incorrect.";
+    return "Identifiants incorrects.";
   }
 
   if (status === 412) {
@@ -213,7 +213,8 @@ export async function POST(request: NextRequest) {
 
     if (!upstreamResponse.ok) {
       return NextResponse.json(
-        { message: getErrorMessage(upstreamResponse.status) },
+        // MAIR-1261: the mock-up's refused sign-in is « Identifiants incorrects. » with its hint as description (F1).
+        { message: getErrorMessage(upstreamResponse.status), ...(upstreamResponse.status === 401 ? { description: "Vérifiez votre email et votre mot de passe." } : {}) },
         { status: upstreamResponse.status },
       );
     }
